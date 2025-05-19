@@ -1,0 +1,123 @@
+:root {
+    --primary-purple: #6a0dad;
+    --primary-purple-darker: #510677;
+    --primary-purple-lighter: #9370DB; /* Medium Purple for accents or lighter hovers */
+    --background-color: #f8f7fa; /* Lighter, slightly purplish background */
+    --text-color: #333;
+    --container-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --error-color: #d9534f; /* A more standard error red */
+    --success-color: #5cb85c; /* For success messages */
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px; /* Add some padding for smaller screens */
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: var(--container-bg);
+    padding: 30px 40px; /* Adjusted padding */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Softer, more diffused shadow */
+    text-align: center;
+    width: 100%;
+    max-width: 450px; /* Max width for login/forms */
+}
+
+h1 {
+    color: var(--primary-purple);
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 2em; /* Slightly larger */
+}
+
+p {
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #555;
+}
+
+.button {
+    background-color: var(--primary-purple);
+    color: var(--container-bg);
+    padding: 12px 25px; /* Increased padding */
+    border: none;
+    border-radius: 6px; /* Slightly more rounded */
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+    display: inline-block; /* For proper spacing if multiple buttons */
+    margin-top: 10px; /* Add some top margin */
+}
+
+.button:hover {
+    background-color: var(--primary-purple-darker);
+    transform: translateY(-1px); /* Subtle lift effect */
+}
+
+.button:active {
+    transform: translateY(0px);
+}
+
+/* Specific styling for anchor tags that look like buttons */
+a.button {
+    text-align: center;
+}
+
+/* Input field styling */
+input[type="text"],
+input[type="password"] {
+    width: calc(100% - 24px); /* Full width minus padding */
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+    border-color: var(--primary-purple-lighter);
+    box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.2);
+    outline: none;
+}
+
+label {
+    display: block;
+    text-align: left;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #444;
+}
+
+.error {
+  color: var(--error-color);
+  margin-top: 15px;
+  font-weight: 500;
+}
+
+#message { /* For admin group management messages */
+    margin-top: 15px;
+    font-weight: 500;
+}
+
+#message.success {
+    color: var(--success-color);
+}
+
+#message.error {
+    color: var(--error-color);
+}

@@ -1,0 +1,22 @@
+# Node.js dependencies for the backend
+/backend/node_modules/
+
+# Local environment variables for the backend
+# Contains sensitive information like API keys
+/backend/.env
+
+# Vercel specific directory
+# Contains local Vercel project linking and build outputs
+.vercel/
+
+# macOS specific files
+.DS_Store
+
+# IDE specific (Visual Studio Code)
+# Ignores user-specific VSCode settings, but you can un-ignore shared settings if needed
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
