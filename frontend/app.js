@@ -50,93 +50,93 @@ async function logout() {
 // checkAuth function now checks local storage instead of Okta Auth JS
 // This is the single source of truth for client-side auth checks.
 function checkAuthAndRedirect() { // Renamed for clarity, as it also handles UI updates
-    // --- Start Local Testing Bypass (Frontend Only) ---
-    if (window.LOCAL_TESTING_MODE) {
-        console.warn("LOCAL_TESTING_MODE is active. Bypassing client-side authentication.");
-        // Simulate a user object for UI elements if one isn't already set (e.g., by manual console commands)
-        // If you want to test non-admin views in LOCAL_TESTING_MODE,
-        // ensure the dummyUser here does NOT have an admin role.
-        if (!localStorage.getItem('authenticatedUser') &&
-            !window.location.pathname.endsWith('/login.html') &&
-            !window.location.pathname.endsWith('/index.html') &&
-            !window.location.pathname.endsWith('/') // Also check for root path
-        ) {
-            // Default dummy user for LOCAL_TESTING_MODE (non-admin if not overridden)
-            const dummyUser = {
-                id: 'test-user-123',
-                profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com' },
-                roles: ['user'] // Simulate a basic user role
-            };
-            localStorage.setItem('authenticatedUser', JSON.stringify(dummyUser));
-        }
+  // --- Start Local Testing Bypass (Frontend Only) ---
+  if (window.LOCAL_TESTING_MODE) {
+    console.warn("LOCAL_TESTING_MODE is active. Bypassing client-side authentication.");
+    // Simulate a user object for UI elements if one isn't already set (e.g., by manual console commands)
+    // If you want to test non-admin views in LOCAL_TESTING_MODE,
+    // ensure the dummyUser here does NOT have an admin role.
+    if (!localStorage.getItem('authenticatedUser') &&
+      !window.location.pathname.endsWith('/login.html') &&
+      !window.location.pathname.endsWith('/index.html') &&
+      !window.location.pathname.endsWith('/') // Also check for root path
+    ) {
+      // Default dummy user for LOCAL_TESTING_MODE (non-admin if not overridden)
+      const dummyUser = {
+        id: 'test-user-123',
+        profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com' },
+        roles: ['user'] // Simulate a basic user role
+      };
+      localStorage.setItem('authenticatedUser', JSON.stringify(dummyUser));
     }
-    // --- End Local Testing Bypass ---
+  }
+  // --- End Local Testing Bypass ---
 
-    const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
-    const currentPage = window.location.pathname;
+  const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+  const currentPage = window.location.pathname;
 
-    // DOM elements for protected.html (or any page showing user info)
-    const userProfileNameEl = document.getElementById('user-profile-name');
-    const userProfileEmailEl = document.getElementById('user-profile-email');
-    const userProfileRolesEl = document.getElementById('user-profile-roles');
-    const adminLinksContainerEl = document.getElementById('admin-links-container');
-    const logoutButton = document.getElementById('logout-button');
+  // DOM elements for protected.html (or any page showing user info)
+  const userProfileNameEl = document.getElementById('user-profile-name');
+  const userProfileEmailEl = document.getElementById('user-profile-email');
+  const userProfileRolesEl = document.getElementById('user-profile-roles');
+  const adminLinksContainerEl = document.getElementById('admin-links-container');
+  const logoutButton = document.getElementById('logout-button');
 
-    if (logoutButton) {
-        logoutButton.style.display = authenticatedUser ? 'block' : 'none';
+  if (logoutButton) {
+    logoutButton.style.display = authenticatedUser ? 'block' : 'none';
+  }
+
+  if (authenticatedUser) {
+    // User is "authenticated" (either via real login or LOCAL_TESTING_MODE with a dummy user)
+
+    // Populate user info on relevant pages (e.g., protected.html)
+    if (userProfileNameEl && authenticatedUser.profile) {
+      userProfileNameEl.textContent = authenticatedUser.profile.name || authenticatedUser.profile.firstName || authenticatedUser.profile.email || 'User';
+    }
+    if (userProfileEmailEl && authenticatedUser.profile) {
+      userProfileEmailEl.textContent = authenticatedUser.profile.email || 'N/A';
+    }
+    if (userProfileRolesEl) {
+      userProfileRolesEl.textContent = authenticatedUser.roles?.join(', ') || 'No roles assigned';
+      // For debugging, you can also log the roles here:
+      // console.log('Current user roles:', authenticatedUser.roles);
     }
 
-    if (authenticatedUser) {
-        // User is "authenticated" (either via real login or LOCAL_TESTING_MODE with a dummy user)
+    const isAdmin = authenticatedUser.roles && authenticatedUser.roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin');
 
-        // Populate user info on relevant pages (e.g., protected.html)
-        if (userProfileNameEl && authenticatedUser.profile) {
-            userProfileNameEl.textContent = authenticatedUser.profile.name || authenticatedUser.profile.firstName || authenticatedUser.profile.email || 'User';
-        }
-        if (userProfileEmailEl && authenticatedUser.profile) {
-            userProfileEmailEl.textContent = authenticatedUser.profile.email || 'N/A';
-        }
-        if (userProfileRolesEl) {
-            userProfileRolesEl.textContent = authenticatedUser.roles?.join(', ') || 'No roles assigned';
-            // For debugging, you can also log the roles here:
-            // console.log('Current user roles:', authenticatedUser.roles);
-        }
+    // Show/hide admin links container on protected.html
+    if (adminLinksContainerEl) {
+      adminLinksContainerEl.style.display = isAdmin ? 'block' : 'none';
+    }
 
-        const isAdmin = authenticatedUser.roles && authenticatedUser.roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin');
-
-        // Show/hide admin links container on protected.html
-        if (adminLinksContainerEl) {
-            adminLinksContainerEl.style.display = isAdmin ? 'block' : 'none';
-        }
-
-        // Redirection logic for logged-in users
-        if (isAdmin) {
-            // Admin can access any page. No specific redirection needed *from* protected.html.
-            // They will see admin links on protected.html.
-            // If they are on login.html, redirect them.
-            if (currentPage.endsWith('login.html')) {
-                window.location.href = 'protected.html';
-            }
-        } else {
-            // Non-admin user
-            // If on an admin page, redirect to protected.html
-            if (currentPage.endsWith('admin.html') || currentPage.endsWith('admin-group.html') || currentPage.endsWith('admin-user-crud.html')) {
-                alert('Access Denied: You do not have permission to view this page.');
-                window.location.href = 'protected.html'; // redirect from admin pages if not admin
-            }
-            // If they are on login.html, redirect them.
-            if (currentPage.endsWith('login.html')) {
-                window.location.href = 'protected.html';
-            }
-        }
+    // Redirection logic for logged-in users
+    if (isAdmin) {
+      // Admin can access any page. No specific redirection needed *from* protected.html.
+      // They will see admin links on protected.html.
+      // If they are on login.html, redirect them.
+      if (currentPage.endsWith('login.html')) {
+        window.location.href = 'protected.html';
+      }
     } else {
-        // User is not authenticated
-        // Redirect to login if on a protected page or any admin page
-        const isProtectedOrAdminPage = currentPage.endsWith('protected.html') || currentPage.includes('admin');
-        if (isProtectedOrAdminPage) {
-            window.location.href = 'login.html';
-        }
+      // Non-admin user
+      // If on an admin page, redirect to protected.html
+      if (currentPage.endsWith('admin.html') || currentPage.endsWith('admin-group.html') || currentPage.endsWith('admin-user-crud.html')) {
+        alert('Access Denied: You do not have permission to view this page.');
+        window.location.href = 'protected.html'; // redirect from admin pages if not admin
+      }
+      // If they are on login.html, redirect them.
+      if (currentPage.endsWith('login.html')) {
+        window.location.href = 'protected.html';
+      }
     }
+  } else {
+    // User is not authenticated
+    // Redirect to login if on a protected page or any admin page
+    const isProtectedOrAdminPage = currentPage.endsWith('protected.html') || currentPage.includes('admin');
+    if (isProtectedOrAdminPage) {
+      window.location.href = 'login.html';
+    }
+  }
 }
 
 /**
@@ -171,10 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname.endsWith('/') || window.location.pathname.endsWith('index.html')) {
     const welcomeTitle = document.querySelector('.welcome-title');
     if (welcomeTitle) {
-        const letters = welcomeTitle.querySelectorAll('span');
-        letters.forEach((span, index) => {
-            span.style.setProperty('--letter-index', index);
-        });
+      const letters = welcomeTitle.querySelectorAll('span');
+      letters.forEach((span, index) => {
+        span.style.setProperty('--letter-index', index);
+      });
     }
   }
 
@@ -213,79 +213,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadAdminUsersMessage = document.getElementById('load-admin-users-message');
 
     async function manageAdminRole(action, buttonElement) {
-        const userIdToAssignRole = userIdInput.value;
-          if (userIdToAssignRole) {
-            // const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser')); // Not needed if backend uses M2M
-            try {
-              if (buttonElement) buttonElement.classList.add('loading');
-              // Call endpoint to assign roles in Auth0
-              const response = await fetch('/api/auth0-user-management', {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  // No specific user header needed here if backend uses M2M token for Management API
-                },
-                // For Auth0, you assign roles. 'AdminGroup' concept is now an Auth0 role.
-                body: JSON.stringify({ action: action, userId: userIdToAssignRole, roles: ['admin'] }) // Example: assign/remove 'admin' role
-              });
-              if (response.ok) {
-                const successMessage = action === 'assignRoles' ? 'User added to admin role.' : 'User removed from admin role.';
-                displayMessage(messageDiv, successMessage, 'success');
-              } else {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error from server.' }));
-                displayMessage(messageDiv, `Failed to update roles: ${errorData.error || 'Server error'}`, 'error');
-              }
-            } catch (error) {
-              console.error("Error updating roles:", error);
-              displayMessage(messageDiv, 'Error: ' + error.message, 'error');
-            } finally {
-              if (buttonElement) buttonElement.classList.remove('loading');
-            }
+      const userIdToAssignRole = userIdInput.value;
+      if (userIdToAssignRole) {
+        // const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser')); // Not needed if backend uses M2M
+        try {
+          if (buttonElement) buttonElement.classList.add('loading');
+          // Call endpoint to assign roles in Auth0
+          const response = await fetch('/api/auth0-user-management', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              // No specific user header needed here if backend uses M2M token for Management API
+            },
+            // For Auth0, you assign roles. 'AdminGroup' concept is now an Auth0 role.
+            body: JSON.stringify({ action: action, userId: userIdToAssignRole, roles: ['admin'] }) // Example: assign/remove 'admin' role
+          });
+          if (response.ok) {
+            const successMessage = action === 'assignRoles' ? 'User added to admin role.' : 'User removed from admin role.';
+            displayMessage(messageDiv, successMessage, 'success');
           } else {
-            displayMessage(messageDiv, 'Please enter a User ID (Auth0 `sub`).', 'error');
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error from server.' }));
+            displayMessage(messageDiv, `Failed to update roles: ${errorData.error || 'Server error'}`, 'error');
           }
+        } catch (error) {
+          console.error("Error updating roles:", error);
+          displayMessage(messageDiv, 'Error: ' + error.message, 'error');
+        } finally {
+          if (buttonElement) buttonElement.classList.remove('loading');
+        }
+      } else {
+        displayMessage(messageDiv, 'Please enter a User ID (Auth0 `sub`).', 'error');
+      }
     }
 
     if (addToAdminRoleButton) {
-        addToAdminRoleButton.addEventListener('click', () => manageAdminRole('assignRoles', addToAdminRoleButton));
+      addToAdminRoleButton.addEventListener('click', () => manageAdminRole('assignRoles', addToAdminRoleButton));
     }
     if (removeFromAdminRoleButton) {
-        removeFromAdminRoleButton.addEventListener('click', () => manageAdminRole('unassignRoles', removeFromAdminRoleButton));
+      removeFromAdminRoleButton.addEventListener('click', () => manageAdminRole('unassignRoles', removeFromAdminRoleButton));
     }
 
     async function loadAdminUsers() {
-        displayMessage(loadAdminUsersMessage, 'Loading admin users...', 'info');
-        adminUsersList.innerHTML = ''; // Clear previous list
-        if (loadAdminUsersButton) loadAdminUsersButton.classList.add('loading');
+      displayMessage(loadAdminUsersMessage, 'Loading admin users...', 'info');
+      adminUsersList.innerHTML = ''; // Clear previous list
+      if (loadAdminUsersButton) loadAdminUsersButton.classList.add('loading');
 
-        try {
-            const response = await fetch('/api/auth0-user-management?action=listUsersInRole&roleName=admin'); // Assuming backend supports this
-            if (response.ok) {
-                const users = await response.json();
-                if (users.length === 0) {
-                    adminUsersList.innerHTML = '<li>No users currently in the admin role.</li>';
-                } else {
-                    users.forEach(user => {
-                        const li = document.createElement('li');
-                        li.textContent = `${user.name || user.email} (ID: ${user.user_id})`;
-                        adminUsersList.appendChild(li);
-                    });
-                }
-                displayMessage(loadAdminUsersMessage, '', 'info'); // Clear loading message
-            } else {
-                const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-                displayMessage(loadAdminUsersMessage, `Error: ${error.error || 'Failed to load admin users.'}`, 'error');
-            }
-        } catch (err) {
-            console.error("Load admin users error:", err);
-            displayMessage(loadAdminUsersMessage, `Network error: ${err.message}`, 'error');
-        } finally {
-            if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading');
+      try {
+        const response = await fetch('/api/auth0-user-management?action=listUsersInRole&roleName=admin'); // Assuming backend supports this
+        if (response.ok) {
+          const users = await response.json();
+          if (users.length === 0) {
+            adminUsersList.innerHTML = '<li>No users currently in the admin role.</li>';
+          } else {
+            users.forEach(user => {
+              const li = document.createElement('li');
+              li.textContent = `${user.name || user.email} (ID: ${user.user_id})`;
+              adminUsersList.appendChild(li);
+            });
+          }
+          displayMessage(loadAdminUsersMessage, '', 'info'); // Clear loading message
+        } else {
+          const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
+          displayMessage(loadAdminUsersMessage, `Error: ${error.error || 'Failed to load admin users.'}`, 'error');
         }
+      } catch (err) {
+        console.error("Load admin users error:", err);
+        displayMessage(loadAdminUsersMessage, `Network error: ${err.message}`, 'error');
+      } finally {
+        if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading');
+      }
     }
 
     if (loadAdminUsersButton) {
-        loadAdminUsersButton.addEventListener('click', loadAdminUsers);
+      loadAdminUsersButton.addEventListener('click', loadAdminUsers);
     }
     // loadAdminUsers(); // Optionally load on page init
   }
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             createUserForm.reset();
             loadUsers();
           } else {
-            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
+            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
             displayMessage(createMessage, `Error: ${error.error || error.message || 'Failed to create user.'}`, 'error');
           }
         } catch (err) {
@@ -370,10 +370,15 @@ document.addEventListener('DOMContentLoaded', () => {
               const email = user.email || '';
 
               li.innerHTML = `
-                <strong>${firstName} ${lastName}</strong> (${email})<br>
-                Auth0 ID: ${userId}
-                <button data-userid="${userId}" data-firstname="${firstName}" data-lastname="${lastName}" data-email="${email}" class="edit-user-btn btn btn-secondary" style="font-size:0.8em; padding: 3px 6px; margin-left:10px; margin-top:5px;">Edit</button>
-                <button data-userid="${userId}" class="delete-user-btn btn btn-danger" style="font-size:0.8em; padding: 3px 6px; margin-top:5px;">Delete</button>
+                <div class="user-item-info">
+                  <span class="user-name">${firstName} ${lastName}</span>
+                  <span class="user-email">${email}</span>
+                  <span class="user-id">Auth0 ID: ${userId}</span>
+                </div>
+                <div class="user-item-actions">
+                  <button data-userid="${userId}" data-firstname="${firstName}" data-lastname="${lastName}" data-email="${email}" class="edit-user-btn btn btn-secondary btn-sm">Edit</button>
+                  <button data-userid="${userId}" class="delete-user-btn btn btn-danger btn-sm">Delete</button>
+                </div>
               `;
               ul.appendChild(li);
             });
@@ -384,8 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           displayMessage(listMessage, '', 'info'); // Clear loading message
         } else {
-          const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
-          displayMessage(listMessage, `Error loading users: ${error.error || error.message ||'Failed to load users.'}`, 'error');
+          const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
+          displayMessage(listMessage, `Error loading users: ${error.error || error.message || 'Failed to load users.'}`, 'error');
         }
       } catch (err) {
         console.error("Load users network error:", err);
@@ -400,56 +405,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeEditModal() {
-        if (editModal) {
-            editModal.style.display = 'none';
-        }
+      if (editModal) {
+        editModal.style.display = 'none';
+      }
     }
     // Make it globally accessible if modal's close button uses it directly in HTML onclick
     window.closeEditModal = closeEditModal;
 
     function handleEditUser(event) {
-        const btn = event.target.closest('.edit-user-btn');
-        if (!btn) return;
-        editUserIdInput.value = btn.dataset.userid; // Auth0 User ID (sub)
-        editFirstNameInput.value = btn.dataset.firstname;
-        editLastNameInput.value = btn.dataset.lastname;
-        editEmailInput.value = btn.dataset.email;
-        displayMessage(editMessage, '', 'info'); // Clear previous message
-        if (editModal) editModal.style.display = 'block';
+      const btn = event.target.closest('.edit-user-btn');
+      if (!btn) return;
+      editUserIdInput.value = btn.dataset.userid; // Auth0 User ID (sub)
+      editFirstNameInput.value = btn.dataset.firstname;
+      editLastNameInput.value = btn.dataset.lastname;
+      editEmailInput.value = btn.dataset.email;
+      displayMessage(editMessage, '', 'info'); // Clear previous message
+      if (editModal) editModal.style.display = 'flex'; // Ensure 'flex' is used to enable CSS centering
     }
 
     if (saveEditButton) {
-        saveEditButton.addEventListener('click', async () => {
-            const userIdToUpdate = editUserIdInput.value; // Auth0 User ID (sub)
-            const updates = { // Payload for Auth0 Management API (PATCH users)
-                given_name: editFirstNameInput.value,
-                family_name: editLastNameInput.value
-                // email: editEmailInput.value, // Email updates are sensitive and might require specific handling/permissions
-            };
-            displayMessage(editMessage, 'Saving...', 'info');
+      saveEditButton.addEventListener('click', async () => {
+        const userIdToUpdate = editUserIdInput.value; // Auth0 User ID (sub)
+        const updates = { // Payload for Auth0 Management API (PATCH users)
+          given_name: editFirstNameInput.value,
+          family_name: editLastNameInput.value
+          // email: editEmailInput.value, // Email updates are sensitive and might require specific handling/permissions
+        };
+        displayMessage(editMessage, 'Saving...', 'info');
 
-            if (saveEditButton) saveEditButton.classList.add('loading');
-            try {
-                const response = await fetch('/api/auth0-user-management', {
-                    method: 'PUT', // Should be PATCH for Auth0 user updates
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'updateUser', userId: userIdToUpdate, updates })
-                });
-                if (response.ok) {
-                    displayMessage(editMessage, 'User updated successfully!', 'success', 'message-area', 3000);
-                    closeEditModal();
-                    loadUsers();
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
-                    displayMessage(editMessage, `Error: ${error.error || error.message || 'Failed to update.'}`, 'error');
-                }
-            } catch (err) {
-                console.error("Update user network error:", err);
-                displayMessage(editMessage, `Network error: ${err.message}`, 'error');
-            } finally {
-                if (saveEditButton) saveEditButton.classList.remove('loading');
-            }
-        });
+        if (saveEditButton) saveEditButton.classList.add('loading');
+        try {
+          const response = await fetch('/api/auth0-user-management', {
+            method: 'PUT', // Should be PATCH for Auth0 user updates
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'updateUser', userId: userIdToUpdate, updates })
+          });
+          if (response.ok) {
+            displayMessage(editMessage, 'User updated successfully!', 'success', 'message-area', 3000);
+            closeEditModal();
+            loadUsers();
+          } else {
+            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
+            displayMessage(editMessage, `Error: ${error.error || error.message || 'Failed to update.'}`, 'error');
+          }
+        } catch (err) {
+          console.error("Update user network error:", err);
+          displayMessage(editMessage, `Network error: ${err.message}`, 'error');
+        } finally {
+          if (saveEditButton) saveEditButton.classList.remove('loading');
+        }
+      });
     }
 
     async function handleDeleteUser(event) {
@@ -470,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displayMessage(listMessage, 'User deleted successfully.', 'success', 'message-area', 3000);
             loadUsers();
           } else {
-            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
+            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
             displayMessage(listMessage, `Error deleting user: ${error.error || error.message || 'Failed to delete.'}`, 'error');
           }
         } catch (err) {

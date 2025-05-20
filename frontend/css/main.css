@@ -153,6 +153,15 @@ a:hover {
 .btn-block {
   display: block;
   width: 100%;
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-sm);
+  background-color: var(--color-surface);
+  transition: var(--transition-base);
+  transition: var(--transition-base), border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  display: flex; /* For aligning info and actions */
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
 }
 
 .btn-glow {
@@ -182,6 +191,11 @@ a:hover {
 .btn-submit-animated.loading > *, /* Hide text/icon when loading */
 .btn-load-animated.loading > * {
   visibility: hidden;
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-sm); /* 4px 8px */
+  font-size: 0.875rem;
 }
 
 /* --- Cards --- */
@@ -621,6 +635,32 @@ a:hover {
   border-color: var(--color-primary-light);
   box-shadow: var(--box-shadow-sm);
   transform: translateX(5px);
+}
+
+.styled-list li .user-item-info {
+  flex-grow: 1;
+  margin-right: var(--spacing-md); /* Space between info and actions */
+}
+.styled-list li .user-name {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  display: block;
+}
+.styled-list li .user-email {
+  font-size: 0.9em;
+  color: var(--color-text-muted);
+  display: block;
+}
+.styled-list li .user-id {
+  font-size: 0.8em;
+  color: var(--color-secondary);
+  display: block;
+  margin-top: var(--spacing-xs);
+}
+.styled-list li .user-item-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-shrink: 0; /* Prevent actions from shrinking too much */
 }
 
 /* --- Accessibility --- */
