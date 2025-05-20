@@ -1,13 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Protected Page</title>
-    <link rel="stylesheet" href="style.css">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="style.css"> <!-- Make sure you have this -->
 </head>
 <body>
     <div class="container">
-        <h1>Welcome, <span id="username"></span>!</h1>
-        <p>You have access to this protected content.</p>
+        <h1>Welcome, <span id="user-profile-name">User</span>!</h1>
+        <div id="user-info-details" style="margin-bottom: 20px;">
+            <p>Email: <span id="user-profile-email">N/A</span></p>
+            <p>Your Roles: <span id="user-profile-roles">N/A</span></p>
+        </div>
+
+        <p>This is your personal dashboard. You have successfully logged in and can access protected resources.</p>
+
+        <!-- This section will be shown/hidden based on user role -->
+        <div id="admin-links-container" style="display:none; margin-top: 20px; padding: 15px; border: 1px solid #eee; background-color: #f9f9f9;">
+            <h2>Admin Section</h2>
+            <p>As an administrator, you have access to the following management pages:</p>
+            <ul>
+                <li><a href="admin-user-crud.html" class="button admin-nav-button">User Management (CRUD)</a></li>
+                <li><a href="admin-group.html" class="button admin-nav-button">Group Management</a></li>
+                <!-- Add more admin links here if needed -->
+            </ul>
+        </div>
+
         <button id="logout-button" class="button">Logout</button>
     </div>
     <script src="app.js"></script>

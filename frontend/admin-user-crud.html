@@ -3,23 +3,26 @@
 <head>
     <title>Admin - User Management</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Make sure version matches -->
 </head>
 <body>
     <div class="container">
         <h1>User Management</h1>
-        <a href="admin.html" class="button" style="margin-bottom: 20px;">Back to Admin Panel</a>
+        <nav style="margin-bottom: 20px;">
+            <a href="protected.html" class="button">Back to Dashboard</a>
+            <a href="admin.html" class="button">Admin Panel Home</a>
+            <button id="logout-button" class="button" style="float: right;">Logout</button>
+        </nav>
 
         <h2>Create User</h2>
         <form id="create-user-form">
             <label for="firstName">First Name:</label>
-            <input type="text" id="firstName" required>
+            <input type="text" id="firstName" name="firstName" required>
             <label for="lastName">Last Name:</label>
-            <input type="text" id="lastName" required>
-            <label for="email">Email (Login):</label>
-            <input type="email" id="email" required>
-            <label for="password">Password:</label>
-            <input type="password" id="password" required>
+            <input type="text" id="lastName" name="lastName" required>
+            <label for="email">Email (Login):</label> <!-- This input should now pick up general input styling -->
+            <input type="email" id="email" name="email" required>
+            <label for="password">Password:</label> <!-- Ensure this is type="password" -->
+            <input type="password" id="password" name="password" required>
             <button type="submit" class="button">Create User</button>
         </form>
         <div id="create-message" class="message"></div>

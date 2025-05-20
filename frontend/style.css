@@ -77,7 +77,8 @@ a.button {
 
 /* Input field styling */
 input[type="text"],
-input[type="password"] {
+input[type="password"]
+input[type="email"] {
     width: calc(100% - 24px); /* Full width minus padding */
     padding: 12px;
     margin-bottom: 15px;
@@ -89,7 +90,8 @@ input[type="password"] {
 }
 
 input[type="text"]:focus,
-input[type="password"]:focus {
+input[type="password"]:focus
+input[type="email"]:focus {
     border-color: var(--primary-purple-lighter);
     box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.2);
     outline: none;

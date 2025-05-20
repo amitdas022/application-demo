@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>Admin Page</title>
-    <script src="https://global.oktacdn.com/okta-auth-js/7.x.x/okta-auth-js.min.js"></script>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
     <div class="container">
-      <h1>Admin Panel</h1>
-      <p>Manage Users Here</p>
-      <a href="admin-user-crud.html" class="button">User CRUD Operations</a>
-      <a href="admin-group.html" class="button">Admin Group Management</a>
-      <button id="logout-button" class="button">Logout</button>
+        <h1>Admin Panel</h1>
+        <nav style="margin-bottom: 20px;">
+            <a href="protected.html" class="button">Back to Dashboard</a>
+            <button id="logout-button" class="button" style="float: right;">Logout</button>
+        </nav>
+
+        <p>Welcome to the administration area. Select a management task below:</p>
+        
+        <a href="admin-user-crud.html" class="button admin-feature-button">User Management (CRUD)</a>
+        <a href="admin-group.html" class="button admin-feature-button">Group Management</a>
+        <!-- Add links to other admin features here -->
     </div>
     <script src="app.js"></script>
-  </body>
+</body>
 </html>
