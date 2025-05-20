@@ -1,9 +1,9 @@
 # Node.js dependencies for the backend
-/backend/node_modules/
+/node_modules/
 
 # Local environment variables for the backend
 # Contains sensitive information like API keys
-/backend/.env
+.env
 
 # Vercel specific directory
 # Contains local Vercel project linking and build outputs
@@ -20,3 +20,5 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+.vercel
+package-lock.json

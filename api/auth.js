@@ -58,8 +58,9 @@ export default async function handler(req, res) {
 
             // Extract roles. The exact location of roles depends on your Auth0 setup (Rules/Actions).
             // Common places: a custom claim (e.g., https://myapp.example.com/roles) or directly if using Auth0 RBAC Core.
-            const rolesClaimKey = Object.keys(auth0User).find(key => key.includes('/roles'));
-            const userRoles = rolesClaimKey ? auth0User[rolesClaimKey] : (auth0User.roles || []);
+            const namespace = 'https://application-demo.com/claims'; // Your defined namespace
+            // Assuming your Auth0 Action adds roles to a claim like 'https://application-demo.com/claims/roles'
+            const userRoles = auth0User[`${namespace}/roles`] || (auth0User.roles || []);
 
 
             // Return essential user info to the frontend.
