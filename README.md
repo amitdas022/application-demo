@@ -1,6 +1,6 @@
-# Application with Okta Integration
+# Application Demo with Auth0 Integration
 
-This project demonstrates a web application with a Vanilla JavaScript frontend and a Node.js backend (using Vercel Serverless Functions) that integrates with Okta for user authentication and management.
+This project demonstrates a web application built with Vanilla JavaScript for the frontend and a Node.js backend (using Vercel Serverless Functions). It integrates with Auth0 for user authentication and user management functionalities.
 
 ## Project Structure
 
@@ -8,36 +8,34 @@ This project demonstrates a web application with a Vanilla JavaScript frontend a
 application-demo/
 ├── backend/
 │   ├── api/
-│   │   ├── auth.js         # Handles user login authentication via Okta
-│   │   └── okta-crud.js    # Handles CRUD operations for users and groups via Okta
-│   ├── .env                # Local environment variables (ignored by Git)
-│   └── package.json        # Backend dependencies
+│   │   ├── auth.js                     # Handles user login authentication via Auth0
+│   │   └── auth0-user-management.js    # Handles CRUD for users & roles via Auth0 Management API
+│   ├── .env                # Local environment variables (Git ignored)
+│   └── package.json        # Backend Node.js dependencies
 ├── frontend/
-│   ├── index.html          # Landing page
-│   ├── login.html          # Login page
-│   ├── protected.html      # Page for authenticated regular users
+│   ├── index.html          # Public landing page
+│   ├── login.html          # User login page
+│   ├── protected.html      # Page accessible by any authenticated regular user
 │   ├── admin.html          # Admin panel landing page
-│   ├── admin-group.html    # Page for managing admin group members
-│   ├── admin-user-crud.html # Page for CRUD operations on users
-│   ├── style.css           # CSS styles
-│   └── app.js              # Frontend JavaScript logic
-├── .gitignore              # Specifies intentionally untracked files
-└── vercel.json             # Vercel project configuration for local dev and deployment
+│   ├── admin-group.html    # Page for managing user roles (e.g., assigning admin role)
+│   ├── admin-user-crud.html # Page for Create, Read, Update, Delete (CRUD) operations on users
+│   ├── style.css           # Main CSS styles
+│   └── app.js              # Core frontend JavaScript logic
+├── .gitignore              # Specifies intentionally untracked files for Git
+└── vercel.json             # Vercel project configuration for local development and deployment
 ```
 
 ## Local Development Setup
 
-Follow these steps to run the project locally.
+Follow these steps to set up and run the project on your local machine.
 
 ### Prerequisites
 
-*   **Node.js and npm:** Download and install from [nodejs.org](https://nodejs.org/).
-*   **Vercel CLI:** Install globally: `npm install -g vercel`
-*   **Okta Developer Account:** You'll need an Okta developer account and an Okta OIDC application configured.
+*   **Node.js and npm:** Ensure you have Node.js (which includes npm) installed. Download from [nodejs.org](https://nodejs.org/).
+*   **Vercel CLI:** Install globally using npm: `npm install -g vercel`
+*   **Auth0 Account:** You will need an active Auth0 account.
 
-### 1. Backend Setup
-
-The backend handles Okta API interactions.
+### 1. Backend Configuration
 
 1.  **Navigate to Backend Directory:**
     ```bash
@@ -50,106 +48,109 @@ The backend handles Okta API interactions.
     ```
 
 3.  **Create `.env` File:**
-    In the `backend/` directory, create a file named `.env`. This file will store your Okta API credentials locally. **Do not commit this file to Git.**
-    Add the following content, replacing placeholders with your actual Okta details:
+    In the `backend/` directory, create a new file named `.env`. This file will store your Auth0 application and API credentials for local development. **This file should not be committed to your Git repository.**
+
+    Populate `.env` with the following, replacing placeholder values with your actual Auth0 details:
     ```env
-    OKTA_ORG_URL=https://your_okta_domain.okta.com
-    OKTA_API_TOKEN=your_actual_okta_api_token
-    ADMIN_GROUP_ID=your_actual_admin_group_id
+    AUTH0_DOMAIN=your-auth0-tenant.us.auth0.com
+    AUTH0_CLIENT_ID=your_spa_application_client_id
+    AUTH0_CLIENT_SECRET=your_spa_application_client_secret_if_confidential
+    AUTH0_AUDIENCE=your_api_identifier_for_spa_login_flow # e.g., https://api.yourapp.com
+    TEST_USERNAME=testuser@example.com # Optional: for easy testing
+    TEST_PASSWORD=yourSecurePassword1! # Optional: for easy testing
+    AUTH0_M2M_CLIENT_ID=your_m2m_application_client_id
+    AUTH0_M2M_CLIENT_SECRET=your_m2m_application_client_secret
+    AUTH0_MANAGEMENT_AUDIENCE=https://your-auth0-tenant.us.auth0.com/api/v2/
     ```
-    *   `OKTA_ORG_URL`: Your Okta organization URL.
-    *   `OKTA_API_TOKEN`: An Okta API token with permissions to manage users and groups.
-    *   `ADMIN_GROUP_ID`: The ID of the Okta group you use for administrators.
+    *   Obtain these values from your Auth0 Dashboard by setting up:
+        *   An Auth0 Application (e.g., SPA type) for user login.
+        *   An Auth0 API that your application will call.
+        *   An Auth0 Machine-to-Machine (M2M) Application authorized to use the Auth0 Management API.
 
-### 2. Okta Application Configuration (for Local Development)
+### 2. Auth0 Tenant Configuration
 
-Your Okta OIDC application needs to be configured to allow communication from your local setup.
+Ensure your Auth0 tenant is configured correctly for this application:
 
-1.  **Sign-in and Sign-out Redirect URIs:**
-    *   Go to your Okta Admin Dashboard.
-    *   Navigate to **Applications > Applications** and select your application.
-    *   Under the **General** tab, edit the "General Settings":
-        *   **Sign-in redirect URIs:** Add your local frontend redirect URI. If `vercel dev` runs on port 3000, this will be: `http://localhost:3000/protected.html`
-        *   **Sign-out redirect URIs:** Add your local frontend logout URI: `http://localhost:3000/index.html`
-    *   Save the changes.
+1.  **Application Settings (for your SPA):**
+    *   **Allowed Callback URLs:** Add `http://localhost:3000/protected.html` (or the port `vercel dev` uses).
+    *   **Allowed Logout URLs:** Add `http://localhost:3000/index.html`.
+    *   **Allowed Web Origins:** Add `http://localhost:3000`.
+    *   **Grant Types:** Ensure "Password" is enabled if using the ROPG flow from the backend for login (as currently implemented in `api/auth.js`). "Authorization Code" should also be enabled for standard SPA flows.
 
-2.  **Trusted Origins (for CORS):**
-    *   In your Okta Admin Dashboard, go to **Security > API**.
-    *   Select the **Trusted Origins** tab.
-    *   Click **Add Origin**.
-    *   **Name:** e.g., "Local Development"
-    *   **Origin URL:** Your local development URL (e.g., `http://localhost:3000`)
-    *   **Type:** Check both "CORS" and "Redirect".
-    *   Click **Save**.
+2.  **Roles and Permissions:**
+    *   Define necessary roles (e.g., "admin") in Auth0 under **User Management > Roles**.
+    *   Assign these roles to your test users.
+    *   Implement a Rule or Action in Auth0 to add user roles to a custom claim (e.g., `https://your-app-namespace/roles`) in the ID token and/or access token. The backend (`api/auth.js`) expects to find roles here to return to the frontend.
 
-### 3. Running the Entire Project Locally with Vercel
+3.  **Management API Access (for your M2M Application):**
+    *   Verify that your M2M application is authorized for the "Auth0 Management API".
+    *   Ensure it has the required scopes/permissions (e.g., `read:users`, `create:users`, `update:users`, `delete:users`, `read:roles`, `update:roles`).
+
+### 3. Running the Project Locally
 
 1.  **Navigate to Project Root:**
-    Ensure you are in the main project directory (`application-demo/`).
+    Open your terminal and navigate to the main `application-demo/` directory.
     ```bash
-    cd .. # If you were in the backend/ directory
-    # Or directly: cd /path/to/application-demo/
+    # Example: cd /path/to/your/application-demo/
     ```
 
 2.  **Start the Vercel Development Server:**
     ```bash
     npx vercel dev
     ```
-    This command will:
-    *   Read the root `vercel.json` file.
-    *   Serve your frontend static files from the `frontend/` directory.
-    *   Run your backend serverless functions from the `backend/api/` directory.
-    *   Typically, the application will be available at `http://localhost:3000`.
+    This command utilizes the root `vercel.json` to:
+    *   Serve static files from the `frontend/` directory.
+    *   Run serverless functions from the `backend/api/` directory.
+    *   The application will typically be accessible at `http://localhost:3000`.
 
-    Your frontend `app.js` is configured to make API calls to relative paths like `/api/auth` and `/api/okta-crud`, which `vercel dev` will correctly route to your backend functions.
+    The frontend (`app.js`) is configured to make API calls to relative paths (e.g., `/api/auth`, `/api/auth0-user-management`), which `vercel dev` will route to your backend functions.
 
-## Local Testing Without Full Okta Setup (UI Testing)
+## Local UI Testing (Bypassing Full Auth0 Login)
 
-The `frontend/app.js` file includes a `LOCAL_TESTING_MODE` to bypass client-side authentication checks. This is useful for quickly testing UI elements on protected pages without needing to go through the full Okta login flow every time.
+For easier UI development of protected pages, `frontend/app.js` includes a `LOCAL_TESTING_MODE`.
 
-1.  **Start the project locally** as described in "Running the Entire Project Locally with Vercel".
-2.  **Open your application** in your web browser (e.g., `http://localhost:3000`).
-3.  **Open your browser's developer console** (usually F12).
-4.  **Enable Local Testing Mode:** In the console, type and run:
+1.  **Start the project locally** (as described above).
+2.  **Open the application** in your browser (e.g., `http://localhost:3000`).
+3.  **Open the browser's developer console** (usually F12).
+4.  **Enable Local Testing Mode:** In the console, execute:
     ```javascript
     window.LOCAL_TESTING_MODE = true;
     ```
-5.  **Navigate to Protected Pages:** You should now be able to directly access pages like `/protected.html`, `/admin.html`, etc.
+5.  You can now navigate directly to protected pages (e.g., `/protected.html`, `/admin.html`).
 
 ### Simulating User Roles in Local Testing Mode
 
-When `window.LOCAL_TESTING_MODE = true;`, the `app.js` file will attempt to create a default dummy user in `localStorage` if one doesn't exist.
+When `LOCAL_TESTING_MODE` is true, `app.js` creates a default non-admin dummy user in `localStorage`.
 
 *   **To test as a REGULAR (non-admin) user:**
-    1.  Enable local testing mode: `window.LOCAL_TESTING_MODE = true;`
-    2.  Ensure no admin user is simulated. If you previously simulated an admin, clear it:
-        ```javascript
-        localStorage.removeItem('authenticatedUser');
-        ```
-    3.  Refresh the page or navigate. The default dummy user created by `app.js` does *not* have admin privileges. You should be able to access `protected.html` but get redirected if you try to access admin pages.
+    1.  Set `window.LOCAL_TESTING_MODE = true;`
+    2.  Clear any existing simulated user: `localStorage.removeItem('authenticatedUser');`
+    3.  Refresh or navigate. You should access `protected.html` but be redirected from admin pages.
 
 *   **To test as an ADMIN user:**
-    1.  Enable local testing mode: `window.LOCAL_TESTING_MODE = true;`
-    2.  Manually set an admin user in `localStorage` via the console:
+    1.  Set `window.LOCAL_TESTING_MODE = true;`
+    2.  Manually create an admin user in `localStorage` via the console:
         ```javascript
         localStorage.setItem('authenticatedUser', JSON.stringify({
-            id: 'test-admin-123',
+            id: 'test-admin-123', // Auth0 user ID (sub)
             profile: {
-                firstName: 'Local',
-                lastName: 'Admin',
-                name: 'Local Admin', // Or use firstName/lastName
+                firstName: 'Local', lastName: 'Admin', name: 'Local Admin',
                 email: 'admin@example.com'
             },
-            groups: ['Everyone', 'AdminGroup'] // Ensure 'AdminGroup' matches your config
+            roles: ['user', 'admin'] // Ensure 'admin' role is present
         }));
         ```
-    3.  Refresh the page or navigate. You should now be treated as an admin and be able to access admin pages. If you land on `protected.html`, you should be redirected to `admin.html`.
+    3.  Refresh or navigate. You should be able to access admin pages.
 
 ### Important Notes for Local Testing Mode:
 
-*   **UI Only:** This mode primarily helps test UI and client-side navigation logic.
-*   **Backend Calls:** Backend API calls will still be made. The `okta-crud.js` backend uses an `X-User-Id` header (populated from the `authenticatedUser` in `localStorage` by `app.js`) for its simplified authorization. This means your simulated admin/non-admin status in `localStorage` will affect what the backend allows.
-*   **Security:** This `LOCAL_TESTING_MODE` and the `X-User-Id` header mechanism are **for development convenience only** and are not secure for production. Real authentication and authorization should rely on validating Okta-issued tokens on the backend.
-*   **Disable for Real Testing/Deployment:** Always set `window.LOCAL_TESTING_MODE = false;` (or ensure it's undefined) and remove any manually set `localStorage` items when testing the full Okta authentication flow or deploying.
+*   **UI Focus:** This mode is primarily for testing UI and client-side navigation.
+*   **Backend Interaction:** API calls to `/api/auth0-user-management` will still occur. The backend uses an M2M token for its own authentication to the Auth0 Management API. Authorization of the *frontend user's action* on the backend currently has a `TODO` and would typically involve validating an Auth0 access token sent from the frontend.
+*   **Security:** `LOCAL_TESTING_MODE` is **for development convenience only** and is not secure for production.
+*   **Disable for Full Testing/Deployment:** Always ensure `window.LOCAL_TESTING_MODE = false;` (or it's undefined) and clear `localStorage` when testing the complete Auth0 authentication flow or before deployment.
+
+## Deployment
+
+This project is structured for easy deployment to Vercel. Ensure your Auth0 environment variables (from `.env`) are configured as Environment Variables in your Vercel project settings.
 
 ```

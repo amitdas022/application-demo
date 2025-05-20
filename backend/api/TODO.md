@@ -1,64 +1,120 @@
-# Project Setup and Running Checklist
+# Project Setup & Auth0 Integration Checklist
 
-This file outlines the remaining steps to get the Okta integration fully configured and the project running locally.
+This document outlines all the necessary steps to configure the application to work fully with Auth0 for authentication, user management, and role-based access control.
 
-## IV. Okta Setup
+## I. Auth0 Tenant Configuration
 
-Ensure your Okta environment is correctly configured.
+1.  **Auth0 Account:**
+    *   [ ] Ensure you have an active Auth0 account.
 
-1.  **Okta Developer Account:**
-    *   [ ] Sign up for an Okta Developer Account if you haven't already.
+2.  **Auth0 Application (for Frontend SPA):**
+    *   [ ] Create a new Application in Auth0 (typically "Single Page Application" type).
+    *   [ ] Note its **Domain**, **Client ID**.
+    *   [ ] If using ROPG from the backend (as in `api/auth.js`), note the **Client Secret** (ensure the application is marked as "Confidential" if a secret is used for ROPG).
+    *   [ ] Configure **Allowed Callback URLs**: Add `http://localhost:3000/protected.html` (adjust port if `vercel dev` uses a different one).
+    *   [ ] Configure **Allowed Logout URLs**: Add `http://localhost:3000/index.html`.
+    *   [ ] Configure **Allowed Web Origins**: Add `http://localhost:3000`.
+    *   [ ] **Grant Types**:
+        *   Enable "Password" (for the ROPG flow in `api/auth.js`).
+        *   Enable "Authorization Code" (standard for SPAs, good for future flexibility).
+        *   Enable "Refresh Token" (if you plan to implement refresh token rotation).
 
-2.  **OIDC Application (Single-Page Application - SPA):**
-    *   [ ] Create a "Single-Page Application (SPA)" in your Okta dashboard.
-    *   [ ] Note the **Client ID** (though not directly used by the frontend in the current backend-auth model, it's good practice for SPAs).
-    *   [ ] Configure **Sign-in redirect URIs**:
-        *   Add `http://localhost:3000/protected.html` (or the correct port if `vercel dev` uses a different one).
-    *   [ ] Configure **Sign-out redirect URIs**:
-        *   Add `http://localhost:3000/index.html` (or the correct port).
-    *   [ ] Ensure **Grant types** enabled include "Authorization Code". "Refresh Token" can also be enabled if future enhancements require it. (Implicit grant is not recommended).
+3.  **Auth0 API (for Application Backend):**
+    *   [ ] Create a new API in Auth0 (e.g., "My Application API").
+    *   [ ] Note its **Identifier (Audience)**. This will be `AUTH0_AUDIENCE` in `backend/.env` used by the ROPG flow in `api/auth.js`.
+    *   [ ] Define any custom scopes if needed (e.g., `read:users`, `manage:profile`).
 
-3.  **API Token:**
-    *   [ ] In Okta, navigate to **Security > API > Tokens**.
-    *   [ ] Create a new API token.
-    *   [ ] Grant it the following permissions:
-        *   `okta.users.manage`
-        *   `okta.users.read`
-        *   `okta.groups.manage`
-        *   `okta.groups.read`
-    *   [ ] **Securely copy this token value.** You will need it for the `OKTA_API_TOKEN` in your `backend/.env` file.
+4.  **Auth0 Machine-to-Machine (M2M) Application (for Backend Management Tasks):**
+    *   [ ] Create a new Application in Auth0 of type "Machine to Machine".
+    *   [ ] Authorize this M2M application to use the **Auth0 Management API**.
+    *   [ ] Grant the following **Permissions (Scopes)** to this M2M application for the Management API:
+        *   `read:users`
+        *   `create:users`
+        *   `update:users` (includes `PATCH` for user profiles)
+        *   `delete:users`
+        *   `read:roles`
+        *   `update:roles` (for assigning/removing roles from users)
+    *   [ ] Note the **Client ID** and **Client Secret** for this M2M application. These will be `AUTH0_M2M_CLIENT_ID` and `AUTH0_M2M_CLIENT_SECRET` in `backend/.env`.
+    *   The `AUTH0_MANAGEMENT_AUDIENCE` will be `https://YOUR_AUTH0_DOMAIN/api/v2/`.
 
-4.  **Admin Group:**
-    *   [ ] Create a group in Okta (e.g., name it "AdminGroup" or similar).
-    *   [ ] Note its **Group ID**. You will need this for the `ADMIN_GROUP_ID` in your `backend/.env` file.
-    *   [ ] Assign any Okta users who should have administrative privileges in your application to this group.
+5.  **Auth0 Roles:**
+    *   [ ] In Auth0, navigate to **User Management > Roles**.
+    *   [ ] Create an "admin" role (or your desired admin role name).
+    *   [ ] Create a "user" role (or your desired default user role name).
+    *   [ ] (Optional) Define permissions for these roles if you plan to use fine-grained permissions.
 
-5.  **Trusted Origins:**
-    *   [ ] In Okta, navigate to **Security > API > Trusted Origins**.
-    *   [ ] Click **Add Origin**.
-    *   [ ] **Name:** e.g., "Local Development"
-    *   [ ] **Origin URL:** `http://localhost:3000` (or the correct port if `vercel dev` uses a different one).
-    *   [ ] **Type:** Check both "CORS" and "Redirect".
-    *   [ ] Save the origin.
+6.  **Auth0 Rule or Action (to Add Roles to Token/Userinfo):**
+    *   [ ] Create an Auth0 Rule (legacy) or Action (recommended) to add the user's assigned roles to a custom claim (e.g., `https://your-app-namespace/roles`) in the ID Token and Access Token. This allows your backend (`api/auth.js`) to retrieve roles and send them to the frontend.
+    *   Example Action script snippet:
+        ```javascript
+        // Action: Add roles to ID Token
+        exports.onExecutePostLogin = async (event, api) => {
+          const namespace = 'https://your-app-namespace.com/'; // Replace with your namespace
+          if (event.authorization) {
+            api.idToken.setCustomClaim(`${namespace}roles`, event.authorization.roles);
+            api.accessToken.setCustomClaim(`${namespace}roles`, event.authorization.roles);
+          }
+        };
+        ```
+    *   Ensure the namespace used in the custom claim matches what `api/auth.js` expects when extracting roles.
 
-## V. Running Locally
+## II. Backend Setup (`application-demo/backend/`)
 
-Once the Okta setup and backend `.env` file are complete:
+1.  **`.env` File:**
+    *   [ ] Create or update `backend/.env` with all the Auth0 credentials noted above:
+        *   `AUTH0_DOMAIN`
+        *   `AUTH0_CLIENT_ID` (for SPA)
+        *   `AUTH0_CLIENT_SECRET` (for SPA, if confidential & using ROPG from backend)
+        *   `AUTH0_AUDIENCE` (for SPA login flow)
+        *   `AUTH0_M2M_CLIENT_ID`
+        *   `AUTH0_M2M_CLIENT_SECRET`
+        *   `AUTH0_MANAGEMENT_AUDIENCE`
+        *   (Optional) `TEST_USERNAME`, `TEST_PASSWORD`
 
-1.  **Install Backend Dependencies:**
-    *   [ ] Navigate to the `application-demo/backend/` directory in your terminal.
-    *   [ ] Run `npm install`.
+2.  **Dependencies (`package.json`):**
+    *   [ ] Ensure `dotenv` and `node-fetch` (v2.x.x for CommonJS) are listed as dependencies.
+    *   [ ] Remove `@okta/okta-sdk-nodejs` if it's no longer used.
+    *   [ ] Run `npm install` in the `backend/` directory.
 
-2.  **Start the Development Server:**
-    *   [ ] Navigate to the root `application-demo/` directory in your terminal.
+3.  **API Files:**
+    *   [ ] Verify `backend/api/auth.js` is correctly implemented to use Auth0 ROPG and fetch/return user profile and roles.
+    *   [ ] Verify `backend/api/auth0-user-management.js` is correctly implemented to use the M2M token and Auth0 Management API for user CRUD and role assignments.
+        *   [ ] **Crucial Security TODO in `auth0-user-management.js`**: Implement proper authorization. Currently, it assumes any call is from an admin. It should validate an Access Token from the frontend user and check if that user has admin roles before performing management actions.
+
+## III. Frontend Setup (`application-demo/frontend/`)
+
+1.  **`app.js` Review:**
+    *   [ ] Ensure `app.js` correctly calls `/api/auth` for login.
+    *   [ ] Ensure it stores the user object (with `id`, `profile`, `roles`) from `/api/auth` into `localStorage`.
+    *   [ ] Verify the `isAdmin` check uses the `roles` array from `localStorage` (e.g., `authenticatedUser.roles.includes('admin')`).
+    *   [ ] Ensure CRUD operations in `admin-user-crud.html` section call `/api/auth0-user-management` with the correct actions and payloads (using Auth0 user IDs - `sub`).
+    *   [ ] Ensure "Assign Admin Role" functionality in `admin-group.html` section calls `/api/auth0-user-management` with `action: 'assignRoles'`, the target Auth0 User ID, and the role(s) to assign.
+
+## IV. Running and Testing Locally
+
+1.  **Start Development Server:**
+    *   [ ] Navigate to the project root (`application-demo/`).
     *   [ ] Run `npx vercel dev`.
+    *   [ ] Access the application at `http://localhost:3000` (or the specified port).
 
-3.  **Access the Application:**
-    *   [ ] Open your web browser and go to `http://localhost:3000` (or the port indicated by the `vercel dev` command).
+2.  **Test Scenarios:**
+    *   [ ] **Login/Logout:** Test with valid and invalid Auth0 credentials.
+    *   [ ] **Regular User Access:** Log in as a non-admin user. Verify access to `protected.html` and redirection from admin pages.
+    *   [ ] **Admin User Access:** Log in as an admin user (ensure this user has the 'admin' role in Auth0). Verify access to `admin.html` and admin functionalities.
+    *   [ ] **User CRUD:** Test creating, listing, editing (profile), and deleting users via the admin UI.
+    *   [ ] **Role Assignment:** Test assigning/removing the 'admin' role to users via the admin UI.
+    *   [ ] **Local Testing Mode:**
+        *   [ ] Test `window.LOCAL_TESTING_MODE = true;` to bypass login for UI checks.
+        *   [ ] Test simulating regular and admin users by manually setting `localStorage.getItem('authenticatedUser')`.
 
-## Next Steps (After Local Setup is Working)
+## V. Deployment to Vercel
 
-*   [ ] Test all authentication flows (login, logout).
-*   [ ] Test regular user access to protected pages.
-*   [ ] Test admin user access to admin pages and CRUD functionalities.
-*   [ ] Prepare for deployment to Vercel (ensure environment variables are set in Vercel project settings).
+1.  **Environment Variables:**
+    *   [ ] Configure all necessary Auth0 environment variables (from your local `.env` file) in your Vercel project settings.
+2.  **Deploy:**
+    *   [ ] Deploy the project using the Vercel CLI (`vercel --prod`) or via Git integration.
+3.  **Post-Deployment Testing:**
+    *   [ ] Thoroughly test all functionalities on the deployed Vercel URL.
+
+This checklist should cover all the critical aspects of making your application fully functional with Auth0.
+```
