@@ -6,11 +6,33 @@
 </head>
 <body>
     <div class="container">
-        <h1>Admin Group Management</h1>
-        <input type="text" id="add-user-input" placeholder="Enter user ID to add to admin group">
-        <button id="add-user-button" class="button">Add User</button>
-        <div id="message"></div>
-        <button id="logout-button" class="button">Logout</button>
+        <h1>Group Management</h1>
+        <nav style="margin-bottom: 20px;">
+            <a href="protected.html" class="button">Back to Dashboard</a>
+            <a href="admin.html" class="button">Admin Panel Home</a>
+            <button id="logout-button" class="button" style="float: right;">Logout</button>
+        </nav>
+
+        <section id="admin-role-management">
+            <h2>Manage 'Admin' Role Assignments</h2>
+            <p>Enter a User ID (e.g., auth0|xxxxxxxxxxxx) to add or remove them from the 'admin' role.</p>
+            <div>
+                <label for="admin-role-userId">User ID:</label>
+                <input type="text" id="admin-role-userId" placeholder="Enter User ID">
+            </div>
+            <button id="add-to-admin-role-button" class="button">Add to Admin Role</button>
+            <button id="remove-from-admin-role-button" class="button button-danger">Remove from Admin Role</button>
+            <div id="admin-role-message" class="message"></div>
+        </section>
+
+        <hr style="margin: 30px 0;">
+
+        <section id="view-admin-users">
+            <h2>Users with 'Admin' Role</h2>
+            <button id="load-admin-users-button" class="button">Load Admin Users</button>
+            <ul id="admin-users-list" style="list-style-type: none; padding: 0;"></ul>
+            <div id="load-admin-users-message" class="message"></div>
+        </section>
     </div>
     <script src="app.js"></script>
 </body>

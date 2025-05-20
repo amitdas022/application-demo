@@ -9,6 +9,10 @@ async function login(username, password, errorMessageElement) {
     const response = await fetch('/api/auth', { // Call backend auth endpoint
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      // Ensure your backend /api/auth expects 'username' or 'email'
+      // The backend /api/auth.js provided uses 'username' which it then treats as email.
+      // If your login form has an input with name="email", use that.
+      // For consistency with backend, let's assume 'username' is the key for email.
       body: JSON.stringify({ username, password })
     });
 
@@ -16,6 +20,8 @@ async function login(username, password, errorMessageElement) {
       const user = await response.json();
       // Store user info locally (e.g., localStorage)
       localStorage.setItem('authenticatedUser', JSON.stringify(user));
+      // Crucial: Log to see what your backend is sending, especially the roles
+      console.log('User data received from backend and stored:', user);
       window.location.href = 'protected.html';
     } else {
       const error = await response.json().catch(() => ({ error: 'Unknown error from server.' }));
@@ -37,16 +43,16 @@ async function logout() {
   localStorage.removeItem('authenticatedUser');
   // In a real app with server-side sessions, you'd call a backend logout endpoint here
   // await fetch('/api/logout', { method: 'POST' });
-  window.location.href = 'index.html';
+  window.location.href = 'login.html'; // Go to login page after logout
 }
 
 // checkAuth function now checks local storage instead of Okta Auth JS
 // This is the single source of truth for client-side auth checks.
-async function checkAuth() {
+function checkAuthAndRedirect() { // Renamed for clarity, as it also handles UI updates
     // --- Start Local Testing Bypass (Frontend Only) ---
     if (window.LOCAL_TESTING_MODE) {
         console.warn("LOCAL_TESTING_MODE is active. Bypassing client-side authentication.");
-        // Simulate a user object for UI elements if needed
+        // Simulate a user object for UI elements if one isn't already set (e.g., by manual console commands)
         // If you want to test non-admin views in LOCAL_TESTING_MODE,
         // ensure the dummyUser here does NOT have an admin role.
         if (!localStorage.getItem('authenticatedUser') &&
@@ -54,7 +60,7 @@ async function checkAuth() {
             !window.location.pathname.endsWith('/index.html') &&
             !window.location.pathname.endsWith('/') // Also check for root path
         ) {
-            // Default dummy user for LOCAL_TESTING_MODE (non-admin)
+            // Default dummy user for LOCAL_TESTING_MODE (non-admin if not overridden)
             const dummyUser = {
                 id: 'test-user-123',
                 profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com' },
@@ -62,39 +68,71 @@ async function checkAuth() {
             };
             localStorage.setItem('authenticatedUser', JSON.stringify(dummyUser));
         }
-        // Do not return here if you want the rest of the logic (like admin checks) to run with the dummy user.
     }
     // --- End Local Testing Bypass ---
 
     const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+    const currentPage = window.location.pathname;
+
+    // DOM elements for protected.html (or any page showing user info)
+    const userProfileNameEl = document.getElementById('user-profile-name');
+    const userProfileEmailEl = document.getElementById('user-profile-email');
+    const userProfileRolesEl = document.getElementById('user-profile-roles');
+    const adminLinksContainerEl = document.getElementById('admin-links-container');
+    const logoutButton = document.getElementById('logout-button');
+
+    if (logoutButton) {
+        logoutButton.style.display = authenticatedUser ? 'block' : 'none';
+    }
 
     if (authenticatedUser) {
-        // User is "authenticated" based on local storage
-        const usernameEl = document.getElementById('username');
-        if (usernameEl && authenticatedUser.profile) {
-             usernameEl.textContent = authenticatedUser.profile.name || authenticatedUser.profile.firstName || authenticatedUser.profile.email;
+        // User is "authenticated" (either via real login or LOCAL_TESTING_MODE with a dummy user)
+
+        // Populate user info on relevant pages (e.g., protected.html)
+        if (userProfileNameEl && authenticatedUser.profile) {
+            userProfileNameEl.textContent = authenticatedUser.profile.name || authenticatedUser.profile.firstName || authenticatedUser.profile.email || 'User';
+        }
+        if (userProfileEmailEl && authenticatedUser.profile) {
+            userProfileEmailEl.textContent = authenticatedUser.profile.email || 'N/A';
+        }
+        if (userProfileRolesEl) {
+            userProfileRolesEl.textContent = authenticatedUser.roles?.join(', ') || 'No roles assigned';
+            // For debugging, you can also log the roles here:
+            // console.log('Current user roles:', authenticatedUser.roles);
         }
 
-        // Check for admin role from Auth0 roles.
-        // Adjust 'admin' if your Auth0 role name is different.
         const isAdmin = authenticatedUser.roles && authenticatedUser.roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin');
 
+        // Show/hide admin links container on protected.html
+        if (adminLinksContainerEl) {
+            adminLinksContainerEl.style.display = isAdmin ? 'block' : 'none';
+        }
+
+        // Redirection logic for logged-in users
         if (isAdmin) {
-            if (window.location.pathname.endsWith('protected.html')) {
-                window.location.href = 'admin.html'; // redirect to admin if on protected
+            // Admin can access any page. No specific redirection needed *from* protected.html.
+            // They will see admin links on protected.html.
+            // If they are on login.html, redirect them.
+            if (currentPage.endsWith('login.html')) {
+                window.location.href = 'protected.html';
             }
         } else {
-            if (window.location.pathname.endsWith('admin.html') || window.location.pathname.endsWith('admin-group.html') || window.location.pathname.endsWith('admin-user-crud.html')) {
+            // Non-admin user
+            // If on an admin page, redirect to protected.html
+            if (currentPage.endsWith('admin.html') || currentPage.endsWith('admin-group.html') || currentPage.endsWith('admin-user-crud.html')) {
+                alert('Access Denied: You do not have permission to view this page.');
                 window.location.href = 'protected.html'; // redirect from admin pages if not admin
+            }
+            // If they are on login.html, redirect them.
+            if (currentPage.endsWith('login.html')) {
+                window.location.href = 'protected.html';
             }
         }
     } else {
-        // User is not authenticated (and not in LOCAL_TESTING_MODE with a dummy user),
-        // redirect to login if not already on login or index page.
-        if (!window.location.pathname.endsWith('login.html') &&
-            !window.location.pathname.endsWith('index.html') &&
-            !window.location.pathname.endsWith('/') // Also check for root path
-        ) {
+        // User is not authenticated
+        // Redirect to login if on a protected page or any admin page
+        const isProtectedOrAdminPage = currentPage.endsWith('protected.html') || currentPage.includes('admin');
+        if (isProtectedOrAdminPage) {
             window.location.href = 'login.html';
         }
     }
@@ -114,12 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
       loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const username = loginForm.username.value;
-        const password = loginForm.password.value;
+        const usernameInput = loginForm.querySelector('input[name="username"]'); // Or by ID if you have one
+        const passwordInput = loginForm.querySelector('input[name="password"]'); // Or by ID
         const errorMessageElement = document.getElementById('error-message');
-        await login(username, password, errorMessageElement);
+        await login(usernameInput.value, passwordInput.value, errorMessageElement);
       });
-    }
+    } // else if on login.html and user is already authenticated, redirect (handled in checkAuthAndRedirect)
   }
   if (document.getElementById('logout-button')) {
     document.getElementById('logout-button').addEventListener('click', logout)
@@ -357,5 +395,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // loadUsers(); // Optionally load users on page load
   }
-  checkAuth(); // Call checkAuth after all event listeners are set up
+  checkAuthAndRedirect(); // Call this on every page load
 });
