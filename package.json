@@ -1,0 +1,16 @@
+{
+  "name": "application-demo-backend",
+  "version": "1.0.0",
+  "description": "Backend for the application demo with Auth0 integration.",
+  "main": "api/auth.js",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "node-fetch": "^2.7.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

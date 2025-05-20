@@ -14,7 +14,7 @@ async function login(username, password, errorMessageElement) {
 
     if (response.ok) {
       const user = await response.json();
-      // Store user info locally (e.g., localStorage) - NOT SECURE FOR SENSITIVE DATA IN PRODUCTION
+      // Store user info locally (e.g., localStorage)
       localStorage.setItem('authenticatedUser', JSON.stringify(user));
       window.location.href = 'protected.html';
     } else {
@@ -23,7 +23,12 @@ async function login(username, password, errorMessageElement) {
     }
   } catch (error) {
     console.error('Login error:', error);
-    displayError('Invalid credentials or error during login.');
+    // Use the passed errorMessageElement if available, otherwise fallback to displayError
+    if (errorMessageElement) {
+        errorMessageElement.textContent = 'Invalid credentials or error during login.';
+    } else {
+        displayError('Invalid credentials or error during login.');
+    }
   }
 }
 
@@ -43,11 +48,18 @@ async function checkAuth() {
         console.warn("LOCAL_TESTING_MODE is active. Bypassing client-side authentication.");
         // Simulate a user object for UI elements if needed
         // If you want to test non-admin views in LOCAL_TESTING_MODE,
-        // ensure the dummyUser here does NOT have 'AdminGroup'.
-        // Or, introduce another flag like window.LOCAL_TESTING_AS_ADMIN
-        if (!localStorage.getItem('authenticatedUser')) {
+        // ensure the dummyUser here does NOT have an admin role.
+        if (!localStorage.getItem('authenticatedUser') &&
+            !window.location.pathname.endsWith('/login.html') &&
+            !window.location.pathname.endsWith('/index.html') &&
+            !window.location.pathname.endsWith('/') // Also check for root path
+        ) {
             // Default dummy user for LOCAL_TESTING_MODE (non-admin)
-            const dummyUser = { id: 'test-user-123', profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com' }, groups: ['Everyone'] };
+            const dummyUser = {
+                id: 'test-user-123',
+                profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com' },
+                roles: ['user'] // Simulate a basic user role
+            };
             localStorage.setItem('authenticatedUser', JSON.stringify(dummyUser));
         }
         // Do not return here if you want the rest of the logic (like admin checks) to run with the dummy user.
@@ -63,8 +75,9 @@ async function checkAuth() {
              usernameEl.textContent = authenticatedUser.profile.name || authenticatedUser.profile.firstName || authenticatedUser.profile.email;
         }
 
-        // Check for admin group membership from stored data
-        const isAdmin = authenticatedUser.groups && authenticatedUser.groups.includes('AdminGroup'); // Replace 'AdminGroup'
+        // Check for admin role from Auth0 roles.
+        // Adjust 'admin' if your Auth0 role name is different.
+        const isAdmin = authenticatedUser.roles && authenticatedUser.roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin');
 
         if (isAdmin) {
             if (window.location.pathname.endsWith('protected.html')) {
@@ -78,7 +91,10 @@ async function checkAuth() {
     } else {
         // User is not authenticated (and not in LOCAL_TESTING_MODE with a dummy user),
         // redirect to login if not already on login or index page.
-        if (!window.location.pathname.endsWith('login.html') && !window.location.pathname.endsWith('index.html')) {
+        if (!window.location.pathname.endsWith('login.html') &&
+            !window.location.pathname.endsWith('index.html') &&
+            !window.location.pathname.endsWith('/') // Also check for root path
+        ) {
             window.location.href = 'login.html';
         }
     }
@@ -109,53 +125,57 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-button').addEventListener('click', logout)
   }
 
+  // This page should now be considered "User Role Management" or similar
   if (window.location.pathname.endsWith('admin-group.html')) {
-    const addUserButton = document.getElementById('add-user-button')
-    const addUserInput = document.getElementById('add-user-input')
-    const messageDiv = document.getElementById('message')
-    addUserButton.addEventListener('click', async () => {
-      const userId = addUserInput.value;
-      if (userId) {
-        const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
-        try {
-          const response = await fetch('/api/okta-crud', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json', 'X-User-Id': authenticatedUser?.id
-            },
-            body: JSON.stringify({ action: 'addToAdminGroup', userId })
-          });
-          if (response.ok) {
-            messageDiv.textContent = 'User added to admin group successfully'
-            messageDiv.className = 'success'; // Use class for styling
+    const addUserButton = document.getElementById('add-user-button');
+    const addUserInput = document.getElementById('add-user-input'); // This input should take Auth0 User ID (sub)
+    const messageDiv = document.getElementById('message');
+
+    if (addUserButton) {
+        addUserButton.addEventListener('click', async () => {
+          const userIdToAssignRole = addUserInput.value; // Auth0 User ID (sub)
+          if (userIdToAssignRole) {
+            // const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser')); // Not needed if backend uses M2M
+            try {
+              // Call endpoint to assign roles in Auth0
+              const response = await fetch('/api/auth0-user-management', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  // No specific user header needed here if backend uses M2M token for Management API
+                },
+                // For Auth0, you assign roles. 'AdminGroup' concept is now an Auth0 role.
+                body: JSON.stringify({ action: 'assignRoles', userId: userIdToAssignRole, roles: ['admin'] }) // Example: assign 'admin' role
+              });
+              if (response.ok) {
+                messageDiv.textContent = 'User roles updated successfully (e.g., "admin" role assigned).';
+                messageDiv.className = 'success';
+              } else {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error from server.' }));
+                messageDiv.textContent = `Failed to update roles: ${errorData.error || 'Server error'}`;
+                messageDiv.className = 'error';
+              }
+            } catch (error) {
+              console.error("Error updating roles:", error);
+              messageDiv.textContent = 'Error: ' + error.message;
+              messageDiv.className = 'error';
+            }
           } else {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' })); // Graceful error parsing
-            messageDiv.textContent = `Failed to add user: ${errorData.error || 'Server error'}`;
-            messageDiv.className = 'error'; // Use class for styling
+            messageDiv.textContent = 'Please enter a User ID (Auth0 `sub`).';
+            messageDiv.className = 'error';
           }
-        } catch (error) {
-          console.error("Error adding to group:", error)
-          messageDiv.textContent = 'Error: ' + error.message
-          messageDiv.className = 'error'; // Use class for styling
-        }
-      } else {
-        messageDiv.textContent = 'Please enter a user ID.'
-        messageDiv.className = 'error'; // Use class for styling
-      }
-    })
+        });
+    }
   }
-  checkAuth();
+
 
   if (window.location.pathname.endsWith('admin-user-crud.html')) {
-    // Ensure only admins can access this page (checkAuth should handle redirection if not admin)
-
     const createUserForm = document.getElementById('create-user-form');
     const createMessage = document.getElementById('create-message');
     const loadUsersButton = document.getElementById('load-users-button');
     const userListContainer = document.getElementById('user-list-container');
     const listMessage = document.getElementById('list-message');
 
-    // Edit Modal Elements
     const editModal = document.getElementById('edit-user-modal');
     const editUserIdInput = document.getElementById('edit-userId');
     const editFirstNameInput = document.getElementById('edit-firstName');
@@ -164,44 +184,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveEditButton = document.getElementById('save-edit-button');
     const editMessage = document.getElementById('edit-message');
 
-
-    // Create User
     if (createUserForm) {
       createUserForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         createMessage.textContent = '';
-        createMessage.className = 'message'; // Reset class
+        createMessage.className = 'message';
 
-        const userData = {
-          profile: {
-            firstName: document.getElementById('firstName').value,
-            lastName: document.getElementById('lastName').value,
-            email: document.getElementById('email').value,
-            login: document.getElementById('email').value, // Okta requires login to be set, often same as email
-          },
-          credentials: {
-            password: { value: document.getElementById('password').value }
-          }
-          // activate: true // Optional: to activate user immediately. Default is false (STAGED).
+        const userData = { // This structure is for Auth0 user creation
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
         };
 
         try {
-          // For local dev, ensure this points to your local backend, e.g., 'http://localhost:3000/api/okta-crud'
-          // For Vercel deployment, '/api/okta-crud' is correct.
-          const response = await fetch('/api/okta-crud', {
+          const response = await fetch('/api/auth0-user-management', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-User-Id': authenticatedUser?.id },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'createUser', userData })
           });
           if (response.ok) {
             const newUser = await response.json();
-            createMessage.textContent = `User ${newUser.profile.firstName} created successfully (ID: ${newUser.id})`;
+            createMessage.textContent = `User ${newUser.email} created successfully (ID: ${newUser.user_id || newUser.id})`;
             createMessage.className = 'message success';
             createUserForm.reset();
-            loadUsers(); // Refresh list
+            loadUsers();
           } else {
-            const error = await response.json().catch(() => ({ error: 'Failed to parse error response from server.'}));
-            createMessage.textContent = `Error: ${error.error || 'Failed to create user.'} ${error.details || ''}`;
+            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
+            createMessage.textContent = `Error: ${error.error || error.message || 'Failed to create user.'}`;
             createMessage.className = 'message error';
           }
         } catch (err) {
@@ -212,22 +222,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Load Users
     async function loadUsers() {
       listMessage.textContent = 'Loading users...';
-      listMessage.className = 'message'; // Reset class
-      userListContainer.innerHTML = ''; // Clear previous list
+      listMessage.className = 'message';
+      userListContainer.innerHTML = '';
 
       try {
-        // GET requests might not need user ID header depending on backend implementation
-        const response = await fetch('/api/okta-crud?action=listUsers'); // GET request
+        const response = await fetch('/api/auth0-user-management?action=listUsers');
         if (response.ok) {
           const users = await response.json();
           if (users.length === 0) {
             userListContainer.innerHTML = '<p>No users found.</p>';
           } else {
             const ul = document.createElement('ul');
-            ul.style.listStyleType = 'none'; // Basic styling
+            ul.style.listStyleType = 'none';
             ul.style.paddingLeft = '0';
             users.forEach(user => {
               const li = document.createElement('li');
@@ -235,24 +243,29 @@ document.addEventListener('DOMContentLoaded', () => {
               li.style.padding = '10px';
               li.style.border = '1px solid #eee';
               li.style.borderRadius = '4px';
+              // Adjust to Auth0 user object structure
+              const userId = user.user_id || user.id || user.sub;
+              const firstName = user.given_name || user.name || '';
+              const lastName = user.family_name || '';
+              const email = user.email || '';
+
               li.innerHTML = `
-                <strong>${user.profile.firstName} ${user.profile.lastName}</strong> (${user.profile.email || 'N/A'})<br>
-                ID: ${user.id} - Status: ${user.status}
-                <button data-userid="${user.id}" data-firstname="${user.profile.firstName}" data-lastname="${user.profile.lastName}" data-email="${user.profile.email || ''}" class="edit-user-btn button" style="font-size:0.8em; padding: 3px 6px; margin-left:10px; margin-top:5px;">Edit</button>
-                <button data-userid="${user.id}" class="delete-user-btn button" style="font-size:0.8em; padding: 3px 6px; background-color:var(--error-color); margin-top:5px;">Delete</button>
+                <strong>${firstName} ${lastName}</strong> (${email})<br>
+                Auth0 ID: ${userId}
+                <button data-userid="${userId}" data-firstname="${firstName}" data-lastname="${lastName}" data-email="${email}" class="edit-user-btn button" style="font-size:0.8em; padding: 3px 6px; margin-left:10px; margin-top:5px;">Edit</button>
+                <button data-userid="${userId}" class="delete-user-btn button" style="font-size:0.8em; padding: 3px 6px; background-color:var(--error-color); margin-top:5px;">Delete</button>
               `;
               ul.appendChild(li);
             });
             userListContainer.appendChild(ul);
 
-            // Add event listeners for new buttons
             document.querySelectorAll('.edit-user-btn').forEach(btn => btn.addEventListener('click', handleEditUser));
             document.querySelectorAll('.delete-user-btn').forEach(btn => btn.addEventListener('click', handleDeleteUser));
           }
           listMessage.textContent = '';
         } else {
-          const error = await response.json().catch(() => ({ error: 'Failed to parse error response from server.'}));
-          listMessage.textContent = `Error loading users: ${error.error || 'Failed to load users.'}`;
+          const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
+          listMessage.textContent = `Error loading users: ${error.error || error.message ||'Failed to load users.'}`;
           listMessage.className = 'message error';
         }
       } catch (err) {
@@ -266,11 +279,10 @@ document.addEventListener('DOMContentLoaded', () => {
       loadUsersButton.addEventListener('click', loadUsers);
     }
 
-    // Handle Edit User
     function handleEditUser(event) {
-        const btn = event.target.closest('.edit-user-btn'); // Ensure we get the button if click is on inner element
+        const btn = event.target.closest('.edit-user-btn');
         if (!btn) return;
-        editUserIdInput.value = btn.dataset.userid;
+        editUserIdInput.value = btn.dataset.userid; // Auth0 User ID (sub)
         editFirstNameInput.value = btn.dataset.firstname;
         editLastNameInput.value = btn.dataset.lastname;
         editEmailInput.value = btn.dataset.email;
@@ -281,32 +293,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (saveEditButton) {
         saveEditButton.addEventListener('click', async () => {
-            const userId = editUserIdInput.value;
-            const updates = {
-                profile: {
-                    firstName: editFirstNameInput.value,
-                    lastName: editLastNameInput.value
-                    // email: editEmailInput.value // Email/login updates are complex and often restricted.
-                }
+            const userIdToUpdate = editUserIdInput.value; // Auth0 User ID (sub)
+            const updates = { // Payload for Auth0 Management API (PATCH users)
+                given_name: editFirstNameInput.value,
+                family_name: editLastNameInput.value
+                // email: editEmailInput.value, // Email updates are sensitive and might require specific handling/permissions
             };
             editMessage.textContent = 'Saving...';
             editMessage.className = 'message';
-            const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
 
             try {
-                const response = await fetch('/api/okta-crud', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-User-Id': authenticatedUser?.id }, // Include user ID for backend auth
-                    body: JSON.stringify({ action: 'updateUser', userId, updates })
+                const response = await fetch('/api/auth0-user-management', {
+                    method: 'PUT', // Should be PATCH for Auth0 user updates
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'updateUser', userId: userIdToUpdate, updates })
                 });
                 if (response.ok) {
                     editMessage.textContent = 'User updated successfully!';
                     editMessage.className = 'message success';
                     if (editModal) editModal.style.display = 'none';
-                    loadUsers(); // Refresh the list
+                    loadUsers();
                 } else {
-                    const error = await response.json().catch(() => ({ error: 'Failed to parse error response from server.'}));
-                    editMessage.textContent = `Error: ${error.error || 'Failed to update.'} ${error.details || ''}`;
+                    const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
+                    editMessage.textContent = `Error: ${error.error || error.message || 'Failed to update.'}`;
                     editMessage.className = 'message error';
                 }
             } catch (err) {
@@ -317,29 +326,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle Delete User
     async function handleDeleteUser(event) {
       const btn = event.target.closest('.delete-user-btn');
       if (!btn) return;
-      const userId = btn.dataset.userid;
-      if (confirm(`Are you sure you want to delete user ID: ${userId}? This is irreversible.`)) {
+      const userIdToDelete = btn.dataset.userid; // Auth0 User ID (sub)
+      if (confirm(`Are you sure you want to delete user with ID: ${userIdToDelete}? This is irreversible.`)) {
         listMessage.textContent = 'Deleting user...';
         listMessage.className = 'message';
-        const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
-
         try {
-          const response = await fetch('/api/okta-crud', {
+          const response = await fetch('/api/auth0-user-management', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'X-User-Id': authenticatedUser?.id }, // Include user ID for backend auth
-            body: JSON.stringify({ action: 'deleteUser', userId })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
           });
-          if (response.ok) {
+          if (response.ok) { // Auth0 DELETE user returns 204 No Content
             listMessage.textContent = 'User deleted successfully.';
             listMessage.className = 'message success';
-            loadUsers(); // Refresh list
+            loadUsers();
           } else {
-            const error = await response.json().catch(() => ({ error: 'Failed to parse error response from server.'}));
-            listMessage.textContent = `Error deleting user: ${error.error || 'Failed to delete.'} ${error.details || ''}`;
+            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.'}));
+            listMessage.textContent = `Error deleting user: ${error.error || error.message || 'Failed to delete.'}`;
             listMessage.className = 'message error';
           }
         } catch (err) {
@@ -349,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
-    // Initial load of users if desired, or wait for button click
-    // loadUsers(); 
+    // loadUsers(); // Optionally load users on page load
   }
+  checkAuth(); // Call checkAuth after all event listeners are set up
 });
