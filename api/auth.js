@@ -32,6 +32,7 @@ export default async function handler(req, res) {
                     scope: 'openid profile email', // Request necessary scopes
                     client_id: process.env.AUTH0_CLIENT_ID, // Client ID of your Auth0 SPA application
                     client_secret: process.env.AUTH0_CLIENT_SECRET, // Client Secret of your Auth0 SPA (if it's confidential)
+                    realm: 'Username-Password-Authentication'
                 }),
             });
 
