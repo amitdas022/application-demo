@@ -1,56 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - User Management</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/main.css"> <!-- Updated stylesheet link -->
 </head>
 <body>
-    <div class="container">
-        <h1>User Management</h1>
-        <nav style="margin-bottom: 20px;">
-            <a href="protected.html" class="button">Back to Dashboard</a>
-            <a href="admin.html" class="button">Admin Panel Home</a>
-            <button id="logout-button" class="button" style="float: right;">Logout</button>
-        </nav>
-
-        <h2>Create User</h2>
-        <form id="create-user-form">
-            <label for="firstName">First Name:</label>
-            <input type="text" id="firstName" name="firstName" required>
-            <label for="lastName">Last Name:</label>
-            <input type="text" id="lastName" name="lastName" required>
-            <label for="email">Email (Login):</label> <!-- This input should now pick up general input styling -->
-            <input type="email" id="email" name="email" required>
-            <label for="password">Password:</label> <!-- Ensure this is type="password" -->
-            <input type="password" id="password" name="password" required>
-            <button type="submit" class="button">Create User</button>
-        </form>
-        <div id="create-message" class="message"></div>
-
-        <hr style="margin: 30px 0;">
-
-        <h2>User List</h2>
-        <button id="load-users-button" class="button">Load Users</button>
-        <div id="user-list-container" style="text-align: left; margin-top: 20px;">
-            <!-- Users will be listed here -->
+    <header class="app-header">
+        <div class="container header-content">
+            <div class="header-nav-links">
+                <a href="protected.html" class="btn btn-outline-light header-nav-link">&larr; Dashboard</a>
+                <a href="admin.html" class="btn btn-outline-light header-nav-link">Admin Panel</a>
+            </div>
+            <h1 class="app-title">User Management</h1>
+            <button id="logout-button" class="btn btn-outline-light">Logout</button>
         </div>
-        <div id="list-message" class="message"></div>
+    </header>
 
-        <!-- Modal for Editing User (Simplified) -->
-        <div id="edit-user-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.2); z-index:1000;">
-            <h3>Edit User</h3>
-            <input type="hidden" id="edit-userId">
-            <label for="edit-firstName">First Name:</label>
-            <input type="text" id="edit-firstName">
-            <label for="edit-lastName">Last Name:</label>
-            <input type="text" id="edit-lastName">
-            <label for="edit-email">Email:</label>
-            <input type="email" id="edit-email" readonly> <!-- Email/login usually not changed easily -->
-            <button id="save-edit-button" class="button">Save Changes</button>
-            <button onclick="document.getElementById('edit-user-modal').style.display='none'" class="button" style="background-color: #777;">Cancel</button>
-            <div id="edit-message" class="message"></div>
+    <main class="admin-crud-page">
+        <div class="container animated-container">
+            <section class="card form-section create-user-section">
+                <h2 class="card-title">Create New User</h2>
+                <form id="create-user-form" class="styled-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="firstName" placeholder="Enter first name" required>
+                            <span class="input-focus-animation"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" placeholder="Enter last name" required>
+                            <span class="input-focus-animation"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email (Login)</label>
+                        <input type="email" id="email" name="email" placeholder="user@example.com" required>
+                        <span class="input-focus-animation"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Create a strong password" required>
+                        <span class="input-focus-animation"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-submit-animated">Create User</button>
+                </form>
+                <div id="create-message" class="message-area" aria-live="polite"></div>
+            </section>
+
+            <hr class="section-divider">
+
+            <section class="card user-list-section">
+                <h2 class="card-title">Manage Existing Users</h2>
+                <button id="load-users-button" class="btn btn-secondary btn-load-animated">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em" style="margin-right: 0.5em; vertical-align: middle;"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM13 7V11H17V13H11V7H13Z"></path></svg>
+                    Load Users
+                </button>
+                <div id="user-list-container" class="table-responsive">
+                    <!-- Users will be listed here, ideally in a table -->
+                </div>
+                <div id="list-message" class="message-area" aria-live="polite"></div>
+            </section>
         </div>
+    </main>
 
+    <!-- Modal for Editing User -->
+    <div id="edit-user-modal" class="modal" style="display:none;" aria-labelledby="edit-modal-title" aria-modal="true" role="dialog">
+        <div class="modal-overlay" onclick="closeEditModal()"></div>
+        <div class="modal-content card animated-modal">
+            <header class="modal-header">
+                <h3 id="edit-modal-title" class="card-title">Edit User Details</h3>
+                <button class="modal-close-btn" onclick="closeEditModal()" aria-label="Close modal">&times;</button>
+            </header>
+            <div class="modal-body">
+                <form id="edit-user-form" class="styled-form">
+                    <input type="hidden" id="edit-userId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-firstName">First Name</label>
+                            <input type="text" id="edit-firstName" name="edit-firstName" placeholder="Enter first name">
+                            <span class="input-focus-animation"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-lastName">Last Name</label>
+                            <input type="text" id="edit-lastName" name="edit-lastName" placeholder="Enter last name">
+                            <span class="input-focus-animation"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-email">Email (Login)</label>
+                        <input type="email" id="edit-email" name="edit-email" readonly> <!-- Email/login usually not changed easily -->
+                        <span class="input-focus-animation"></span>
+                    </div>
+                    <div id="edit-message" class="message-area" aria-live="polite"></div>
+                </form>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" id="save-edit-button" class="btn btn-primary">Save Changes</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
+            </footer>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>

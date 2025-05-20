@@ -1,0 +1,74 @@
+/* General Purpose Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideUpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Welcome Title Animation */
+@keyframes letterWave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Button Glow Animation */
+@keyframes subtleGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(var(--color-primary-rgb), 0.3), 0 0 10px rgba(var(--color-primary-rgb), 0.2); }
+  50% { box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.5), 0 0 20px rgba(var(--color-primary-rgb), 0.3); }
+}
+
+/* Input Focus Underline Animation */
+@keyframes inputFocusLine {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Animated Border for Feature Cards */
+@keyframes animatedBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Simple Pulse for Attention */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+/* Loading Spinner (example) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
