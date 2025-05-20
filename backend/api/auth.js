@@ -2,17 +2,11 @@
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
 }
-import { Client } from '@okta/okta-sdk-nodejs';
-
-// Read Okta configuration from environment variables
-const oktaClient = new Client({
-    orgUrl: process.env.OKTA_ORG_URL,
-    token: process.env.OKTA_API_TOKEN, // Okta API token (used here to fetch user details after successful auth)
-});
+import fetch from 'node-fetch'; // Make sure 'node-fetch' is in your backend/package.json and installed
 
 // Helper to send error responses
 function sendError(res, statusCode, message, errorDetails) {
-    console.error(message, errorDetails);
+    console.error("Auth API Error:", message, errorDetails);
     res.status(statusCode).json({ error: message, details: errorDetails?.message || errorDetails });
 }
 
@@ -25,24 +19,64 @@ export default async function handler(req, res) {
         }
 
         try {
-            // Use the Okta SDK to authenticate the user with credentials
-            const transaction = await oktaClient.authN.authenticate({ username, password });
+            // Auth0 ROPG flow
+            const auth0TokenUrl = `https://${process.env.AUTH0_DOMAIN}/oauth/token`;
+            const tokenResponse = await fetch(auth0TokenUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    grant_type: 'password',
+                    username: username, // Auth0 typically uses email as username
+                    password: password,
+                    audience: process.env.AUTH0_AUDIENCE, // Audience for your SPA's API or the Management API if directly calling it
+                    scope: 'openid profile email', // Request necessary scopes
+                    client_id: process.env.AUTH0_CLIENT_ID, // Client ID of your Auth0 SPA application
+                    client_secret: process.env.AUTH0_CLIENT_SECRET, // Client Secret of your Auth0 SPA (if it's confidential)
+                }),
+            });
 
-            if (transaction.status === 'SUCCESS') {
-                // Authentication successful. Fetch the full user object including groups.
-                const user = await oktaClient.getUser(transaction.session.userId);
-                // Return essential user info to the frontend
-                res.status(200).json({
-                    id: user.id,
-                    profile: user.profile,
-                    groups: user.profile.groups // Assuming groups are in profile or fetch separately if needed
-                });
-            } else {
-                sendError(res, 401, 'Authentication failed.', { status: transaction.status });
+            if (!tokenResponse.ok) {
+                const errorData = await tokenResponse.json();
+                return sendError(res, tokenResponse.status, 'Auth0 authentication failed.', errorData);
             }
+
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+
+            // Fetch user profile from Auth0 /userinfo endpoint
+            const userInfoUrl = `https://${process.env.AUTH0_DOMAIN}/userinfo`;
+            const userInfoResponse = await fetch(userInfoUrl, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+
+            if (!userInfoResponse.ok) {
+                const errorData = await userInfoResponse.json();
+                return sendError(res, userInfoResponse.status, 'Failed to fetch user info from Auth0.', errorData);
+            }
+
+            const auth0User = await userInfoResponse.json();
+
+            // Extract roles. The exact location of roles depends on your Auth0 setup (Rules/Actions).
+            // Common places: a custom claim (e.g., https://myapp.example.com/roles) or directly if using Auth0 RBAC Core.
+            const rolesClaimKey = Object.keys(auth0User).find(key => key.includes('/roles'));
+            const userRoles = rolesClaimKey ? auth0User[rolesClaimKey] : (auth0User.roles || []);
+
+
+            // Return essential user info to the frontend.
+            res.status(200).json({
+                id: auth0User.sub, // Auth0 user ID is in 'sub' claim
+                profile: {
+                    firstName: auth0User.given_name || auth0User.nickname || '',
+                    lastName: auth0User.family_name || '',
+                    email: auth0User.email,
+                    name: auth0User.name || `${auth0User.given_name || ''} ${auth0User.family_name || ''}`.trim() || auth0User.email,
+                },
+                roles: userRoles // Send roles to the frontend
+            });
+
         } catch (error) {
-            // Handle Okta API errors during authentication
-            sendError(res, error.status || 500, 'Error during authentication.', error);
+            // Handle other errors during authentication
+            sendError(res, error.status || 500, 'Error during authentication process.', error.message || error);
         }
     } else {
         res.setHeader('Allow', ['POST']);
