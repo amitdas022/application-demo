@@ -1,15 +1,24 @@
+<!-- frontend/index.html -->
+<!-- This is the public landing page for the application.
+     It provides a welcome message and a link to the login page.
+     It may include some basic animations or styling. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Our Application!</title>
-    <link rel="stylesheet" href="css/main.css"> <!-- Updated stylesheet link -->
+    <!-- Main stylesheet for general layout, component styling, and potentially welcome page specifics -->
+    <link rel="stylesheet" href="css/main.css">
+    <!-- Note: animations.css might be linked here if specific complex animations for the welcome page are defined there,
+         or they might be part of main.css. For this example, assuming main.css covers it or it's simple enough. -->
 </head>
 <body>
+    <!-- Main content container for the welcome page -->
     <main class="welcome-page">
         <div class="container animated-container">
             <header class="welcome-header">
+                <!-- The title uses spans for individual letter styling/animation, potentially handled by app.js or CSS -->
                 <h1 class="welcome-title">
                     <span>W</span><span>e</span><span>l</span><span>c</span><span>o</span><span>m</span><span>e</span><span>!</span>
                 </h1>
@@ -17,8 +26,16 @@
             <p class="welcome-message">
                 Ready to dive in? Please log in to unlock all the amazing features.
             </p>
+            <!-- Link to the login page -->
             <a href="login.html" class="btn btn-primary btn-lg btn-glow">Let's Go!</a>
         </div>
     </main>
+    <!-- Main application JavaScript file.
+         Handles the welcome title animation setup by adding CSS variables.
+         Also contains global functions like checkAuthAndRedirect, which are
+         called on other pages but not strictly necessary for index.html's primary function
+         if it remains purely presentational. However, its inclusion here is consistent
+         and handles the title animation. -->
+    <script src="app.js"></script>
 </body>
 </html>

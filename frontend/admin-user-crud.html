@@ -1,12 +1,19 @@
+<!-- frontend/admin-user-crud.html -->
+<!-- This page provides administrators with tools to perform CRUD (Create, Read, Update, Delete)
+     operations on users. It includes a form for creating new users, a section to list
+     and manage existing users, and a modal for editing user details.
+     All interactions are handled by frontend/app.js. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - User Management</title>
-    <link rel="stylesheet" href="css/main.css"> <!-- Updated stylesheet link -->
+    <!-- Main stylesheet for general layout and component styling -->
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+    <!-- Common application header with navigation and logout -->
     <header class="app-header">
         <div class="container header-content">
             <div class="header-nav-links">
@@ -18,10 +25,13 @@
         </div>
     </header>
 
+    <!-- Main content area for user CRUD operations -->
     <main class="admin-crud-page">
         <div class="container animated-container">
+            <!-- Section for creating a new user -->
             <section class="card form-section create-user-section">
                 <h2 class="card-title">Create New User</h2>
+                <!-- Form to collect new user details. Submitted via app.js -->
                 <form id="create-user-form" class="styled-form">
                     <div class="form-row">
                         <div class="form-group">
@@ -47,35 +57,46 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-submit-animated">Create User</button>
                 </form>
+                <!-- Area to display messages related to user creation (success/error) -->
                 <div id="create-message" class="message-area" aria-live="polite"></div>
             </section>
 
             <hr class="section-divider">
 
+            <!-- Section for listing and managing existing users -->
             <section class="card user-list-section">
                 <h2 class="card-title">Manage Existing Users</h2>
+                <!-- Button to trigger loading the list of users -->
                 <button id="load-users-button" class="btn btn-secondary btn-load-animated">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em" style="margin-right: 0.5em; vertical-align: middle;"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM13 7V11H17V13H11V7H13Z"></path></svg>
                     Load Users
                 </button>
+                <!-- Container where the list of users will be dynamically rendered by app.js -->
                 <div id="user-list-container" class="table-responsive">
-                    <!-- Users will be listed here, ideally in a table -->
+                    <!-- Users will be listed here by frontend/app.js, typically as a list or table -->
                 </div>
+                <!-- Area to display messages related to the user list (e.g., loading status, errors) -->
                 <div id="list-message" class="message-area" aria-live="polite"></div>
             </section>
         </div>
     </main>
 
-    <!-- Modal for Editing User -->
+    <!-- Modal for Editing User Details -->
+    <!-- The modal is hidden by default (style="display:none;") and shown by app.js -->
     <div id="edit-user-modal" class="modal" style="display:none;" aria-labelledby="edit-modal-title" aria-modal="true" role="dialog">
+        <!-- Overlay to dim the background when the modal is active -->
         <div class="modal-overlay" onclick="closeEditModal()"></div>
+        <!-- Main modal content -->
         <div class="modal-content card animated-modal">
             <header class="modal-header">
                 <h3 id="edit-modal-title" class="card-title">Edit User Details</h3>
+                <!-- Button to close the modal, calls closeEditModal() in app.js -->
                 <button class="modal-close-btn" onclick="closeEditModal()" aria-label="Close modal">&times;</button>
             </header>
             <div class="modal-body">
+                <!-- Form for editing user details. Populated and submitted by app.js -->
                 <form id="edit-user-form" class="styled-form">
+                    <!-- Hidden input to store the User ID (Auth0 sub) of the user being edited -->
                     <input type="hidden" id="edit-userId">
                     <div class="form-row">
                         <div class="form-group">
@@ -91,18 +112,23 @@
                     </div>
                     <div class="form-group">
                         <label for="edit-email">Email (Login)</label>
-                        <input type="email" id="edit-email" name="edit-email" readonly> <!-- Email/login usually not changed easily -->
+                        <!-- Email field is often read-only as changing login email can be complex -->
+                        <input type="email" id="edit-email" name="edit-email" readonly>
                         <span class="input-focus-animation"></span>
                     </div>
+                    <!-- Area to display messages related to editing the user (success/error) -->
                     <div id="edit-message" class="message-area" aria-live="polite"></div>
                 </form>
             </div>
             <footer class="modal-footer">
+                <!-- Button to save changes to the user details -->
                 <button type="button" id="save-edit-button" class="btn btn-primary">Save Changes</button>
+                <!-- Button to cancel editing and close the modal -->
                 <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
             </footer>
         </div>
     </div>
+    <!-- Main application JavaScript file: handles UI interactions, API calls, authentication state -->
     <script src="app.js"></script>
 </body>
 </html>

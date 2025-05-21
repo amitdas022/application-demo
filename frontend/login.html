@@ -1,12 +1,18 @@
+<!-- frontend/login.html -->
+<!-- This page provides the user interface for logging into the application.
+     It contains a form for username (email) and password submission.
+     The form submission and authentication process are handled by frontend/app.js. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Access Your Account</title>
-    <link rel="stylesheet" href="css/main.css"> <!-- Updated stylesheet link -->
+    <!-- Main stylesheet for general layout, form styling, and component styling -->
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+    <!-- Main content container for the login page -->
     <main class="login-page">
         <div class="container form-container animated-container">
             <header class="form-header">
@@ -14,6 +20,7 @@
                 <p class="form-subtitle">Welcome back! Please enter your credentials.</p>
             </header>
 
+            <!-- Login form. Submission is handled by app.js, which calls the /api/auth backend. -->
             <form id="login-form" class="styled-form">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -29,9 +36,15 @@
 
                 <button type="submit" class="btn btn-primary btn-block btn-submit-animated">Login</button>
             </form>
+            <!-- Paragraph element to display error messages related to login attempts.
+                 Content is set by app.js. aria-live="assertive" for accessibility. -->
             <p id="error-message" class="error-message" aria-live="assertive"></p>
         </div>
     </main>
-    <script src="app.js"></script> <!-- Assuming app.js handles login logic -->
+    <!-- Main application JavaScript file.
+         Handles login form submission, API calls to /api/auth,
+         storing authentication state, and redirection.
+         Also includes checkAuthAndRedirect which might redirect if already logged in. -->
+    <script src="app.js"></script>
 </body>
 </html>
