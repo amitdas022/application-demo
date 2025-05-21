@@ -1,32 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>User Dashboard</title>
-    <link rel="stylesheet" href="style.css"> <!-- Make sure you have this -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Dashboard</title>
+    <link rel="stylesheet" href="css/main.css"> <!-- Updated stylesheet link -->
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome, <span id="user-profile-name">User</span>!</h1>
-        <div id="user-info-details" style="margin-bottom: 20px;">
-            <p>Email: <span id="user-profile-email">N/A</span></p>
-            <p>Your Roles: <span id="user-profile-roles">N/A</span></p>
+    <header class="app-header">
+        <div class="container header-content">
+            <h1 class="app-title">My Dashboard</h1>
+            <button id="logout-button" class="btn btn-outline-light">Logout</button>
         </div>
+    </header>
 
-        <p>This is your personal dashboard. You have successfully logged in and can access protected resources.</p>
+    <main class="dashboard-page">
+        <div class="container animated-container">
+            <section class="welcome-banner">
+                <h2>Welcome back, <span id="user-profile-name" class="highlight">User</span>!</h2>
+                <p>This is your personal space. Explore and manage your account.</p>
+            </section>
 
-        <!-- This section will be shown/hidden based on user role -->
-        <div id="admin-links-container" style="display:none; margin-top: 20px; padding: 15px; border: 1px solid #eee; background-color: #f9f9f9;">
-            <h2>Admin Section</h2>
-            <p>As an administrator, you have access to the following management pages:</p>
-            <ul>
-                <li><a href="admin-user-crud.html" class="button admin-nav-button">User Management (CRUD)</a></li>
-                <li><a href="admin-group.html" class="button admin-nav-button">Group Management</a></li>
-                <!-- Add more admin links here if needed -->
-            </ul>
+            <section id="user-info-details" class="user-details-card card">
+                <h3 class="card-title">Your Profile</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Email:</span>
+                    <span id="user-profile-email" class="detail-value">N/A</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Roles:</span>
+                    <span id="user-profile-roles" class="detail-value">N/A</span>
+                </div>
+            </section>
+
+            <!-- This section will be shown/hidden based on user role -->
+            <section id="admin-links-container" class="admin-section card" style="display:none;">
+                <h3 class="card-title admin-title">Administrator Tools</h3>
+                <p>Access the main administration panel to manage users and groups.</p>
+                <a href="admin.html" id="admin-panel-btn" class="btn btn-primary btn-block">Go to Admin Panel</a>
+            </section>
         </div>
-
-        <button id="logout-button" class="button">Logout</button>
-    </div>
+    </main>
     <script src="app.js"></script>
 </body>
 </html>

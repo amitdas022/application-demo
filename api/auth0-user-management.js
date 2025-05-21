@@ -25,7 +25,7 @@ async function getManagementApiToken() {
 
     const tokenUrl = `https://${AUTH0_DOMAIN}/oauth/token`;
     try {
-        const response = await fetch(tokenUrl, {
+        const tokenRequest = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -34,7 +34,10 @@ async function getManagementApiToken() {
                 audience: AUTH0_MANAGEMENT_AUDIENCE,
                 grant_type: 'client_credentials',
             }),
-        });
+        };
+        //console.log('[Auth0] Fetching Management Token:', tokenUrl, tokenRequest);
+
+        const response = await fetch(tokenUrl, tokenRequest);
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Failed to get Auth0 Management API token:', errorData);
@@ -51,21 +54,14 @@ async function getManagementApiToken() {
 }
 
 export default async function handler(req, res) {
-    const { action, userId, userData, updates, roles } = req.body; // userId is Auth0 user_id (sub) or email for lookup
+    const { action, userId, userData, updates, roles } = req.body;
     const queryAction = req.query.action;
-    const queryUserId = req.query.userId; // Auth0 user_id (sub)
+    const queryUserId = req.query.userId;
 
     try {
         const token = await getManagementApiToken();
-        const baseUrl = `${AUTH0_MANAGEMENT_AUDIENCE}users`; // Management API users endpoint
-
-        // Authorization: Check if the acting user (from X-Auth0-User-Email) has admin role in Auth0
-        // This part needs to be implemented based on how you pass the acting user's identity
-        // For simplicity, we'll assume all calls to this endpoint are from an "admin" context for now.
-        // In a real app, you'd validate a JWT from the frontend for the acting user.
-        // const actingUserEmail = req.headers['x-auth0-user-email'];
-        // if (!actingUserEmail) return sendError(res, 401, "Unauthorized: Missing acting user email.");
-        // TODO: Fetch acting user from Auth0 using 'actingUserEmail' and check their roles.
+        // Log the incoming request from the frontend first
+        const baseUrl = `${AUTH0_MANAGEMENT_AUDIENCE}users`;
 
         if (req.method === 'POST') {
             if (action === 'createUser') {
@@ -77,15 +73,15 @@ export default async function handler(req, res) {
                     password: userData.password,
                     given_name: userData.firstName,
                     family_name: userData.lastName,
-                    connection: 'Username-Password-Authentication', // Or your default DB connection
-                    email_verified: true, // Optional
-                    // app_metadata: { roles: ['user'] } // Example of setting roles
+                    connection: 'Username-Password-Authentication',
+                    email_verified: true,
                 };
-                const response = await fetch(baseUrl, {
+                const reqOptions = {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(createUserData),
-                });
+                };
+                const response = await fetch(baseUrl, reqOptions);
                 if (!response.ok) return sendError(res, response.status, 'Failed to create user in Auth0', await response.json());
                 res.status(201).json(await response.json());
             } else {
@@ -98,54 +94,82 @@ export default async function handler(req, res) {
                 res.status(200).json(await response.json());
             } else if (queryAction === 'getUser') {
                 if (!queryUserId) return sendError(res, 400, 'User ID (Auth0 sub) is required.');
-                const response = await fetch(`${baseUrl}/${encodeURIComponent(queryUserId)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const getUserUrl = `${baseUrl}/${encodeURIComponent(queryUserId)}`;
+                const response = await fetch(getUserUrl, { headers: { 'Authorization': `Bearer ${token}` } });
                 if (!response.ok) return sendError(res, response.status, 'Failed to get user from Auth0', await response.json());
                 res.status(200).json(await response.json());
+            } else if (queryAction === 'listUsersInRole') {
+                const roleName = req.query.roleName;
+                if (!roleName) return sendError(res, 400, 'roleName query parameter is required for listUsersInRole.');
+
+                // Step 1: Get Role ID from Role Name
+                const rolesApiUrl = `${AUTH0_MANAGEMENT_AUDIENCE}roles`;
+                const getRoleUrl = `${rolesApiUrl}?name_filter=${encodeURIComponent(roleName)}`;
+                const rolesResponse = await fetch(getRoleUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!rolesResponse.ok) return sendError(res, rolesResponse.status, `Failed to find role '${roleName}' in Auth0`, await rolesResponse.json());
+                
+                const rolesData = await rolesResponse.json();
+                if (!rolesData || rolesData.length === 0) return sendError(res, 404, `Role '${roleName}' not found in Auth0.`);
+                const roleId = rolesData[0].id; // Assuming the first role found is the correct one
+
+                // Step 2: Get Users for that Role ID
+                const usersInRoleApiUrl = `${AUTH0_MANAGEMENT_AUDIENCE}roles/${roleId}/users`;
+                const usersInRoleResponse = await fetch(usersInRoleApiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!usersInRoleResponse.ok) return sendError(res, usersInRoleResponse.status, `Failed to list users in role '${roleName}' from Auth0`, await usersInRoleResponse.json());
+                
+                res.status(200).json(await usersInRoleResponse.json());
             } else {
                 sendError(res, 400, 'Invalid action for GET request.');
             }
         } else if (req.method === 'PUT') {
-            if (action === 'updateUser') { // userId is Auth0 user_id (sub)
+            if (action === 'updateUser') {
                 if (!userId) return sendError(res, 400, 'User ID (Auth0 sub) is required for update.');
                 if (!updates) return sendError(res, 400, 'Update data is required.');
-                const updatePayload = { ...updates }; // e.g., { given_name: "NewName" }
-                const response = await fetch(`${baseUrl}/${encodeURIComponent(userId)}`, {
-                    method: 'PATCH', // Use PATCH for partial updates
+                const updatePayload = { ...updates };
+                const updateUrl = `${baseUrl}/${encodeURIComponent(userId)}`;
+                const reqOptions = {
+                    method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatePayload),
-                });
+                };
+                const response = await fetch(updateUrl, reqOptions);
                 if (!response.ok) return sendError(res, response.status, 'Failed to update user in Auth0', await response.json());
                 res.status(200).json(await response.json());
-            } else if (action === 'assignRoles') { // userId is Auth0 user_id (sub)
+            } else if (action === 'assignRoles' || action === 'unassignRoles') {
                  if (!userId || !roles || !Array.isArray(roles)) return sendError(res, 400, 'User ID and a roles array are required.');
-                 // First, get existing roles to avoid duplicates or to remove all then add
-                 // For simplicity, this example just assigns. A real app might want to replace.
-                 const roleIdsToAssign = []; // You'd map role names to Auth0 role IDs here
-                 // This requires you to know the Auth0 Role IDs.
-                 // Example: if (roles.includes('admin')) roleIdsToAssign.push('auth0_role_id_for_admin');
-                 // This part is highly dependent on how you manage roles and get their IDs.
-                 // For now, this is a placeholder. You'd typically fetch role IDs by name first.
-                 // const assignRolesUrl = `${AUTH0_MANAGEMENT_AUDIENCE}users/${encodeURIComponent(userId)}/roles`;
-                 // const response = await fetch(assignRolesUrl, {
-                 //    method: 'POST',
-                 //    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                 //    body: JSON.stringify({ roles: roleIdsToAssign /* array of Auth0 Role IDs */ }),
-                 // });
-                 // if (!response.ok) return sendError(res, response.status, 'Failed to assign roles in Auth0', await response.json());
-                 // res.status(204).send(); // No content on successful role assignment
-                 return sendError(res, 501, "Role assignment not fully implemented. Requires mapping role names to Auth0 Role IDs.");
+
+                const roleIdsPayload = [];
+                if (roles.includes('admin')) { // Example: only handling 'admin' role for now
+                    const rolesApiUrl = `${AUTH0_MANAGEMENT_AUDIENCE}roles`;
+                    const getAdminRoleUrl = `${rolesApiUrl}?name_filter=admin`;
+                    const adminRoleResponse = await fetch(getAdminRoleUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (adminRoleResponse.ok) {
+                        const adminRolesData = await adminRoleResponse.json();
+                        if (adminRolesData && adminRolesData.length > 0) {
+                            roleIdsPayload.push(adminRolesData[0].id);
+                        } else { console.warn("Admin role not found in Auth0 when trying to assign/unassign."); }
+                    }
+                }
+                 if (roleIdsPayload.length === 0 && roles.length > 0) return sendError(res, 400, "Could not map provided role names to Auth0 Role IDs for this example.");
+
+                 const rolesUrl = `${AUTH0_MANAGEMENT_AUDIENCE}users/${encodeURIComponent(userId)}/roles`;
+                 const methodForRoles = action === 'assignRoles' ? 'POST' : 'DELETE';
+                 const rolesResponse = await fetch(rolesUrl, { method: methodForRoles, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ roles: roleIdsPayload }) });
+                 if (!rolesResponse.ok) return sendError(res, rolesResponse.status, `Failed to ${action} in Auth0`, await rolesResponse.json());
+                 res.status(204).send();
             } else {
                 sendError(res, 400, 'Invalid action for PUT request.');
             }
         } else if (req.method === 'DELETE') {
-            if (action === 'deleteUser') { // userId is Auth0 user_id (sub)
+            if (action === 'deleteUser') {
                 if (!userId) return sendError(res, 400, 'User ID (Auth0 sub) is required for deletion.');
-                const response = await fetch(`${baseUrl}/${encodeURIComponent(userId)}`, {
+                const deleteUrl = `${baseUrl}/${encodeURIComponent(userId)}`;
+                const response = await fetch(deleteUrl, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
                 if (!response.ok) return sendError(res, response.status, 'Failed to delete user in Auth0', await response.json());
-                res.status(204).send(); // No content on successful deletion
+                res.status(204).send();
             } else {
                 sendError(res, 400, 'Invalid action for DELETE request.');
             }

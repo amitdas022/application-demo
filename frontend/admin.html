@@ -1,23 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Page</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel</title>
+    <link rel="stylesheet" href="css/main.css"> <!-- Updated stylesheet link -->
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Panel</h1>
-        <nav style="margin-bottom: 20px;">
-            <a href="protected.html" class="button">Back to Dashboard</a>
-            <button id="logout-button" class="button" style="float: right;">Logout</button>
-        </nav>
+    <header class="app-header">
+        <div class="container header-content">
+            <a href="protected.html" class="btn btn-outline-light header-nav-link">
+                &larr; Back to Dashboard
+            </a>
+            <h1 class="app-title">Admin Control Panel</h1>
+            <button id="logout-button" class="btn btn-outline-light">Logout</button>
+        </div>
+    </header>
 
-        <p>Welcome to the administration area. Select a management task below:</p>
-        
-        <a href="admin-user-crud.html" class="button admin-feature-button">User Management (CRUD)</a>
-        <a href="admin-group.html" class="button admin-feature-button">Group Management</a>
-        <!-- Add links to other admin features here -->
-    </div>
+    <main class="admin-page">
+        <div class="container animated-container">
+            <section class="admin-intro">
+                <h2>Administration Area</h2>
+                <p>Welcome! From here, you can manage various aspects of the application. Please select a task below to get started.</p>
+            </section>
+
+            <section class="admin-features">
+                <h3 class="section-title">Management Tools</h3>
+                <div class="feature-grid">
+                    <a href="admin-user-crud.html" class="feature-card card btn-animated-border">
+                        <h4>User Management</h4>
+                        <p>Create, view, update, and delete user accounts.</p>
+                    </a>
+                    <a href="admin-group.html" class="feature-card card btn-animated-border">
+                        <h4>Group Management</h4>
+                        <p>Define and manage user groups and their permissions.</p>
+                    </a>
+                    <!-- Add links to other admin features here, following the same pattern -->
+                </div>
+            </section>
+        </div>
+    </main>
     <script src="app.js"></script>
 </body>
 </html>

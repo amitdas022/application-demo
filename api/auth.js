@@ -48,7 +48,7 @@ export default async function handler(req, res) {
             const tokenData = await tokenResponse.json();
 
             // >>> Add this log to see the raw token data from Auth0 <<<
-            console.log('Raw token data received from Auth0 /oauth/token:', tokenData);
+            //console.log('Raw token data received from Auth0 /oauth/token:', tokenData);
 
             if (!tokenData.id_token) {
                 return sendError(res, 500, 'Authentication successful, but ID token was not returned.', 'Ensure "openid" scope is requested and tenant settings allow ID tokens for ROPG.');
