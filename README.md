@@ -19,6 +19,16 @@ The application consists of:
 *   **Frontend (Static Files):**
     *   Basic HTML and JavaScript files (`index.html`, `protected.html`, `admin.html`, `frontend/app.js`) to interact with the backend APIs and demonstrate login, protected content, and admin functionalities.
 
+## What's Working and How
+
+This section summarizes the application's features from a user/developer perspective:
+
+*   **User Authentication**: Users can log in with their email and password. The backend (`/api/auth.js`) uses Auth0's Resource Owner Password Grant (ROPG) flow to validate credentials and obtain tokens. User roles are fetched via a custom claim (e.g., `https://myapp.example.com/roles`) in the ID token, populated by an Auth0 Action. The namespace for this claim must be configured via the `AUTH0_ROLES_NAMESPACE` environment variable.
+*   **User Management (Admin)**: Authenticated admin users can perform CRUD operations (Create, Read, Update, Delete) on users via the "Admin" page. This is handled by backend API calls from `/api/auth0-user-management.js` to the Auth0 Management API using a Machine-to-Machine (M2M) token.
+*   **Role Management (Admin)**: Admin users can assign or unassign the 'admin' role to other users from the "Admin" page. This also uses the Auth0 Management API via the backend (`/api/auth0-user-management.js`).
+*   **Protected Content**: Pages like `protected.html` (for any authenticated user) and `admin.html` (for authenticated users with an 'admin' role) are only accessible based on authentication status and roles.
+*   **Local Testing Mode**: A `LOCAL_TESTING_MODE` flag in `frontend/app.js` allows bypassing Auth0 login for easier UI development and testing of protected routes and role-based UI elements. When enabled, user data (including roles) can be simulated via `localStorage`.
+
 ## Authentication Flows Explained
 
 This project utilizes two distinct Auth0 authentication/authorization flows:
@@ -96,12 +106,17 @@ This project utilizes two distinct Auth0 authentication/authorization flows:
     AUTH0_M2M_CLIENT_SECRET=YOUR_M2M_CLIENT_SECRET
     AUTH0_MANAGEMENT_AUDIENCE=https://YOUR_AUTH0_TENANT_DOMAIN/api/v2/ # This is always the Management API audience
 
+    # Auth0 Action Namespace for Custom Claims (e.g., roles)
+    # This MUST match the namespace defined in your Auth0 Action script.
+    # Example: https://myapp.example.com/ (ensure it has a trailing slash if your action uses it)
+    AUTH0_ROLES_NAMESPACE=YOUR_CHOSEN_NAMESPACE_FOR_ROLES_CLAIM
+
     # Optional: Test user credentials for quick testing of the ROPG flow
     # Ensure this user exists in your Auth0 database connection
     TEST_USERNAME=your_test_user@example.com
     TEST_PASSWORD=YourSecurePassword123!
     ```
-    Replace placeholder values with your actual Auth0 credentials. See the "Porting to a Different Auth0 Account / Initial Setup" section for details on obtaining these.
+    Replace placeholder values with your actual Auth0 credentials. See the "Setting Up Your Auth0 Dashboard" section for details on obtaining these.
 
 ## Running the Application Locally
 
@@ -162,9 +177,9 @@ When `LOCAL_TESTING_MODE` is `true`, `frontend/app.js` creates a default non-adm
 *   **Security:** `LOCAL_TESTING_MODE` is for development convenience **only** and is not secure. It should never be enabled in production or committed with `true` as its default state.
 *   **Disable for Full Testing/Deployment:** Always ensure `window.LOCAL_TESTING_MODE = false;` (or that it's undefined) and clear `localStorage` when testing the complete Auth0 authentication flow or before deploying.
 
-## Porting to a Different Auth0 Account / Initial Setup
+## Setting Up Your Auth0 Dashboard
 
-To set up this project with a new or different Auth0 account, follow these steps:
+To set up this project with a new or different Auth0 account, or for initial setup, follow these steps to configure your Auth0 dashboard correctly. This includes creating the necessary applications, APIs, roles, and actions.
 
 ### I. Auth0 Tenant Configuration:
 
@@ -202,15 +217,16 @@ To set up this project with a new or different Auth0 account, follow these steps
         ```javascript
         // Action: Add roles to ID Token and Access Token
         exports.onExecutePostLogin = async (event, api) => {
-          const namespace = 'https://myapp.example.com/'; // Use a unique namespace
+          const namespace = process.env.AUTH0_ROLES_NAMESPACE; // Use the namespace from environment variables
           if (event.authorization) {
             api.idToken.setCustomClaim(`${namespace}roles`, event.authorization.roles);
             api.accessToken.setCustomClaim(`${namespace}roles`, event.authorization.roles);
           }
         };
         ```
+    *   **Important**: For the Action script above, you must configure an Action secret (e.g., name it `AUTH0_ROLES_NAMESPACE`) with the value of your chosen namespace (e.g., `https://myapp.example.com/`). This namespace value must also be set as the `AUTH0_ROLES_NAMESPACE` environment variable in your `.env` file and Vercel deployment.
     *   Deploy the Action. Then, go to Actions => Flows => Login. Drag your custom Action into the flow.
-    *   The `/api/auth.js` file will need to look for this custom claim (e.g., `event.user.profile[namespace + 'roles']` after token decoding/validation, or directly from the decoded access/id token).
+    *   The `/api/auth.js` file will look for this custom claim using the `AUTH0_ROLES_NAMESPACE` (e.g., `decodedAccessToken[process.env.AUTH0_ROLES_NAMESPACE + 'roles']`).
 
 7.  **Set Default Directory for ROPG:**
     *   Go to Tenant Settings (click tenant name in top right) => API Authorization Settings.
@@ -258,9 +274,8 @@ After these changes, restart your local development server (`npx vercel dev`).
 *   `AUTH0_M2M_CLIENT_ID`: Client ID for the Auth0 M2M Application used by `/api/auth0-user-management.js`.
 *   `AUTH0_M2M_CLIENT_SECRET`: Client Secret for the Auth0 M2M Application.
 *   `AUTH0_MANAGEMENT_AUDIENCE`: The audience for the Auth0 Management API (always `https://YOUR_AUTH0_DOMAIN/api/v2/`).
+*   `AUTH0_ROLES_NAMESPACE`: The namespace URL used in your Auth0 Action to add custom claims (like roles) to tokens. This value in `.env` (and Vercel environment variables) MUST exactly match the namespace string used in the Action script and configured as an Action secret.
 
 ---
 
 *This README provides guidance based on the project structure and typical Auth0 configurations. Adapt specific Auth0 settings (like namespaces in Actions or exact API audiences) to your precise implementation details.*
-
-```
