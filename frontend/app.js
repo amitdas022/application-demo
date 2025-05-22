@@ -637,4 +637,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // This ensures the user's authentication state is checked, UI is updated accordingly,
   // and redirection rules are applied consistently across the application.
   checkAuthAndRedirect();
+
+  // Theme switching logic
+  const themeToggleButton = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }
+
+  // Apply saved theme or preference on initial load
+  if (currentTheme) {
+    applyTheme(currentTheme);
+  } else if (prefersDark) {
+    applyTheme('dark'); // Default to dark if OS prefers it and no user choice yet
+  } else {
+    applyTheme('light'); // Default to light
+  }
+
+  if (themeToggleButton) {
+    themeToggleButton.addEventListener('click', () => {
+      let newTheme = localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    });
+  }
 });

@@ -43,6 +43,12 @@ export default async function handler(req, res) {
             return sendError(res, 400, 'Username and password are required.');
         }
 
+        // Validate username format (email)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(username)) {
+            return sendError(res, 400, 'Invalid username format. Please use a valid email address.');
+        }
+
         try {
             // --- Auth0 ROPG Flow ---
             // Construct the URL for Auth0's token endpoint
@@ -129,8 +135,16 @@ export default async function handler(req, res) {
             });
 
         } catch (error) {
-            // Catch-all for other errors that might occur during the authentication process (e.g., network issues).
-            sendError(res, error.status || 500, 'Error during authentication process.', error.message || error);
+            // Catch-all for other errors
+            console.error('Unhandled error in /api/auth:', error); // Log the full error server-side
+            if (error.type === 'system') { // Example: DNS resolution, network connection error
+                sendError(res, 503, 'Service unavailable. Please try again later.', 'Network or system error reaching authentication service.');
+            } else if (error.response) { // Error from fetch itself, but not necessarily an Auth0 operational error
+                sendError(res, error.response.status || 500, 'Authentication service communication error.', error.message);
+            }
+            else { // Other unexpected errors
+                sendError(res, 500, 'An unexpected error occurred during authentication.', error.message || 'Internal Server Error');
+            }
         }
     } else {
         // If the request method is not POST, respond with 405 Method Not Allowed.
