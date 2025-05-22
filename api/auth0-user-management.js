@@ -90,7 +90,7 @@ async function getManagementApiToken() {
  */
 export default async function handler(req, res) {
     // Extract action and parameters from request body (for POST, PUT, DELETE) or query string (for GET)
-    const { action, userId, userData, updates, roles } = req.body; // For POST, PUT, DELETE
+    const { action, userId, userData, updates, roles } = req.query; // For POST, PUT, DELETE
     const queryAction = req.query.action; // For GET actions
     const queryUserId = req.query.userId; // For GET actions requiring a user ID
 
