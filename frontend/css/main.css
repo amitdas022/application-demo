@@ -681,3 +681,38 @@ label {
 #message.error {
     color: var(--error-color);
 }
+
+.form-wrapper {
+  position: relative;
+  display: inline-block; /* shrink to fit the form card */
+}
+
+.bg-logo {
+  position: absolute;
+  width: 80px;
+  height: auto;
+  opacity: 0; /* Start fully transparent */
+  transform: scale(0.8); /* Start scaled down slightly */
+  transition: transform 0.4s ease, opacity 0.3s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Positioned relative to the form container */
+.card-top-left {
+  top: -30px;
+  left: -30px;
+  transform: translate(-20%, -20%);
+}
+
+.card-bottom-right {
+  bottom: -30px;
+  right: -30px;
+  transform: translate(20%, 20%);
+}
+
+/* Reveal on hover of the form card */
+.form-wrapper:hover .bg-logo {
+  transform: translate(0, 0);
+  opacity: 0.5;
+}
