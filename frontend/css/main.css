@@ -1,3 +1,4 @@
+/* frontend/css/main.css */
 @import url('./variables.css');
 @import url('./animations.css');
 
@@ -19,11 +20,14 @@ body {
   font-family: var(--font-family-sans-serif);
   line-height: var(--line-height-base);
   color: var(--color-text);
-  background-color: var(--color-background);
+  /* Dynamic background gradient for visual interest */
+  background: linear-gradient(135deg, var(--color-background), var(--color-primary-light), var(--color-background));
+  background-size: 200% 200%;
+  animation: backgroundPan 30s linear infinite alternate; /* Subtle, slow animation */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  display: flex; /* For pages like login/welcome */
-  flex-direction: column; /* For pages with header/main */
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
@@ -35,10 +39,10 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-primary);
 }
 
-h1 { font-size: 2.25rem; } /* 36px */
-h2 { font-size: 1.75rem; } /* 28px */
-h3 { font-size: 1.5rem; }  /* 24px */
-h4 { font-size: 1.125rem; } /* 18px */
+h1 { font-size: 2.5rem; } /* Slightly larger for impact */
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.25rem; }
 
 p {
   margin-bottom: var(--spacing-md);
@@ -58,11 +62,10 @@ a:hover {
 /* --- Layout Helpers --- */
 .container {
   width: 100%;
-  max-width: 1140px; /* Standard container width */
+  max-width: 1200px; /* Slightly wider container */
   margin-left: auto;
   margin-right: auto;
-  padding-left: var(--spacing-md);
-  padding-right: var(--spacing-md);
+  padding: var(--spacing-md); /* Consistent padding */
 }
 
 .section-divider {
@@ -70,6 +73,7 @@ a:hover {
   height: 1px;
   background-color: var(--color-border);
   margin: var(--spacing-xl) 0;
+  opacity: 0.7; /* Slightly softer */
 }
 
 /* --- Buttons --- */
@@ -82,16 +86,19 @@ a:hover {
   user-select: none;
   background-color: transparent;
   border: 1px solid transparent;
-  padding: var(--spacing-sm) var(--spacing-lg); /* 8px 24px */
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: 1rem;
   border-radius: var(--border-radius);
-  transition: var(--transition-base), var(--transition-transform);
-  text-decoration: none !important; /* Override link underline */
+  transition: var(--transition-base); /* Ensure consistency */
+  text-decoration: none !important;
+  position: relative; /* For ripple effect */
+  overflow: hidden; /* For ripple effect */
+  z-index: 1; /* For ripple effect */
 }
 
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--box-shadow-sm);
+  transform: translateY(-3px); /* More pronounced lift */
+  box-shadow: var(--box-shadow); /* Stronger shadow on hover */
 }
 .btn:active {
   transform: translateY(0px) scale(0.98);
@@ -130,8 +137,9 @@ a:hover {
   border-color: var(--color-danger);
 }
 .btn-danger:hover {
-  background-color: darken(var(--color-danger), 10%);
-  border-color: darken(var(--color-danger), 10%);
+  background-color: var(--color-danger); /* keep the color, maybe darker on hover */
+  filter: brightness(90%); /* Subtle darken */
+  border-color: var(--color-danger);
   color: var(--color-text-on-primary);
 }
 
@@ -159,11 +167,33 @@ a:hover {
   animation: subtleGlow 2s infinite ease-in-out;
 }
 
+/* Button Ripple Effect */
+.btn::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(var(--color-white), 0.5);
+  width: 100px; /* Initial size of the ripple */
+  height: 100px;
+  margin-top: -50px; /* Center the ripple */
+  margin-left: -50px;
+  opacity: 0;
+  transition: all 0.3s ease-out;
+  transform: scale(0);
+  pointer-events: none;
+  z-index: 2; /* Above button content but below spinner */
+}
+
+.btn.ripple-active::after {
+  animation: buttonRipple 0.6s ease-out forwards;
+}
+
+
+/* Spinner for loading buttons */
 .btn-submit-animated,
 .btn-load-animated {
   position: relative;
 }
-/* Add .loading class via JS to show spinner */
 .btn-submit-animated.loading::after,
 .btn-load-animated.loading::after {
   content: '';
@@ -178,8 +208,9 @@ a:hover {
   border-left-color: var(--color-white);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+  z-index: 3; /* Above ripple */
 }
-.btn-submit-animated.loading > *, /* Hide text/icon when loading */
+.btn-submit-animated.loading > *,
 .btn-load-animated.loading > * {
   visibility: hidden;
 }
@@ -189,32 +220,47 @@ a:hover {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-sm);
-  padding: var(--spacing-lg);
+  box-shadow: var(--box-shadow); /* Use a stronger shadow by default */
+  padding: var(--spacing-lg) var(--spacing-xl); /* More generous padding */
   margin-bottom: var(--spacing-lg);
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  position: relative; /* For potential inner shadow/border effects */
+  overflow: hidden; /* For clean edges with inner effects */
 }
-.card:hover:not(.no-hover-effect) { /* Add .no-hover-effect to disable */
-  transform: translateY(-5px) scale(1.01);
-  box-shadow: var(--box-shadow);
+.card:hover:not(.no-hover-effect) {
+  transform: translateY(-7px) scale(1.005); /* More pronounced lift and subtle scale */
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); /* Deeper shadow on hover */
 }
 .card-title {
-  color: var(--color-primary);
+  color: var(--color-primary-dark); /* Slightly darker for contrast */
   margin-top: 0;
   margin-bottom: var(--spacing-md);
+  position: relative;
+  padding-bottom: var(--spacing-xs);
 }
+.card-title::after { /* Decorative underline for titles */
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50px;
+  height: 3px;
+  background-color: var(--color-primary-light);
+  border-radius: 2px;
+}
+
 
 /* --- Forms --- */
 .styled-form .form-group {
   margin-bottom: var(--spacing-lg);
-  position: relative; /* For input-focus-animation */
+  position: relative;
 }
 
 .styled-form label {
   display: block;
   margin-bottom: var(--spacing-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-text);
+  color: var(--color-dark); /* Darker label for better contrast */
 }
 
 .styled-form input[type="text"],
@@ -231,7 +277,7 @@ a:hover {
   background-clip: padding-box;
   border: 1px solid var(--color-input-border);
   border-radius: var(--border-radius);
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: var(--transition-base); /* Unified transition */
 }
 
 .styled-form input[type="text"]:focus,
@@ -241,7 +287,8 @@ a:hover {
   background-color: var(--color-surface);
   border-color: var(--color-primary-light);
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.25); /* Default focus shadow */
+  animation: inputGlow 0.3s ease forwards; /* Apply glow animation */
 }
 .styled-form input[readonly] {
   background-color: var(--color-light);
@@ -272,18 +319,18 @@ a:hover {
 }
 .styled-form .form-row .form-group {
   flex: 1;
-  min-width: calc(50% - (var(--spacing-md) / 2)); /* Adjust for gap */
+  min-width: calc(50% - (var(--spacing-md) / 2));
 }
 
 .styled-form .form-actions {
   margin-top: var(--spacing-lg);
   display: flex;
   gap: var(--spacing-md);
-  justify-content: flex-start; /* Or flex-end, center */
+  justify-content: flex-start;
 }
 
-/* --- Messages --- */
-.message-area, .error-message { /* .error-message for login page */
+/* --- Messages & Toasts --- */
+.message-area, .error-message {
   padding: var(--spacing-md);
   margin-top: var(--spacing-lg);
   border-radius: var(--border-radius);
@@ -293,19 +340,61 @@ a:hover {
   transition: opacity 0.3s ease, transform 0.3s ease;
   text-align: left;
 }
-.message-area.show, .error-message.show { /* Add .show class via JS */
+.message-area.show, .error-message.show {
   opacity: 1;
   transform: translateY(0);
 }
-.message-area.success, .error-message.success { /* .error-message can also be success */
+.message-area.success, .error-message.success {
   color: var(--color-success);
   background-color: #d4edda;
   border: 1px solid #c3e6cb;
 }
-.message-area.error, .error-message:not(.success) { /* Default .error-message is error */
+.message-area.error, .error-message:not(.success) {
   color: var(--color-danger);
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
+}
+/* Error message shake animation */
+.error-message.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  z-index: 2000; /* Higher than modals */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  pointer-events: none; /* Allows clicks to pass through */
+}
+
+.toast {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  opacity: 0;
+  transform: translateY(-100%);
+  animation: toastSlideIn 0.5s ease-out forwards;
+  max-width: 300px;
+  pointer-events: auto; /* Re-enable pointer events for the toast itself */
+}
+.toast.info {
+  border-left: 5px solid var(--color-primary);
+}
+.toast.success {
+  border-left: 5px solid var(--color-success);
+}
+.toast.error {
+  border-left: 5px solid var(--color-danger);
+}
+.toast.hide {
+  animation: toastSlideOut 0.5s ease-in forwards;
 }
 
 /* --- Modals --- */
@@ -315,7 +404,7 @@ a:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex; /* Will be controlled by JS (none/flex) */
+  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1050;
@@ -327,19 +416,20 @@ a:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(var(--color-black), 0.5);
+  background-color: rgba(var(--color-black), 0.6); /* Darker overlay */
   z-index: 1;
 }
 .modal-content {
   position: relative;
   z-index: 2;
   width: 90%;
-  max-width: 500px; /* Default max-width */
+  max-width: 550px; /* Slightly larger modal */
   display: flex;
   flex-direction: column;
-}
-.animated-modal { /* Applied to modal-content */
-  animation: slideUpFadeIn 0.4s ease-out forwards;
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-lg); /* More prominent shadow */
+  animation: modalBounceIn 0.6s ease-out forwards; /* Apply bounce animation */
 }
 .modal-header {
   display: flex;
@@ -353,18 +443,20 @@ a:hover {
 .modal-close-btn {
   background: transparent;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.8rem; /* Larger close button */
   font-weight: var(--font-weight-bold);
   line-height: 1;
   color: var(--color-text-muted);
   opacity: 0.7;
   cursor: pointer;
   padding: var(--spacing-sm);
-  margin: calc(-1 * var(--spacing-sm)); /* Offset padding */
+  margin: calc(-1 * var(--spacing-sm));
+  transition: var(--transition-base);
 }
 .modal-close-btn:hover {
   opacity: 1;
-  color: var(--color-dark);
+  color: var(--color-danger); /* Red on hover for clear action */
+  transform: rotate(90deg); /* Subtle rotate on hover */
 }
 .modal-body {
   position: relative;
@@ -396,8 +488,9 @@ a:hover {
 }
 .app-header .app-title {
   color: var(--color-text-on-primary);
-  font-size: 1.75rem;
+  font-size: 2rem; /* Larger title */
   margin-bottom: 0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Subtle text shadow */
 }
 .app-header .header-nav-links {
   display: flex;
@@ -410,19 +503,21 @@ a:hover {
 }
 .app-header .header-nav-link:hover {
   opacity: 1;
-  background-color: rgba(var(--color-white), 0.1);
+  background-color: rgba(var(--color-white), 0.15); /* Slightly more opaque background */
   color: var(--color-white);
+  transform: translateY(-2px);
 }
 
 /* --- Page Specific Styles & Animated Containers --- */
-/* Centered content for welcome/login */
 .welcome-page, .login-page {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex-grow: 1; /* Take remaining height */
+  flex-grow: 1;
   padding: var(--spacing-lg);
+  position: relative; /* For background logos */
+  overflow: hidden; /* Ensure logos don't spill */
 }
 .welcome-page .container,
 .login-page .container {
@@ -432,23 +527,32 @@ a:hover {
   box-shadow: var(--box-shadow);
   text-align: center;
   width: 100%;
-  max-width: 450px;
+  max-width: 480px; /* Slightly wider login/welcome card */
+  z-index: 1; /* Above background logos */
+  position: relative;
 }
 
 .animated-container {
   animation: slideUpFadeIn 0.6s 0.2s ease-out forwards;
-  opacity: 0; /* Start hidden for animation */
+  opacity: 0;
 }
 
 /* Welcome Page */
+.welcome-title {
+  font-size: 3rem; /* Larger and more impactful */
+  letter-spacing: -2px; /* Tighter letter spacing */
+  margin-bottom: var(--spacing-md);
+}
 .welcome-title span {
   display: inline-block;
   animation: letterWave 0.5s ease-in-out forwards;
-  animation-delay: calc(0.1s * var(--letter-index)); /* JS will set --letter-index */
-  opacity: 0; /* Start hidden */
+  animation-delay: calc(0.08s * var(--letter-index)); /* Slightly faster delay */
+  opacity: 0;
+  transform: translateY(20px); /* Start further down */
+  text-shadow: 2px 2px 5px rgba(var(--color-primary-rgb), 0.3); /* Add shadow */
 }
 .welcome-message {
-  font-size: 1.1rem;
+  font-size: 1.15rem; /* Slightly larger text */
   color: var(--color-text-muted);
   margin-bottom: var(--spacing-xl);
 }
@@ -458,13 +562,66 @@ a:hover {
   margin-bottom: var(--spacing-lg);
 }
 .form-container .form-title {
-  font-size: 1.75rem;
+  font-size: 2rem;
 }
 .form-container .form-subtitle {
-  font-size: 1rem;
+  font-size: 1.1rem; /* Slightly larger */
   color: var(--color-text-muted);
   margin-top: var(--spacing-xs);
 }
+
+/* Background Logos for Login Page */
+.login-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.bg-logo {
+  position: absolute;
+  width: 100px; /* Larger logos */
+  height: auto;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: transform 0.4s ease, opacity 0.3s ease;
+  z-index: 0;
+  pointer-events: none;
+  animation: logoPulseDrift 15s infinite ease-in-out paused; /* Initially paused */
+}
+
+/* Logos within the form card */
+.form-wrapper .card-top-left {
+  top: -30px;
+  left: -30px;
+}
+.form-wrapper .card-bottom-right {
+  bottom: -30px;
+  right: -30px;
+}
+/* Specific hover/reveal for logos */
+.login-page:hover .bg-logo,
+.login-button.hovered ~ .form-wrapper .bg-logo { /* New selector for button hover */
+  transform: translate(0, 0) scale(2);
+  opacity: 0.3; /* More subtle opacity */
+  animation-play-state: running; /* Start global logo animation */
+}
+.form-wrapper:hover .bg-logo { /* Card specific hover */
+  transform: translate(0, 0) scale(2);
+  opacity: 0.6;
+}
+
+/* Form field entrance for login page */
+.login-page .styled-form .form-group {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUpFadeIn 0.5s ease forwards;
+  animation-delay: var(--form-field-delay); /* JS will set this */
+}
+
 
 /* Dashboard & Admin Pages */
 .dashboard-page, .admin-page, .admin-crud-page {
@@ -474,16 +631,34 @@ a:hover {
 }
 
 .welcome-banner {
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary-dark)); /* Deeper gradient */
   color: var(--color-white);
   padding: var(--spacing-xl);
   border-radius: var(--border-radius);
   margin-bottom: var(--spacing-lg);
-  box-shadow: var(--box-shadow-sm);
+  box-shadow: var(--box-shadow); /* Stronger shadow */
+  position: relative;
+  overflow: hidden;
+  animation: slideUpFadeIn 0.7s ease-out; /* Add entry animation */
 }
+.welcome-banner::before { /* Animated overlay for subtle shimmer */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.8s ease;
+}
+.welcome-banner:hover::before {
+  left: 100%;
+}
+
 .welcome-banner h2 {
   color: var(--color-white);
   margin-top: 0;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
 }
 .welcome-banner .highlight {
   font-weight: var(--font-weight-bold);
@@ -497,9 +672,14 @@ a:hover {
   justify-content: space-between;
   padding: var(--spacing-sm) 0;
   border-bottom: 1px solid var(--color-border);
+  transition: var(--transition-base);
 }
 .user-details-card .detail-item:last-child {
   border-bottom: none;
+}
+.user-details-card .detail-item:hover {
+  background-color: var(--color-background); /* Highlight on hover */
+  transform: translateX(5px);
 }
 .user-details-card .detail-label {
   font-weight: var(--font-weight-medium);
@@ -508,6 +688,21 @@ a:hover {
 .user-details-card .detail-value {
   color: var(--color-text-muted);
 }
+.user-profile-avatar { /* New style for profile picture */
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: var(--spacing-md);
+  border: 3px solid var(--color-primary-light);
+  box-shadow: var(--box-shadow-sm);
+  transition: var(--transition-base);
+}
+.user-profile-avatar:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: var(--box-shadow);
+}
+
 
 .admin-section .admin-title {
   color: var(--color-primary-dark);
@@ -520,7 +715,7 @@ a:hover {
   margin-bottom: var(--spacing-sm);
 }
 .admin-link-list .admin-nav-button {
-  display: block; /* Make buttons full width of li */
+  display: block;
 }
 
 /* Admin Page (admin.html) */
@@ -529,45 +724,46 @@ a:hover {
   text-align: center;
 }
 .admin-intro h2 {
-  font-size: 2rem;
+  font-size: 2.5rem; /* Larger heading */
 }
 .admin-features .section-title {
   text-align: center;
   margin-bottom: var(--spacing-lg);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
 }
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Slightly wider min column */
   gap: var(--spacing-lg);
 }
-.feature-card { /* This is an <a> tag styled as a card */
+.feature-card {
   display: block;
   text-decoration: none;
   color: var(--color-text);
-  position: relative; /* For animated border */
-  overflow: hidden; /* For animated border */
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border); /* Explicit border for contrast */
 }
 .feature-card h4 {
-  color: var(--color-primary);
+  color: var(--color-primary-dark); /* Deeper primary color */
   margin-bottom: var(--spacing-sm);
 }
 .feature-card p {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem; /* Slightly larger text */
 }
 .btn-animated-border::before {
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0; left: 0;
   z-index: -1;
-  margin: -3px; /* Adjust for border thickness */
-  border-radius: inherit; /* Use card's border-radius */
-  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary), var(--color-primary-light));
+  margin: -4px; /* Slightly thicker border animation */
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary), var(--color-primary-dark)); /* More colors in gradient */
   background-size: 200% 200%;
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
-  animation: animatedBorder 4s linear infinite paused; /* Paused initially */
+  animation: animatedBorder 4s linear infinite paused;
 }
 .btn-animated-border:hover::before {
   opacity: 1;
@@ -582,7 +778,6 @@ a:hover {
   overflow-x: auto;
   margin-top: var(--spacing-lg);
 }
-/* Basic table styling (if you use tables for user lists) */
 .styled-table {
   width: 100%;
   border-collapse: collapse;
@@ -601,6 +796,14 @@ a:hover {
 .styled-table tr:hover {
   background-color: var(--color-background);
 }
+/* Staggered entry for table rows */
+.styled-table tr.animated-item {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: itemSlideUpFadeIn 0.4s ease-out forwards;
+  animation-delay: var(--item-index);
+}
+
 
 .list-container {
   margin-top: var(--spacing-lg);
@@ -616,12 +819,71 @@ a:hover {
   margin-bottom: var(--spacing-sm);
   background-color: var(--color-surface);
   transition: var(--transition-base);
+  position: relative;
+  overflow: hidden;
 }
 .styled-list li:hover {
   border-color: var(--color-primary-light);
-  box-shadow: var(--box-shadow-sm);
-  transform: translateX(5px);
+  box-shadow: var(--box-shadow); /* Stronger shadow on hover */
+  transform: translateX(8px); /* More pronounced slide */
 }
+/* Staggered entry for list items */
+.styled-list li.animated-item {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: itemSlideUpFadeIn 0.4s ease-out forwards;
+  animation-delay: var(--item-index);
+}
+
+.user-item-info { /* Flex layout for user item details */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex-grow: 1;
+}
+.user-item-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm); /* Adjust spacing */
+}
+@media (min-width: 768px) { /* Adjust for larger screens */
+  .styled-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .user-item-actions {
+    margin-top: 0;
+  }
+}
+
+/* Skeleton Loader Styles */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  background-color: var(--color-surface);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: var(--spacing-lg);
+}
+.skeleton-loader-line {
+  height: 1rem;
+  background-color: var(--color-border);
+  border-radius: var(--border-radius);
+  animation: skeletonPulse 1.5s infinite ease-in-out;
+}
+.skeleton-loader-line.short {
+  width: 60%;
+}
+.skeleton-loader-line.medium {
+  width: 80%;
+}
+.skeleton-loader-line.long {
+  width: 100%;
+}
+
 
 /* --- Accessibility --- */
 @media (prefers-reduced-motion: reduce) {
@@ -633,86 +895,70 @@ a:hover {
   }
   .btn-glow { animation: none; }
   .btn-animated-border::before { animation: none; }
+  .btn.ripple-active::after { animation: none !important; opacity: 0 !important;}
+  .welcome-banner::before { transition: none !important; }
+  .bg-logo { animation: none !important; }
+  .login-page .styled-form .form-group { animation: none !important; opacity: 1 !important; transform: none !important;}
+  .styled-list li.animated-item, .styled-table tr.animated-item { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .user-profile-avatar { transition: none !important; }
+  .modal-close-btn { transition: none !important; transform: none !important; }
 }
+
+/* Original styles from your file, adjusted or integrated */
 input[type="text"],
-input[type="password"]
+input[type="password"],
 input[type="email"] {
-    width: calc(100% - 24px); /* Full width minus padding */
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
+    width: calc(100% - 0px); /* Adjusted for new padding, removed old 24px */
+    padding: var(--spacing-sm) var(--spacing-md); /* Consistent padding */
+    margin-bottom: 0; /* Handled by form-group */
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--border-radius);
     font-size: 1em;
     box-sizing: border-box;
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 input[type="text"]:focus,
-input[type="password"]:focus
+input[type="password"]:focus,
 input[type="email"]:focus {
-    border-color: var(--primary-purple-lighter);
-    box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.2);
+    border-color: var(--color-primary-light); /* Using var(--color-primary-light) */
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2); /* Using rgba var */
     outline: none;
 }
 
 label {
     display: block;
     text-align: left;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #444;
+    margin-bottom: var(--spacing-xs); /* Use spacing variable */
+    font-weight: var(--font-weight-medium); /* Use font-weight variable */
+    color: var(--color-dark); /* Use color variable */
 }
 
-.error {
-  color: var(--error-color);
+.error { /* This seems to be a generic class, replaced by error-message */
+  color: var(--color-danger);
   margin-top: 15px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
-#message { /* For admin group management messages */
-    margin-top: 15px;
-    font-weight: 500;
+#message { /* For admin group management messages, use message-area */
+    margin-top: var(--spacing-md);
+    font-weight: var(--font-weight-medium);
 }
 
 #message.success {
-    color: var(--success-color);
+    color: var(--color-success);
 }
 
 #message.error {
-    color: var(--error-color);
+    color: var(--color-danger);
 }
 
 .form-wrapper {
   position: relative;
-  display: inline-block; /* shrink to fit the form card */
+  display: inline-block;
 }
 
-.bg-logo {
-  position: absolute;
-  width: 80px;
-  height: auto;
-  opacity: 0; /* Start fully transparent */
-  transform: scale(0.8); /* Start scaled down slightly */
-  transition: transform 0.4s ease, opacity 0.3s ease;
-  z-index: 0;
-  pointer-events: none;
-}
+/* bg-logo styles are now above, for login page, and integrated with animations */
+/* These specific .bg-logo styles are now handled by the .login-page > .bg-logo and .form-wrapper .card-top-left/bottom-right */
 
-/* Positioned relative to the form container */
-.card-top-left {
-  top: -30px;
-  left: -30px;
-  transform: translate(-20%, -20%);
-}
-
-.card-bottom-right {
-  bottom: -30px;
-  right: -30px;
-  transform: translate(20%, 20%);
-}
-
-/* Reveal on hover of the form card */
-.form-wrapper:hover .bg-logo {
-  transform: translate(0, 0);
-  opacity: 0.5;
-}
+/* The original .form-wrapper:hover .bg-logo is now integrated into the login-page:hover .bg-logo and login-button.hovered selection */
