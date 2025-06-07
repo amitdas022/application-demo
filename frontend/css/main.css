@@ -20,8 +20,10 @@ body {
   font-family: var(--font-family-sans-serif);
   line-height: var(--line-height-base);
   color: var(--color-text);
-  /* Dynamic background gradient for visual interest */
-  background: linear-gradient(135deg, var(--color-background), var(--color-primary-light), var(--color-background));
+  /* Use the new soft background color for the page */
+  background-color: var(--color-background);
+  /* Dynamic background gradient for visual interest - now softer, more aligned with image */
+  background-image: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary-light) 50%, var(--color-background) 100%);
   background-size: 200% 200%;
   animation: backgroundPan 30s linear infinite alternate; /* Subtle, slow animation */
   -webkit-font-smoothing: antialiased;
@@ -29,6 +31,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scroll due to animations */
 }
 
 /* --- Typography --- */
@@ -36,13 +39,13 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-md);
   font-weight: var(--font-weight-bold);
   line-height: 1.2;
-  color: var(--color-primary);
+  color: var(--color-primary); /* Headings use the primary color */
 }
 
-h1 { font-size: 2.5rem; } /* Slightly larger for impact */
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.25rem; }
+h1 { font-size: 2.8rem; } /* Larger and more impactful */
+h2 { font-size: 2.2rem; }
+h3 { font-size: 1.85rem; }
+h4 { font-size: 1.35rem; }
 
 p {
   margin-bottom: var(--spacing-md);
@@ -62,10 +65,10 @@ a:hover {
 /* --- Layout Helpers --- */
 .container {
   width: 100%;
-  max-width: 1200px; /* Slightly wider container */
+  max-width: 1300px; /* Slightly wider container for more breathing room */
   margin-left: auto;
   margin-right: auto;
-  padding: var(--spacing-md); /* Consistent padding */
+  padding: var(--spacing-lg); /* Consistent padding */
 }
 
 .section-divider {
@@ -88,8 +91,8 @@ a:hover {
   border: 1px solid transparent;
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: 1rem;
-  border-radius: var(--border-radius);
-  transition: var(--transition-base); /* Ensure consistency */
+  border-radius: var(--border-radius); /* Use new border-radius from variables */
+  transition: var(--transition-base);
   text-decoration: none !important;
   position: relative; /* For ripple effect */
   overflow: hidden; /* For ripple effect */
@@ -97,27 +100,29 @@ a:hover {
 }
 
 .btn:hover {
-  transform: translateY(-3px); /* More pronounced lift */
-  box-shadow: var(--box-shadow); /* Stronger shadow on hover */
+  transform: translateY(-5px); /* More pronounced lift on hover */
+  box-shadow: var(--box-shadow-sm); /* Subtle shadow on hover */
 }
 .btn:active {
-  transform: translateY(0px) scale(0.98);
+  transform: translateY(0px) scale(0.95); /* Deeper press on active */
   box-shadow: none;
 }
 .btn:focus {
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.35); /* More prominent focus ring */
 }
 
 .btn-primary {
   color: var(--color-text-on-primary);
   background-color: var(--color-primary);
   border-color: var(--color-primary);
+  box-shadow: 0 4px 10px rgba(var(--color-primary-rgb), 0.2); /* Initial shadow for primary buttons */
 }
 .btn-primary:hover {
   background-color: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
   color: var(--color-text-on-primary);
+  box-shadow: 0 8px 15px rgba(var(--color-primary-rgb), 0.3); /* Deeper shadow on hover */
 }
 
 .btn-secondary {
@@ -137,7 +142,6 @@ a:hover {
   border-color: var(--color-danger);
 }
 .btn-danger:hover {
-  background-color: var(--color-danger); /* keep the color, maybe darker on hover */
   filter: brightness(90%); /* Subtle darken */
   border-color: var(--color-danger);
   color: var(--color-text-on-primary);
@@ -146,9 +150,10 @@ a:hover {
 .btn-outline-light {
   color: var(--color-light);
   border-color: var(--color-light);
+  background-color: transparent;
 }
 .btn-outline-light:hover {
-  color: var(--color-dark);
+  color: var(--color-primary-dark); /* Changed text color to dark on hover */
   background-color: var(--color-light);
   border-color: var(--color-light);
 }
@@ -172,20 +177,19 @@ a:hover {
   content: '';
   position: absolute;
   border-radius: 50%;
-  background-color: rgba(var(--color-white), 0.5);
+  background-color: rgba(var(--color-white), 0.6); /* More visible ripple */
   width: 100px; /* Initial size of the ripple */
   height: 100px;
   margin-top: -50px; /* Center the ripple */
   margin-left: -50px;
   opacity: 0;
-  transition: all 0.3s ease-out;
   transform: scale(0);
   pointer-events: none;
   z-index: 2; /* Above button content but below spinner */
 }
 
 .btn.ripple-active::after {
-  animation: buttonRipple 0.6s ease-out forwards;
+  animation: buttonRipple 0.6s ease-out forwards; /* Uses enhanced ripple animation */
 }
 
 
@@ -204,7 +208,7 @@ a:hover {
   left: 50%;
   margin-top: -0.6em;
   margin-left: -0.6em;
-  border: 2px solid rgba(var(--color-white), 0.2);
+  border: 2px solid rgba(var(--color-white), 0.4); /* Slightly thicker border */
   border-left-color: var(--color-white);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -219,17 +223,18 @@ a:hover {
 .card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow); /* Use a stronger shadow by default */
-  padding: var(--spacing-lg) var(--spacing-xl); /* More generous padding */
+  border-radius: var(--border-radius); /* Use new border-radius from variables */
+  box-shadow: var(--box-shadow); /* Use new stronger shadow by default */
+  padding: var(--spacing-xl); /* More generous padding for all cards */
   margin-bottom: var(--spacing-lg);
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-  position: relative; /* For potential inner shadow/border effects */
-  overflow: hidden; /* For clean edges with inner effects */
+  position: relative;
+  overflow: hidden;
+  will-change: transform, box-shadow; /* Optimize for animations */
 }
 .card:hover:not(.no-hover-effect) {
-  transform: translateY(-7px) scale(1.005); /* More pronounced lift and subtle scale */
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); /* Deeper shadow on hover */
+  transform: translateY(-10px) scale(1.005); /* More pronounced lift and subtle scale */
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); /* Deeper shadow on hover */
 }
 .card-title {
   color: var(--color-primary-dark); /* Slightly darker for contrast */
@@ -243,8 +248,8 @@ a:hover {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 50px;
-  height: 3px;
+  width: 60px; /* Slightly longer underline */
+  height: 4px; /* Thicker underline */
   background-color: var(--color-primary-light);
   border-radius: 2px;
 }
@@ -263,36 +268,68 @@ a:hover {
   color: var(--color-dark); /* Darker label for better contrast */
 }
 
+/* New: Wrapper for input with icon */
+.input-with-icon {
+    position: relative;
+    display: flex; /* Allow icon and input to sit side-by-side */
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent white border */
+    border-radius: var(--border-radius); /* Inherit from variables */
+    background-color: rgba(255, 255, 255, 0.1); /* Very light, semi-transparent background */
+    box-shadow: var(--box-shadow-sm); /* Subtle shadow for depth */
+    backdrop-filter: blur(5px); /* Less blur for inputs than card */
+    -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
+    transition: var(--transition-base);
+    overflow: hidden; /* Ensure focus animation stays within bounds */
+}
+
+.input-with-icon:focus-within {
+    border-color: rgba(var(--color-primary-rgb), 0.6); /* Primary color on focus */
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2), var(--box-shadow); /* Glow effect */
+    background-color: rgba(255, 255, 255, 0.2); /* Slightly more opaque on focus */
+}
+
+.input-icon {
+    width: 50px; /* Icon size as requested */
+    height: 50px; /* Icon size as requested */
+    margin-left: var(--spacing-xs); /* Space from left edge */
+    margin-right: var(--spacing-xs); /* Space between icon and input */
+    color: var(--color-primary); /* Primary color for icons */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    z-index: 1; /* Ensure icon is above input-focus-animation */
+}
+
+
 .styled-form input[type="text"],
 .styled-form input[type="password"],
 .styled-form input[type="email"] {
   display: block;
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 1rem;
+  width: 100%; /* Take remaining width */
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xs); /* Adjust padding for icon */
+  font-size: 1.1rem; /* Slightly larger text in inputs */
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-base);
-  color: var(--color-text);
-  background-color: var(--color-surface);
-  background-clip: padding-box;
-  border: 1px solid var(--color-input-border);
-  border-radius: var(--border-radius);
-  transition: var(--transition-base); /* Unified transition */
+  color: var(--color-dark); /* Darker text for readability on light background */
+  background-color: transparent; /* Make input itself transparent within wrapper */
+  border: none; /* Remove default border, handled by parent .input-with-icon */
+  outline: none; /* Remove default outline */
+  border-radius: 0; /* No individual border-radius for input */
+  transition: var(--transition-base);
 }
 
 .styled-form input[type="text"]:focus,
 .styled-form input[type="password"]:focus,
 .styled-form input[type="email"]:focus {
-  color: var(--color-text);
-  background-color: var(--color-surface);
-  border-color: var(--color-primary-light);
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.25); /* Default focus shadow */
-  animation: inputGlow 0.3s ease forwards; /* Apply glow animation */
+  color: var(--color-dark); /* Keep color on focus */
+  background-color: transparent; /* Keep transparent */
+  border-color: transparent; /* Keep transparent */
+  outline: 0; /* Keep outline removed */
+  box-shadow: none; /* Remove default focus shadow, handled by parent wrapper */
+  animation: none; /* Remove glow animation, handled by parent wrapper */
 }
 .styled-form input[readonly] {
-  background-color: var(--color-light);
-  opacity: 0.7;
+  background-color: rgba(var(--color-light), 0.5); /* Semi-transparent for glassy effect */
+  opacity: 0.9;
   cursor: not-allowed;
 }
 
@@ -301,11 +338,12 @@ a:hover {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background-color: var(--color-primary);
+  height: 3px; /* Thicker focus line */
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary)); /* Gradient focus line */
   transform: scaleX(0);
   transform-origin: center;
   transition: transform 0.3s ease;
+  z-index: 0; /* Ensure it's behind icon */
 }
 .styled-form input:focus + .input-focus-animation {
   transform: scaleX(1);
@@ -315,15 +353,15 @@ a:hover {
 .styled-form .form-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg); /* More space between form elements in a row */
 }
 .styled-form .form-row .form-group {
   flex: 1;
-  min-width: calc(50% - (var(--spacing-md) / 2));
+  min-width: calc(50% - (var(--spacing-lg) / 2));
 }
 
 .styled-form .form-actions {
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-xl); /* More space above action buttons */
   display: flex;
   gap: var(--spacing-md);
   justify-content: flex-start;
@@ -363,8 +401,8 @@ a:hover {
 /* Toast Notifications */
 #toast-container {
   position: fixed;
-  top: var(--spacing-lg);
-  right: var(--spacing-lg);
+  top: var(--spacing-xl); /* Slightly lower from top */
+  right: var(--spacing-xl); /* Slightly further from right */
   z-index: 2000; /* Higher than modals */
   display: flex;
   flex-direction: column;
@@ -381,23 +419,25 @@ a:hover {
   opacity: 0;
   transform: translateY(-100%);
   animation: toastSlideIn 0.5s ease-out forwards;
-  max-width: 300px;
+  max-width: 350px; /* Slightly wider toast */
   pointer-events: auto; /* Re-enable pointer events for the toast itself */
+  will-change: transform, opacity; /* Optimize for animations */
 }
 .toast.info {
-  border-left: 5px solid var(--color-primary);
+  border-left: 6px solid var(--color-primary); /* Thicker border */
 }
 .toast.success {
-  border-left: 5px solid var(--color-success);
+  border-left: 6px solid var(--color-success);
 }
 .toast.error {
-  border-left: 5px solid var(--color-danger);
+  border-left: 6px solid var(--color-danger);
 }
 .toast.hide {
   animation: toastSlideOut 0.5s ease-in forwards;
 }
 
 /* --- Modals --- */
+/* Base modal container, handles backdrop */
 .modal {
   position: fixed;
   top: 0;
@@ -408,29 +448,56 @@ a:hover {
   align-items: center;
   justify-content: center;
   z-index: 1050;
-  animation: fadeIn 0.3s ease forwards;
+  background-color: rgba(var(--color-black), 0.6); /* Darker overlay for strong focus */
+  opacity: 0; /* Default hidden state */
+  visibility: hidden; /* Default hidden state */
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s; /* Fade out, then hide visibility */
+  will-change: opacity, visibility;
 }
-.modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(var(--color-black), 0.6); /* Darker overlay */
-  z-index: 1;
+
+/* Modal active state (when opened by JS) */
+.modal.modal-active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease; /* Fade in, visibility immediate */
 }
+
+/* Modal closing backdrop animation */
+.modal.modal-closing-backdrop {
+    animation: fadeOut 0.3s ease forwards; /* Fade out backdrop */
+    visibility: hidden;
+    transition: visibility 0s linear 0.3s; /* Hide visibility after fade out */
+}
+
+
+/* Modal content box */
 .modal-content {
   position: relative;
   z-index: 2;
-  width: 90%;
-  max-width: 550px; /* Slightly larger modal */
+  width: 95%; /* Wider modal on smaller screens */
+  max-width: 600px; /* Larger max width for modals */
   display: flex;
   flex-direction: column;
   background-color: var(--color-surface);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow-lg); /* More prominent shadow */
-  animation: modalBounceIn 0.6s ease-out forwards; /* Apply bounce animation */
+  opacity: 0; /* Hidden by default */
+  transform: translateY(50px) scale(0.9); /* Start position for bounce-in */
+  will-change: transform, opacity;
 }
+
+/* Modal content open animation (triggered by JS) */
+.modal-content.modal-open {
+  animation: modalBounceIn 0.7s ease-out forwards; /* Use the bounce animation */
+  opacity: 1; /* Ensure it's visible during animation */
+}
+
+/* Modal content closing animation (triggered by JS) */
+.modal-content.modal-closing {
+  animation: modalBounceOut 0.4s ease-in forwards; /* New bounce out animation */
+}
+
+
 .modal-header {
   display: flex;
   align-items: flex-start;
@@ -443,7 +510,7 @@ a:hover {
 .modal-close-btn {
   background: transparent;
   border: none;
-  font-size: 1.8rem; /* Larger close button */
+  font-size: 2rem; /* Larger close button */
   font-weight: var(--font-weight-bold);
   line-height: 1;
   color: var(--color-text-muted);
@@ -456,7 +523,7 @@ a:hover {
 .modal-close-btn:hover {
   opacity: 1;
   color: var(--color-danger); /* Red on hover for clear action */
-  transform: rotate(90deg); /* Subtle rotate on hover */
+  transform: rotate(90deg) scale(1.1); /* More pronounced rotate and scale */
 }
 .modal-body {
   position: relative;
@@ -488,7 +555,7 @@ a:hover {
 }
 .app-header .app-title {
   color: var(--color-text-on-primary);
-  font-size: 2rem; /* Larger title */
+  font-size: 2.2rem; /* Larger title */
   margin-bottom: 0;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Subtle text shadow */
 }
@@ -503,9 +570,9 @@ a:hover {
 }
 .app-header .header-nav-link:hover {
   opacity: 1;
-  background-color: rgba(var(--color-white), 0.15); /* Slightly more opaque background */
+  background-color: rgba(var(--color-white), 0.2); /* Slightly more opaque background */
   color: var(--color-white);
-  transform: translateY(-2px);
+  transform: translateY(-3px); /* More lift */
 }
 
 /* --- Page Specific Styles & Animated Containers --- */
@@ -515,62 +582,88 @@ a:hover {
   justify-content: center;
   align-items: center;
   flex-grow: 1;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   position: relative; /* For background logos */
   overflow: hidden; /* Ensure logos don't spill */
 }
-.welcome-page .container,
-.login-page .container {
-  background-color: var(--color-surface);
+.welcome-page .container {
+  background-color: var(--color-surface); /* Keep welcome page opaque for now */
   padding: var(--spacing-xl);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   text-align: center;
   width: 100%;
-  max-width: 480px; /* Slightly wider login/welcome card */
-  z-index: 1; /* Above background logos */
+  max-width: 550px;
+  z-index: 1;
   position: relative;
+  overflow: hidden;
+}
+
+/* Login Page Specific Styling for Glassmorphism */
+.login-page .form-container {
+  /* Glassmorphism effect */
+  background-color: rgba(255, 255, 255, var(--glass-background-alpha)); /* Semi-transparent white */
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Semi-transparent border */
+  backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
+  -webkit-backdrop-filter: blur(var(--glass-blur)); /* For Safari compatibility */
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
+  transition: var(--transition-base); /* Smooth transitions for hover/focus */
+
+  padding: var(--spacing-xl);
+  text-align: center;
+  width: 100%;
+  max-width: 480px; /* Adjust login card width to match image */
+  z-index: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex; /* Ensure content stacks correctly */
+  flex-direction: column;
+  justify-content: center;
 }
 
 .animated-container {
-  animation: slideUpFadeIn 0.6s 0.2s ease-out forwards;
+  animation: slideUpFadeIn 0.7s 0.2s ease-out forwards;
   opacity: 0;
 }
 
 /* Welcome Page */
 .welcome-title {
-  font-size: 3rem; /* Larger and more impactful */
-  letter-spacing: -2px; /* Tighter letter spacing */
+  font-size: 3.5rem; /* Larger and more impactful */
+  letter-spacing: -3px; /* Tighter letter spacing */
   margin-bottom: var(--spacing-md);
+  color: var(--color-primary-dark); /* Deeper primary for title */
 }
 .welcome-title span {
   display: inline-block;
-  animation: letterWave 0.5s ease-in-out forwards;
-  animation-delay: calc(0.08s * var(--letter-index)); /* Slightly faster delay */
+  animation: letterWave 0.6s ease-in-out forwards; /* Slightly slower wave */
+  animation-delay: calc(0.1s * var(--letter-index));
   opacity: 0;
-  transform: translateY(20px); /* Start further down */
-  text-shadow: 2px 2px 5px rgba(var(--color-primary-rgb), 0.3); /* Add shadow */
+  transform: translateY(30px); /* Start further down */
+  text-shadow: 2px 2px 5px rgba(var(--color-primary-rgb), 0.4); /* Add shadow */
 }
 .welcome-message {
-  font-size: 1.15rem; /* Slightly larger text */
+  font-size: 1.25rem; /* Larger text */
   color: var(--color-text-muted);
   margin-bottom: var(--spacing-xl);
+  line-height: 1.8;
 }
 
-/* Login Page */
+/* Login Page Typography & Form Headers */
 .form-container .form-header {
   margin-bottom: var(--spacing-lg);
 }
 .form-container .form-title {
-  font-size: 2rem;
+  font-size: 2.4rem; /* Larger title */
+  color: var(--color-primary-dark); /* Deeper primary for title */
 }
 .form-container .form-subtitle {
-  font-size: 1.1rem; /* Slightly larger */
+  font-size: 1.2rem; /* Slightly larger */
   color: var(--color-text-muted);
   margin-top: var(--spacing-xs);
 }
 
-/* Background Logos for Login Page */
+/* Background Logos for Login Page (instead of shapes) */
 .login-wrapper {
   position: relative;
   width: 100%;
@@ -583,42 +676,39 @@ a:hover {
 
 .bg-logo {
   position: absolute;
-  width: 100px; /* Larger logos */
+  width: 250px; /* Make logos large to fill space and be partially visible */
   height: auto;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: transform 0.4s ease, opacity 0.3s ease;
-  z-index: 0;
+  opacity: 1; /* Subtly visible by default */
+  filter: blur(2px); /* Initial blur so visible parts are also soft */
+  z-index: 0; /* Ensure they are behind the glassy form */
   pointer-events: none;
-  animation: logoPulseDrift 15s infinite ease-in-out paused; /* Initially paused */
+  transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+  will-change: transform, opacity, filter;
 }
 
-/* Logos within the form card */
-.form-wrapper .card-top-left {
-  top: -30px;
-  left: -30px;
+.bg-logo.logo-top-left {
+  top: -5%;
+  left: 25%;
 }
-.form-wrapper .card-bottom-right {
-  bottom: -30px;
-  right: -30px;
+
+.bg-logo.logo-bottom-right {
+  bottom: -5%;
+  right:25%;
 }
-/* Specific hover/reveal for logos */
-.login-page:hover .bg-logo,
-.login-button.hovered ~ .form-wrapper .bg-logo { /* New selector for button hover */
-  transform: translate(0, 0) scale(2);
-  opacity: 0.3; /* More subtle opacity */
-  animation-play-state: running; /* Start global logo animation */
+
+/* Animation trigger for background logos based on form-wrapper hover */
+.form-wrapper.hovered-by-button .bg-logo {
+  opacity: 0.3; /* Slightly more visible on hover */
+  transform: scale(1.1) rotate(0deg); /* Subtle growth/reset on hover */
+  filter: blur(5px); /* Less blur on hover, making them a bit clearer */
 }
-.form-wrapper:hover .bg-logo { /* Card specific hover */
-  transform: translate(0, 0) scale(2);
-  opacity: 0.6;
-}
+
 
 /* Form field entrance for login page */
 .login-page .styled-form .form-group {
   opacity: 0;
-  transform: translateY(20px);
-  animation: slideUpFadeIn 0.5s ease forwards;
+  transform: translateY(30px); /* Start further down */
+  animation: slideUpFadeIn 0.6s ease forwards; /* Slightly slower and more pronounced */
   animation-delay: var(--form-field-delay); /* JS will set this */
 }
 
@@ -628,18 +718,31 @@ a:hover {
   padding-top: var(--spacing-xl);
   padding-bottom: var(--spacing-xl);
   flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align content to top */
+}
+.dashboard-page .container,
+.admin-page .container,
+.admin-crud-page .container {
+  max-width: 900px; /* Optimal width for content pages */
 }
 
+
 .welcome-banner {
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary-dark)); /* Deeper gradient */
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%); /* Deeper gradient */
   color: var(--color-white);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-xl);
   border-radius: var(--border-radius);
   margin-bottom: var(--spacing-lg);
   box-shadow: var(--box-shadow); /* Stronger shadow */
   position: relative;
   overflow: hidden;
   animation: slideUpFadeIn 0.7s ease-out; /* Add entry animation */
+  display: flex; /* For avatar and text alignment */
+  align-items: center;
+  gap: var(--spacing-md);
+  text-align: left;
 }
 .welcome-banner::before { /* Animated overlay for subtle shimmer */
   content: '';
@@ -648,8 +751,9 @@ a:hover {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15) 50%, transparent); /* More visible shimmer */
   transition: left 0.8s ease;
+  pointer-events: none; /* Ensure clicks pass through */
 }
 .welcome-banner:hover::before {
   left: 100%;
@@ -658,12 +762,18 @@ a:hover {
 .welcome-banner h2 {
   color: var(--color-white);
   margin-top: 0;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  margin-bottom: var(--spacing-xs); /* Reduced margin for subtitle */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.4); /* Stronger text shadow */
+  font-size: 2rem;
+}
+.welcome-banner p {
+  color: rgba(var(--color-white), 0.9);
+  font-size: 1.1rem;
 }
 .welcome-banner .highlight {
   font-weight: var(--font-weight-bold);
   text-decoration: underline;
-  text-decoration-color: rgba(var(--color-white), 0.5);
+  text-decoration-color: rgba(var(--color-white), 0.6);
   text-decoration-thickness: 2px;
 }
 
@@ -671,7 +781,7 @@ a:hover {
   display: flex;
   justify-content: space-between;
   padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px dashed var(--color-border); /* Dashed border for softer look */
   transition: var(--transition-base);
 }
 .user-details-card .detail-item:last-child {
@@ -679,7 +789,7 @@ a:hover {
 }
 .user-details-card .detail-item:hover {
   background-color: var(--color-background); /* Highlight on hover */
-  transform: translateX(5px);
+  transform: translateX(8px); /* More pronounced slide */
 }
 .user-details-card .detail-label {
   font-weight: var(--font-weight-medium);
@@ -689,17 +799,18 @@ a:hover {
   color: var(--color-text-muted);
 }
 .user-profile-avatar { /* New style for profile picture */
-  width: 80px;
-  height: 80px;
+  width: 90px; /* Larger avatar */
+  height: 90px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: var(--spacing-md);
-  border: 3px solid var(--color-primary-light);
+  margin-right: var(--spacing-md);
+  border: 4px solid var(--color-light); /* Thicker light border */
   box-shadow: var(--box-shadow-sm);
   transition: var(--transition-base);
+  flex-shrink: 0; /* Prevent shrinking */
 }
 .user-profile-avatar:hover {
-  transform: scale(1.05) rotate(5deg);
+  transform: scale(1.1) rotate(7deg); /* More pronounced scale and rotate */
   box-shadow: var(--box-shadow);
 }
 
@@ -724,16 +835,21 @@ a:hover {
   text-align: center;
 }
 .admin-intro h2 {
-  font-size: 2.5rem; /* Larger heading */
+  font-size: 2.8rem; /* Larger heading */
+  color: var(--color-primary);
+}
+.admin-intro p {
+  font-size: 1.15rem;
 }
 .admin-features .section-title {
   text-align: center;
   margin-bottom: var(--spacing-lg);
-  font-size: 1.75rem;
+  font-size: 2rem;
+  color: var(--color-primary-dark);
 }
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Slightly wider min column */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Slightly wider min column */
   gap: var(--spacing-lg);
 }
 .feature-card {
@@ -742,28 +858,33 @@ a:hover {
   color: var(--color-text);
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--color-border); /* Explicit border for contrast */
+  border: 1px solid var(--color-border);
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  will-change: transform, box-shadow;
 }
 .feature-card h4 {
-  color: var(--color-primary-dark); /* Deeper primary color */
+  color: var(--color-primary); /* Use primary color for card titles */
   margin-bottom: var(--spacing-sm);
+  font-size: 1.6rem;
 }
 .feature-card p {
   color: var(--color-text-muted);
-  font-size: 0.95rem; /* Slightly larger text */
+  font-size: 1rem;
 }
 .btn-animated-border::before {
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0; left: 0;
   z-index: -1;
-  margin: -4px; /* Slightly thicker border animation */
+  margin: -6px; /* Thicker border animation */
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary), var(--color-primary-dark)); /* More colors in gradient */
-  background-size: 200% 200%;
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary), var(--color-primary-dark), var(--color-primary-light)); /* More colors in gradient */
+  background-size: 300% 300%; /* Larger background for smoother animation */
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
-  animation: animatedBorder 4s linear infinite paused;
+  animation: animatedBorder 6s linear infinite paused; /* Slower animation for subtlety */
+  will-change: background-position, opacity;
 }
 .btn-animated-border:hover::before {
   opacity: 1;
@@ -799,9 +920,10 @@ a:hover {
 /* Staggered entry for table rows */
 .styled-table tr.animated-item {
   opacity: 0;
-  transform: translateY(10px);
-  animation: itemSlideUpFadeIn 0.4s ease-out forwards;
+  transform: translateY(20px); /* Uses enhanced itemSlideUpFadeIn */
+  animation: itemSlideUpFadeIn 0.5s ease-out forwards;
   animation-delay: var(--item-index);
+  will-change: transform, opacity;
 }
 
 
@@ -813,7 +935,7 @@ a:hover {
   padding: 0;
 }
 .styled-list li {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-md); /* More padding for list items */
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   margin-bottom: var(--spacing-sm);
@@ -821,18 +943,20 @@ a:hover {
   transition: var(--transition-base);
   position: relative;
   overflow: hidden;
+  will-change: transform, box-shadow;
 }
 .styled-list li:hover {
   border-color: var(--color-primary-light);
   box-shadow: var(--box-shadow); /* Stronger shadow on hover */
-  transform: translateX(8px); /* More pronounced slide */
+  transform: translateX(10px); /* More pronounced slide */
 }
 /* Staggered entry for list items */
 .styled-list li.animated-item {
   opacity: 0;
-  transform: translateY(10px);
-  animation: itemSlideUpFadeIn 0.4s ease-out forwards;
+  transform: translateY(20px); /* Uses enhanced itemSlideUpFadeIn */
+  animation: itemSlideUpFadeIn 0.5s ease-out forwards;
   animation-delay: var(--item-index);
+  will-change: transform, opacity;
 }
 
 .user-item-info { /* Flex layout for user item details */
@@ -869,16 +993,16 @@ a:hover {
   margin-bottom: var(--spacing-lg);
 }
 .skeleton-loader-line {
-  height: 1rem;
+  height: 1.2rem; /* Slightly taller lines */
   background-color: var(--color-border);
   border-radius: var(--border-radius);
   animation: skeletonPulse 1.5s infinite ease-in-out;
 }
 .skeleton-loader-line.short {
-  width: 60%;
+  width: 50%; /* Adjusted width */
 }
 .skeleton-loader-line.medium {
-  width: 80%;
+  width: 75%; /* Adjusted width */
 }
 .skeleton-loader-line.long {
   width: 100%;
@@ -897,54 +1021,46 @@ a:hover {
   .btn-animated-border::before { animation: none; }
   .btn.ripple-active::after { animation: none !important; opacity: 0 !important;}
   .welcome-banner::before { transition: none !important; }
-  .bg-logo { animation: none !important; }
+  .bg-logo { animation: none !important; } /* Reverted to .bg-logo */
   .login-page .styled-form .form-group { animation: none !important; opacity: 1 !important; transform: none !important;}
   .styled-list li.animated-item, .styled-table tr.animated-item { animation: none !important; opacity: 1 !important; transform: none !important; }
   .user-profile-avatar { transition: none !important; }
   .modal-close-btn { transition: none !important; transform: none !important; }
+
+  /* Ensure modals appear instantly in reduced motion */
+  .modal, .modal.modal-active, .modal.modal-closing-backdrop {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none !important;
+  }
+  .modal-content, .modal-content.modal-open, .modal-content.modal-closing {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }
 
 /* Original styles from your file, adjusted or integrated */
+/* Many of these have been replaced or integrated into the new, more systematic design.
+   Keeping a few here for specific overrides or clarity if needed, but the structure
+   above covers most elements. */
+
+/* Explicitly ensure form input sizing is correct after general resets */
 input[type="text"],
 input[type="password"],
 input[type="email"] {
-    width: calc(100% - 0px); /* Adjusted for new padding, removed old 24px */
-    padding: var(--spacing-sm) var(--spacing-md); /* Consistent padding */
-    margin-bottom: 0; /* Handled by form-group */
-    border: 1px solid var(--color-input-border);
-    border-radius: var(--border-radius);
-    font-size: 1em;
-    box-sizing: border-box;
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    width: 100%; /* Ensure full width within its container */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="email"]:focus {
-    border-color: var(--color-primary-light); /* Using var(--color-primary-light) */
-    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2); /* Using rgba var */
-    outline: none;
-}
-
-label {
-    display: block;
-    text-align: left;
-    margin-bottom: var(--spacing-xs); /* Use spacing variable */
-    font-weight: var(--font-weight-medium); /* Use font-weight variable */
-    color: var(--color-dark); /* Use color variable */
-}
-
-.error { /* This seems to be a generic class, replaced by error-message */
+/* The error class for general use, now more integrated with message-area */
+.error {
   color: var(--color-danger);
-  margin-top: 15px;
+  margin-top: var(--spacing-md); /* Use spacing variable */
   font-weight: var(--font-weight-medium);
 }
 
-#message { /* For admin group management messages, use message-area */
-    margin-top: var(--spacing-md);
-    font-weight: var(--font-weight-medium);
-}
-
+/* The #message div should now use the message-area styles */
 #message.success {
     color: var(--color-success);
 }
@@ -955,10 +1071,95 @@ label {
 
 .form-wrapper {
   position: relative;
-  display: inline-block;
+  display: flex; /* Changed to flex for better centering of form-container */
+  justify-content: center;
+  align-items: center;
+  width: 100%; /* Ensure it takes full width for responsive design */
+  max-width: 550px; /* Match the login card's max-width */
 }
 
-/* bg-logo styles are now above, for login page, and integrated with animations */
-/* These specific .bg-logo styles are now handled by the .login-page > .bg-logo and .form-wrapper .card-top-left/bottom-right */
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+  h1 { font-size: 2.2rem; }
+  h2 { font-size: 1.8rem; }
+  h3 { font-size: 1.5rem; }
+  .welcome-title { font-size: 2.8rem; letter-spacing: -1px; }
+  .welcome-message { font-size: 1rem; }
+  .form-container .form-title { font-size: 2rem; }
+  .form-container .form-subtitle { font-size: 1rem; }
 
-/* The original .form-wrapper:hover .bg-logo is now integrated into the login-page:hover .bg-logo and login-button.hovered selection */
+  .btn-lg {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 1rem;
+  }
+
+  .card {
+    padding: var(--spacing-lg);
+  }
+
+  .styled-form .form-row {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  .styled-form .form-row .form-group {
+    min-width: 100%; /* Full width on small screens */
+  }
+
+  .user-profile-avatar {
+    width: 70px;
+    height: 70px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .welcome-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--spacing-lg);
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr; /* Stack on small screens */
+  }
+
+  #toast-container {
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    max-width: 90%;
+  }
+
+  .modal-content {
+    width: 95%; /* Ensure modal is responsive */
+  }
+
+  .bg-logo { /* Adjust logos for smaller screens */
+    width: 180px; /* Smaller size for mobile */
+    height: auto;
+    filter: blur(8px); /* Less blur */
+  }
+  .bg-logo.logo-top-left {
+    top: 0%;
+    left: 0%;
+  }
+  .bg-logo.logo-bottom-right {
+    bottom: 0%;
+    right: 0%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header .app-title {
+    font-size: 1.8rem;
+  }
+  .app-header .header-content {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .app-header .header-nav-links {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+  }
+  .app-header .header-nav-link {
+    width: 90%;
+  }
+}

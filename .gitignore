@@ -22,3 +22,4 @@
 *.code-workspace
 .vercel
 package-lock.json
+okta-sf-SAML.xml
