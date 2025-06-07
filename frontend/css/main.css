@@ -184,6 +184,12 @@ a:hover {
   animation: subtleGlow 2s infinite ease-in-out;
 }
 
+.login-button.login-button-clicked {
+  /* Important: Ensure this animation doesn't interfere with the :active state's transform if clicked multiple times quickly. */
+  /* The 'forwards' fill mode will keep the 100% state until class is removed. */
+  animation: loginButtonClickPulse 0.25s ease-out forwards; /* Short and crisp duration */
+}
+
 /* Button Ripple Effect */
 .btn::after {
   content: "";

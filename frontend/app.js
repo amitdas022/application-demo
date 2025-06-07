@@ -400,17 +400,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const usernameInput = loginForm.querySelector('input[name="username"]');
         const passwordInput = loginForm.querySelector('input[name="password"]');
         const errorMessageElement = document.getElementById('error-message');
-        const submitButton = loginForm.querySelector('button[type="submit"]');
+        const submitButton = loginForm.querySelector('button[type="submit"]'); // This is the login-button
 
-        if (submitButton) {
-          submitButton.classList.add('loading');
-          submitButton.classList.remove('ripple-active'); // Ensure no lingering ripple
+        // Start: New animation logic for login button
+        if (submitButton && !submitButton.classList.contains('loading') && !submitButton.classList.contains('login-button-clicked')) {
+          // Add the click animation class
+          submitButton.classList.add('login-button-clicked');
+          submitButton.classList.remove('ripple-active'); // Stop ripple if it's somehow active
+
+          // Listen for the animation to end
+          submitButton.addEventListener('animationend', function handleAnimationEnd() {
+            // Remove this specific listener to avoid it firing multiple times
+            submitButton.removeEventListener('animationend', handleAnimationEnd);
+
+            // Now, add the loading class
+            // Check if still relevant (e.g. user hasn't spammed click)
+            if (submitButton.classList.contains('login-button-clicked')) {
+                submitButton.classList.add('loading');
+            }
+            // The login-button-clicked class can be removed after loading starts, or when login attempt finishes
+            // For now, let's remove it when the login attempt (success/failure) is done (in the finally block)
+
+          }, { once: true }); // Ensure the listener is called only once per click animation
+
+          // Fallback timeout in case animationend doesn't fire (e.g. if animation duration is 0 or display is none)
+          // Duration should match animation-duration (0.25s = 250ms)
+          setTimeout(() => {
+            if (submitButton.classList.contains('login-button-clicked') && !submitButton.classList.contains('loading')) {
+                console.warn('Login button animationend event fallback triggered.');
+                submitButton.classList.add('loading');
+            }
+          }, 260); // A bit longer than animation
+
+        } else if (submitButton && (submitButton.classList.contains('loading') || submitButton.classList.contains('login-button-clicked'))) {
+          // If button is already loading or animating, don't do anything
+          return;
         }
+        // End: New animation logic
 
         try {
+          // Ensure login logic is not executed if button is already processing
+          // The 'loading' or 'login-button-clicked' check at the start of the event listener should prevent re-entry
+          // for the most part.
+          // The display of the spinner is now handled by the animationend/timeout callback.
           await login(usernameInput.value, passwordInput.value, errorMessageElement);
         } finally {
-          if (submitButton) submitButton.classList.remove('loading');
+          if (submitButton) {
+            submitButton.classList.remove('loading');
+            submitButton.classList.remove('login-button-clicked'); // Clean up animation class
+          }
         }
       });
     }
