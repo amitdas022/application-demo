@@ -1,18 +1,12 @@
-<!-- frontend/admin-group.html -->
-<!-- This page allows administrators to manage 'admin' role assignments for users
-     and view users who currently have the 'admin' role.
-     Interactions are handled by frontend/app.js. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Group Management</title>
-    <!-- Main stylesheet for general layout and component styling -->
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <!-- Common application header with navigation and logout -->
     <header class="app-header">
         <div class="container header-content">
             <div class="header-nav-links">
@@ -24,58 +18,45 @@
         </div>
     </header>
 
-    <!-- Main content area for group/role management -->
     <main class="admin-crud-page">
         <div class="container animated-container">
-            <!-- Section for assigning or unassigning the 'admin' role to a user -->
             <section id="admin-role-management" class="card form-section">
                 <h2 class="card-title">Manage 'Admin' Role Assignments</h2>
                 <p class="section-description">Enter a User ID (e.g., auth0|xxxxxxxxxxxx) to add or remove them from the 'admin' role.</p>
-                <!-- Form for admin role management -->
                 <form id="manage-admin-role-form" class="styled-form">
                     <div class="form-group">
                         <label for="admin-role-userId">User ID</label>
-                        <!-- Input field for the Auth0 User ID (sub) -->
                         <input type="text" id="admin-role-userId" name="admin-role-userId" placeholder="Enter User ID (e.g., auth0|xxxx)" required>
                         <span class="input-focus-animation"></span>
                     </div>
                     <div class="form-actions">
-                        <!-- Button to trigger adding the user to the 'admin' role -->
                         <button type="button" id="add-to-admin-role-button" class="btn btn-primary btn-submit-animated">
                             Add to Admin Role
                         </button>
-                        <!-- Button to trigger removing the user from the 'admin' role -->
                         <button type="button" id="remove-from-admin-role-button" class="btn btn-danger btn-submit-animated">
                             Remove from Admin Role
                         </button>
                     </div>
                 </form>
-                <!-- Area to display success or error messages for role management operations -->
                 <div id="admin-role-message" class="message-area" aria-live="polite"></div>
             </section>
 
             <hr class="section-divider">
 
-            <!-- Section for viewing users who currently have the 'admin' role -->
             <section id="view-admin-users" class="card list-section">
                 <h2 class="card-title">Users with 'Admin' Role</h2>
-                <!-- Button to trigger loading the list of admin users -->
                 <button id="load-admin-users-button" class="btn btn-secondary btn-load-animated">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em" style="margin-right: 0.5em; vertical-align: middle;"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM13 7V11H17V13H11V7H13Z"></path></svg>
                     Load Admin Users
                 </button>
                 <div class="list-container">
-                    <!-- Unordered list where admin users will be dynamically inserted by app.js -->
                     <ul id="admin-users-list" class="styled-list item-list">
-                        <!-- Admin users will be listed here by frontend/app.js -->
-                    </ul>
+                        </ul>
                 </div>
-                <!-- Area to display messages related to loading admin users (e.g., loading status, errors) -->
                 <div id="load-admin-users-message" class="message-area" aria-live="polite"></div>
             </section>
         </div>
     </main>
-    <!-- Main application JavaScript file: handles UI interactions, API calls, authentication state -->
     <script src="app.js"></script>
 </body>
 </html>

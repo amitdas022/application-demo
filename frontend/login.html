@@ -9,10 +9,6 @@
 <body>
   <main class="login-page">
     <div class="login-wrapper">
-
-      <img src="assets/okta-logo.png" alt="Okta Logo" class="bg-logo top-left" />
-      <img src="assets/auth0-logo.png" alt="Auth0 Logo" class="bg-logo bottom-right" />
-
       <div class="form-wrapper">
         <img src="assets/okta-logo.png" alt="Okta Logo" class="bg-logo card-top-left" />
         <img src="assets/auth0-logo.png" alt="Auth0 Logo" class="bg-logo card-bottom-right" />
@@ -44,19 +40,6 @@
     </div>
   </main>
 
-  <script>
-    const loginBtn = document.querySelector('.login-button');
-    const logos = document.querySelectorAll('.bg-logo');
-
-    loginBtn.addEventListener('mouseenter', () => {
-      logos.forEach(logo => logo.classList.add('reveal'));
-    });
-
-    loginBtn.addEventListener('mouseleave', () => {
-      logos.forEach(logo => logo.classList.remove('reveal'));
-    });
-  </script>
-
   <script src="app.js"></script>
-</body>
+  </body>
 </html>

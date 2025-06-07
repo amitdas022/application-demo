@@ -46,13 +46,13 @@ async function login(username, password, errorMessageElement) {
       // Handle login failure (e.g., invalid credentials).
       // Attempt to parse error JSON from the backend, or use a default error message.
       const error = await response.json().catch(() => ({ error: 'Unknown error from server.' }));
-      displayMessage(errorMessageElement, `Login failed: ${error.error || 'Invalid credentials.'}`, 'error', 'error-message');
+      displayMessage(errorMessageElement, `Login failed: ${error.error || 'Invalid credentials.'}`, 'error', 'error-message', 0, true); // Added shake animation for error
     }
   } catch (error) {
     // Handle network errors or other issues during the login process.
     console.error('Login error:', error);
     const message = 'Invalid credentials or error during login.';
-    displayMessage(errorMessageElement, message, 'error', 'error-message');
+    displayMessage(errorMessageElement, message, 'error', 'error-message', 0, true); // Added shake animation for error
   }
 }
 
@@ -95,7 +95,7 @@ function checkAuthAndRedirect() {
       // in localStorage via the browser console (see README for example).
       const dummyUser = {
         id: 'local-test-user-sub', // Simulated Auth0 user ID (sub)
-        profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com', picture: 'path/to/default-avatar.png' },
+        profile: { firstName: 'Local', lastName: 'Tester', name: 'Local Tester', email: 'test@example.com', picture: 'assets/default-avatar.png' }, // Added default picture
         roles: ['user'] // Simulate a basic user role; add 'admin' to test admin features.
       };
       localStorage.setItem('authenticatedUser', JSON.stringify(dummyUser)); // Store the dummy user.
@@ -110,15 +110,16 @@ function checkAuthAndRedirect() {
   const currentPage = window.location.pathname; // Get the current page's path.
 
   // Select DOM elements used for displaying user information and controlling UI visibility.
-  const userProfileNameEl = document.getElementById('user-profile-name');       // Displays user's name.
-  const userProfileEmailEl = document.getElementById('user-profile-email');     // Displays user's email.
-  const userProfileRolesEl = document.getElementById('user-profile-roles');     // Displays user's roles.
-  const adminLinksContainerEl = document.getElementById('admin-links-container'); // Container for admin-specific links.
-  const logoutButton = document.getElementById('logout-button');                // The logout button.
+  const userProfileNameEl = document.getElementById('user-profile-name');
+  const userProfileEmailEl = document.getElementById('user-profile-email');
+  const userProfileRolesEl = document.getElementById('user-profile-roles');
+  const userProfilePictureEl = document.getElementById('user-profile-picture'); // New: Profile picture element
+  const adminLinksContainerEl = document.getElementById('admin-links-container');
+  const logoutButton = document.getElementById('logout-button');
 
   // Control visibility of the logout button based on authentication state.
   if (logoutButton) {
-    logoutButton.style.display = authenticatedUser ? 'block' : 'none'; // Show if user is authenticated, hide otherwise.
+    logoutButton.style.display = authenticatedUser ? 'block' : 'none';
   }
 
   // Handle behavior if a user is authenticated (i.e., authenticatedUser object exists).
@@ -132,47 +133,51 @@ function checkAuthAndRedirect() {
     if (userProfileEmailEl && authenticatedUser.profile) {
       userProfileEmailEl.textContent = authenticatedUser.profile.email || 'N/A';
     }
-    // Display user roles, joined by a comma, or a default message if no roles.
+    // New: Set profile picture
+    if (userProfilePictureEl && authenticatedUser.profile?.picture) {
+        userProfilePictureEl.src = authenticatedUser.profile.picture;
+    } else if (userProfilePictureEl) {
+        userProfilePictureEl.src = 'assets/default-avatar.png'; // Fallback to default
+    }
+
     if (userProfileRolesEl) {
       userProfileRolesEl.textContent = authenticatedUser.roles?.join(', ') || 'No roles assigned';
-      // For debugging, log the roles to the console.
-      // console.log('Current user roles from localStorage:', authenticatedUser.roles);
     }
 
     // Determine if the authenticated user has an 'admin' role.
-    // This checks if the 'roles' array exists and includes the string 'admin' (case-insensitive).
     const isAdmin = authenticatedUser.roles && authenticatedUser.roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin');
 
     // Show or hide the admin links container based on whether the user is an admin.
     if (adminLinksContainerEl) {
       adminLinksContainerEl.style.display = isAdmin ? 'block' : 'none';
+      // New: Staggered entry for dashboard cards if on protected.html
+      if (currentPage.endsWith('protected.html')) {
+        const userInfoCard = document.getElementById('user-info-details');
+        if (userInfoCard) userInfoCard.style.animationDelay = '0.4s';
+        if (adminLinksContainerEl) adminLinksContainerEl.style.animationDelay = '0.6s';
+      }
     }
 
     // Redirection logic for logged-in users.
     if (isAdmin) {
-      // Admin users can access any page.
-      // If an admin is somehow on the login page, redirect them to the protected page.
       if (currentPage.endsWith('login.html')) {
         window.location.href = 'protected.html';
       }
     } else {
-      // Non-admin users.
-      // If a non-admin user tries to access an admin-only page, show an alert and redirect them.
       const isAdminPage = currentPage.endsWith('admin.html') || currentPage.endsWith('admin-group.html') || currentPage.endsWith('admin-user-crud.html');
       if (isAdminPage) {
-        alert('Access Denied: You do not have permission to view this page.');
-        window.location.href = 'protected.html'; // Redirect to a general protected page.
+        // Use toast notification instead of alert for access denied
+        showToast('Access Denied: You do not have permission to view this page.', 'error');
+        window.location.href = 'protected.html';
       }
-      // If a non-admin (but logged-in) user is on the login page, redirect them to the protected page.
       if (currentPage.endsWith('login.html')) {
         window.location.href = 'protected.html';
       }
     }
   } else {
-    // User is not authenticated (no authenticatedUser object in localStorage).
-    // If an unauthenticated user tries to access a protected page or any admin page, redirect them to the login page.
+    // User is not authenticated
     const isProtectedPage = currentPage.endsWith('protected.html');
-    const isAdminAreaPage = currentPage.includes('admin'); // Covers admin.html, admin-group.html, etc.
+    const isAdminAreaPage = currentPage.includes('admin');
     if (isProtectedPage || isAdminAreaPage) {
       window.location.href = 'login.html';
     }
@@ -187,41 +192,68 @@ function checkAuthAndRedirect() {
  * @param {'success' | 'error' | 'info'} [type='info'] - The type of message, influencing its styling.
  * @param {string} [baseClass='message-area'] - The base CSS class for the message element.
  * @param {number} [autoHideDelay=0] - Delay in milliseconds to auto-hide the message. If 0, message remains visible.
+ * @param {boolean} [addShake=false] - If true, adds a shake animation to the error message.
  */
-function displayMessage(element, text, type = 'info', baseClass = 'message-area', autoHideDelay = 0) {
+function displayMessage(element, text, type = 'info', baseClass = 'message-area', autoHideDelay = 0, addShake = false) {
   if (element) {
-    // Set the message text.
     element.textContent = text;
-    // Apply CSS classes: the base class, the message type class, and 'show' to trigger visibility/animation.
     element.className = `${baseClass} ${type} show`;
+    if (addShake && type === 'error') {
+      element.classList.add('shake');
+      // Remove shake class after animation
+      element.addEventListener('animationend', () => {
+        element.classList.remove('shake');
+      }, { once: true });
+    }
 
-    // If an autoHideDelay is specified, set a timeout to remove the 'show' class,
-    // which can trigger a CSS transition to hide the message.
     if (autoHideDelay > 0) {
       setTimeout(() => {
         element.classList.remove('show');
-        // Optional: Fully reset the element's content and class after the hide animation.
-        // This might be useful if the element is reused for many messages.
-        // setTimeout(() => {
-        //   element.textContent = '';
-        //   element.className = baseClass;
-        // }, 300); // Duration should match the CSS transition-duration for hiding.
       }, autoHideDelay);
     }
   }
 }
 
+/**
+ * Displays a transient "toast" notification.
+ * @param {string} message - The message to display.
+ * @param {'success' | 'error' | 'info'} [type='info'] - The type of toast.
+ * @param {number} [duration=3000] - How long the toast should be visible in milliseconds.
+ */
+function showToast(message, type = 'info', duration = 3000) {
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
+
+  // Auto-hide after duration
+  setTimeout(() => {
+    toast.classList.add('hide');
+    toast.addEventListener('animationend', () => {
+      toast.remove();
+      if (toastContainer.children.length === 0) {
+        toastContainer.remove(); // Remove container if no toasts left
+      }
+    }, { once: true });
+  }, duration);
+}
+
+
 // Main event listener that runs when the DOM is fully loaded.
-// Sets up page-specific event listeners and performs initial checks like authentication.
 document.addEventListener('DOMContentLoaded', () => {
-  // Code for welcome page title animation (if the element exists).
-  // This applies a staggered animation to letters within the '.welcome-title' element.
+  // Code for welcome page title animation.
   if (window.location.pathname.endsWith('/') || window.location.pathname.endsWith('index.html')) {
     const welcomeTitle = document.querySelector('.welcome-title');
     if (welcomeTitle) {
       const letters = welcomeTitle.querySelectorAll('span');
       letters.forEach((span, index) => {
-        // CSS variable '--letter-index' is likely used by a CSS animation to create a delay or offset.
         span.style.setProperty('--letter-index', index);
       });
     }
@@ -229,31 +261,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Setup for the login page.
   if (window.location.pathname.endsWith('login.html')) {
-    const loginForm = document.getElementById('login-form'); // Get the login form element.
-    if (loginForm) {
-      // Add a submit event listener to the login form.
-      loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent the default form submission (which would cause a page reload).
+    const loginForm = document.getElementById('login-form');
+    const loginButton = document.querySelector('.login-button'); // Get the login button
+    const bgLogos = document.querySelectorAll('.login-page > .bg-logo'); // Global logos
 
-        // Get username and password input values.
+    // Event listener for global background logo animation on button hover
+    if (loginButton) {
+      loginButton.addEventListener('mouseenter', () => {
+        bgLogos.forEach(logo => logo.classList.add('reveal')); // This class should trigger the `logoPulseDrift` animation.
+      });
+      loginButton.addEventListener('mouseleave', () => {
+        bgLogos.forEach(logo => logo.classList.remove('reveal'));
+      });
+    }
+
+    if (loginForm) {
+      // Form field entrance animation
+      const formGroups = loginForm.querySelectorAll('.form-group');
+      formGroups.forEach((group, index) => {
+        group.style.setProperty('--form-field-delay', `${0.2 + index * 0.1}s`);
+      });
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
         const usernameInput = loginForm.querySelector('input[name="username"]');
         const passwordInput = loginForm.querySelector('input[name="password"]');
-        const errorMessageElement = document.getElementById('error-message'); // Element for displaying login errors.
-        const submitButton = loginForm.querySelector('button[type="submit"]'); // Login button for loading state.
+        const errorMessageElement = document.getElementById('error-message');
+        const submitButton = loginForm.querySelector('button[type="submit"]');
 
-        // Toggle loading state on the submit button.
-        if (submitButton) submitButton.classList.add('loading');
+        if (submitButton) {
+            submitButton.classList.add('loading');
+            submitButton.classList.remove('ripple-active'); // Ensure no lingering ripple
+        }
+
         try {
-          // Call the login function with credentials and the error message element.
           await login(usernameInput.value, passwordInput.value, errorMessageElement);
         } finally {
-          // Remove loading state from the submit button after login attempt.
           if (submitButton) submitButton.classList.remove('loading');
         }
       });
     }
-    // Note: If a user is already authenticated and lands on login.html,
-    // checkAuthAndRedirect() will handle redirecting them away.
   }
 
   // Add event listener for the global logout button if it exists.
@@ -262,68 +310,62 @@ document.addEventListener('DOMContentLoaded', () => {
     globalLogoutButton.addEventListener('click', logout);
   }
 
+  // Add ripple effect to all buttons
+  document.querySelectorAll('.btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+      // Only apply ripple if not loading
+      if (!this.classList.contains('loading')) {
+        this.classList.add('ripple-active');
+        // Remove the class after the animation to allow it to be re-triggered
+        this.addEventListener('animationend', () => {
+          this.classList.remove('ripple-active');
+        }, { once: true });
+      }
+    });
+  });
+
+
   // Setup for the Admin Group Management page (admin-group.html).
-  // This page is now effectively "User Role Management" for the 'admin' role.
   if (window.location.pathname.endsWith('admin-group.html')) {
-    // Select DOM elements for role management.
     const addToAdminRoleButton = document.getElementById('add-to-admin-role-button');
     const removeFromAdminRoleButton = document.getElementById('remove-from-admin-role-button');
-    const userIdInput = document.getElementById('admin-role-userId'); // Input for Auth0 User ID (sub).
-    const messageDiv = document.getElementById('admin-role-message'); // For displaying success/error messages.
+    const userIdInput = document.getElementById('admin-role-userId');
+    const messageDiv = document.getElementById('admin-role-message');
     const loadAdminUsersButton = document.getElementById('load-admin-users-button');
-    const adminUsersList = document.getElementById('admin-users-list'); // UL element to list admin users.
-    const loadAdminUsersMessage = document.getElementById('load-admin-users-message'); // Message area for loading admins.
+    const adminUsersList = document.getElementById('admin-users-list');
+    const loadAdminUsersMessage = document.getElementById('load-admin-users-message');
 
-    /**
-     * Manages assigning or unassigning the 'admin' role to a user via a backend API call.
-     * @async
-     * @param {'assignRoles' | 'unassignRoles'} action - The action to perform.
-     * @param {HTMLButtonElement} buttonElement - The button that triggered the action, for loading state.
-     */
     async function manageAdminRole(action, buttonElement) {
-      const userIdToManage = userIdInput.value; // Get the User ID (Auth0 sub) from the input field.
-      // Validate that a User ID has been entered.
+      const userIdToManage = userIdInput.value;
       if (userIdToManage) {
         try {
-          // Toggle loading state on the button.
           if (buttonElement) buttonElement.classList.add('loading');
-          // Call the backend API to assign or unassign the 'admin' role.
           const response = await fetch('/api/auth0-user-management', {
-            method: 'PUT', // Backend expects PUT for role modifications.
-            headers: {
-              'Content-Type': 'application/json',
-              // No specific user authorization header needed here if the backend uses an M2M token
-              // for calls to the Auth0 Management API.
-            },
-            // The backend API expects an 'action', 'userId', and 'roles' array.
-            // This example specifically targets the 'admin' role.
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['admin'] })
           });
 
-          // Handle the response from the backend.
-          if (response.ok) { // HTTP 204 (No Content) is typical for successful role assignment.
+          if (response.ok) {
             const successMessage = action === 'assignRoles' ? 'User added to admin role successfully.' : 'User removed from admin role successfully.';
-            displayMessage(messageDiv, successMessage, 'success', 'message-area', 3000);
+            showToast(successMessage, 'success'); // Use toast for success
+            userIdInput.value = ''; // Clear input
+            loadAdminUsers(); // Refresh the list
           } else {
-            // Parse error response from the backend.
             const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
-            displayMessage(messageDiv, `Failed to update roles: ${errorData.error || 'Server error'}`, 'error');
+            showToast(`Failed to update roles: ${errorData.error || 'Server error'}`, 'error'); // Use toast for error
           }
         } catch (error) {
-          // Handle network errors or other issues.
           console.error("Error updating roles:", error);
-          displayMessage(messageDiv, 'Client-side error: ' + error.message, 'error');
+          showToast('Client-side error: ' + error.message, 'error'); // Use toast for network errors
         } finally {
-          // Remove loading state from the button.
           if (buttonElement) buttonElement.classList.remove('loading');
         }
       } else {
-        // If no User ID was entered, display an error message.
-        displayMessage(messageDiv, 'Please enter a User ID (Auth0 `sub`).', 'error');
+        showToast('Please enter a User ID (Auth0 `sub`).', 'error'); // Use toast for validation
       }
     }
 
-    // Add event listeners to the "Add to Admin Role" and "Remove from Admin Role" buttons.
     if (addToAdminRoleButton) {
       addToAdminRoleButton.addEventListener('click', () => manageAdminRole('assignRoles', addToAdminRoleButton));
     }
@@ -331,149 +373,122 @@ document.addEventListener('DOMContentLoaded', () => {
       removeFromAdminRoleButton.addEventListener('click', () => manageAdminRole('unassignRoles', removeFromAdminRoleButton));
     }
 
-    /**
-     * Loads and displays users who have the 'admin' role from the backend.
-     * @async
-     */
     async function loadAdminUsers() {
-      displayMessage(loadAdminUsersMessage, 'Loading admin users...', 'info'); // Show loading message.
-      adminUsersList.innerHTML = ''; // Clear any previously listed admin users.
-      if (loadAdminUsersButton) loadAdminUsersButton.classList.add('loading'); // Set button to loading state.
+      displayMessage(loadAdminUsersMessage, 'Loading admin users...', 'info');
+      adminUsersList.innerHTML = '';
+      if (loadAdminUsersButton) loadAdminUsersButton.classList.add('loading');
 
       try {
-        // Fetch users in the 'admin' role from the backend.
-        // The backend /api/auth0-user-management should handle the 'listUsersInRole' action
-        // by querying the Auth0 Management API.
         const response = await fetch('/api/auth0-user-management?action=listUsersInRole&roleName=admin');
         if (response.ok) {
-          const users = await response.json(); // Parse the list of admin users.
+          const users = await response.json();
           if (users.length === 0) {
             adminUsersList.innerHTML = '<li>No users currently in the admin role.</li>';
           } else {
-            // Render each admin user in the list.
-            users.forEach(user => {
+            users.forEach((user, index) => {
               const li = document.createElement('li');
-              // Auth0 user object might have user.user_id or user.id, and user.name or user.email.
               li.textContent = `${user.name || user.email} (ID: ${user.user_id || user.id})`;
+              li.classList.add('animated-item'); // Add class for animation
+              li.style.setProperty('--item-index', index); // Set delay
               adminUsersList.appendChild(li);
             });
           }
-          displayMessage(loadAdminUsersMessage, '', 'info'); // Clear the loading message.
+          displayMessage(loadAdminUsersMessage, '', 'info');
         } else {
-          // Handle errors from the backend.
           const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
           displayMessage(loadAdminUsersMessage, `Error: ${error.error || 'Failed to load admin users.'}`, 'error');
         }
       } catch (err) {
-        // Handle network errors.
         console.error("Load admin users error:", err);
         displayMessage(loadAdminUsersMessage, `Network error: ${err.message}`, 'error');
       } finally {
-        if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading'); // Reset button loading state.
+        if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading');
       }
     }
 
-    // Add event listener to the "Load Admin Users" button.
     if (loadAdminUsersButton) {
       loadAdminUsersButton.addEventListener('click', loadAdminUsers);
     }
-    // Optionally, load admin users when the page initially loads:
-    // loadAdminUsers();
   }
 
   // Setup for the Admin User CRUD page (admin-user-crud.html).
   if (window.location.pathname.endsWith('admin-user-crud.html')) {
-    // Select DOM elements for CRUD operations.
     const createUserForm = document.getElementById('create-user-form');
-    const createMessage = document.getElementById('create-message'); // For create user feedback.
+    const createMessage = document.getElementById('create-message');
     const loadUsersButton = document.getElementById('load-users-button');
-    const userListContainer = document.getElementById('user-list-container'); // Where the list of users is rendered.
-    const listMessage = document.getElementById('list-message'); // For user list feedback.
+    const userListContainer = document.getElementById('user-list-container');
+    const listMessage = document.getElementById('list-message');
+    const userListSkeleton = document.getElementById('user-list-skeleton'); // Skeleton loader
 
-    // Modal elements for editing a user.
     const editModal = document.getElementById('edit-user-modal');
-    const editUserIdInput = document.getElementById('edit-userId');     // Hidden input for user's Auth0 ID.
+    const editUserIdInput = document.getElementById('edit-userId');
     const editFirstNameInput = document.getElementById('edit-firstName');
     const editLastNameInput = document.getElementById('edit-lastName');
-    const editEmailInput = document.getElementById('edit-email');       // Email might be read-only or require special handling.
+    const editEmailInput = document.getElementById('edit-email');
     const saveEditButton = document.getElementById('save-edit-button');
-    const editMessage = document.getElementById('edit-message');        // For edit user feedback.
+    const editMessage = document.getElementById('edit-message');
     const createUserSubmitButton = createUserForm ? createUserForm.querySelector('button[type="submit"]') : null;
 
-    // Event listener for the Create User form submission.
     if (createUserForm) {
       createUserForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent default form submission.
-        displayMessage(createMessage, 'Creating user...', 'info'); // Clear previous messages.
+        event.preventDefault();
+        displayMessage(createMessage, 'Creating user...', 'info');
 
-        // Gather user data from the form. This structure is for creating an Auth0 user.
         const userData = {
           firstName: document.getElementById('firstName').value,
           lastName: document.getElementById('lastName').value,
           email: document.getElementById('email').value,
-          password: document.getElementById('password').value // Initial password for the new user.
+          password: document.getElementById('password').value
         };
 
-        if (createUserSubmitButton) createUserSubmitButton.classList.add('loading'); // Set button to loading.
+        if (createUserSubmitButton) createUserSubmitButton.classList.add('loading');
         try {
-          // Call the backend API to create a new user.
           const response = await fetch('/api/auth0-user-management', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // The backend API expects 'action: createUser' and the 'userData' payload.
             body: JSON.stringify({ action: 'createUser', userData })
           });
 
           if (response.ok) {
-            const newUser = await response.json(); // Get the created user data.
-            displayMessage(createMessage, `User ${newUser.email} created successfully (ID: ${newUser.user_id || newUser.id})`, 'success', 'message-area', 3000);
-            createUserForm.reset(); // Reset the form fields.
-            loadUsers(); // Refresh the list of users to include the new one.
+            const newUser = await response.json();
+            showToast(`User ${newUser.email} created successfully!`, 'success'); // Use toast
+            createUserForm.reset();
+            loadUsers();
           } else {
-            // Handle creation errors from the backend.
             const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-            displayMessage(createMessage, `Error: ${error.error || error.message || 'Failed to create user.'}`, 'error');
+            displayMessage(createMessage, `Error: ${error.error || error.message || 'Failed to create user.'}`, 'error', 'message-area', 0, true); // Shake on error
           }
         } catch (err) {
-          // Handle network errors.
           console.error("Create user network error:", err);
-          displayMessage(createMessage, `Network error: ${err.message}`, 'error');
+          displayMessage(createMessage, `Network error: ${err.message}`, 'error', 'message-area', 0, true); // Shake on error
         } finally {
-          if (createUserSubmitButton) createUserSubmitButton.classList.remove('loading'); // Reset button loading state.
+          if (createUserSubmitButton) createUserSubmitButton.classList.remove('loading');
         }
       });
     }
 
-    /**
-     * Loads all users from the backend and renders them in the UI.
-     * @async
-     */
     async function loadUsers() {
-      displayMessage(listMessage, 'Loading users...', 'info'); // Show loading message.
-      userListContainer.innerHTML = ''; // Clear existing user list.
-      if (loadUsersButton) loadUsersButton.classList.add('loading'); // Set button to loading.
+      displayMessage(listMessage, 'Loading users...', 'info');
+      userListContainer.innerHTML = ''; // Clear existing
+      if (loadUsersButton) loadUsersButton.classList.add('loading');
+      if (userListSkeleton) userListSkeleton.style.display = 'flex'; // Show skeleton
 
       try {
-        // Fetch all users from the backend.
         const response = await fetch('/api/auth0-user-management?action=listUsers');
         if (response.ok) {
-          const users = await response.json(); // Parse the list of users.
+          const users = await response.json();
           if (users.length === 0) {
             userListContainer.innerHTML = '<p>No users found.</p>';
           } else {
             const ul = document.createElement('ul');
-            ul.className = 'styled-list item-list'; // Apply CSS classes for styling.
-            // Create list items for each user with their details and action buttons.
-            users.forEach(user => {
+            ul.className = 'styled-list item-list';
+            users.forEach((user, index) => {
               const li = document.createElement('li');
-              // Extract user details. Auth0 user objects have fields like user_id, given_name, family_name, email.
-              const userId = user.user_id || user.id || user.sub; // Auth0 User ID (subject claim).
-              const firstName = user.given_name || ''; // User's first name.
-              const lastName = user.family_name || '';  // User's last name.
-              const email = user.email || '';           // User's email.
+              const userId = user.user_id || user.id || user.sub;
+              const firstName = user.given_name || '';
+              const lastName = user.family_name || '';
+              const email = user.email || '';
 
-              // Populate list item HTML with user info and action buttons.
-              // Data attributes on buttons store user data for easy access in event handlers.
               li.innerHTML = `
                 <div class="user-item-info">
                   <span class="user-name">${firstName} ${lastName}</span>
@@ -485,84 +500,68 @@ document.addEventListener('DOMContentLoaded', () => {
                   <button data-userid="${userId}" class="delete-user-btn btn btn-danger btn-sm">Delete</button>
                 </div>
               `;
+              li.classList.add('animated-item'); // Add class for animation
+              li.style.setProperty('--item-index', index); // Set delay
               ul.appendChild(li);
             });
             userListContainer.appendChild(ul);
 
-            // Attach event listeners to the dynamically created "Edit" and "Delete" buttons.
             document.querySelectorAll('.edit-user-btn').forEach(btn => btn.addEventListener('click', handleEditUser));
             document.querySelectorAll('.delete-user-btn').forEach(btn => btn.addEventListener('click', handleDeleteUser));
           }
-          displayMessage(listMessage, '', 'info'); // Clear loading message.
+          displayMessage(listMessage, '', 'info');
         } else {
-          // Handle errors from the backend when loading users.
           const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
           displayMessage(listMessage, `Error loading users: ${error.error || error.message || 'Failed to load users.'}`, 'error');
         }
       } catch (err) {
-        // Handle network errors.
         console.error("Load users network error:", err);
         displayMessage(listMessage, `Network error: ${err.message}`, 'error');
       } finally {
-        if (loadUsersButton) loadUsersButton.classList.remove('loading'); // Reset button loading state.
+        if (loadUsersButton) loadUsersButton.classList.remove('loading');
+        if (userListSkeleton) userListSkeleton.style.display = 'none'; // Hide skeleton
       }
     }
 
-    // Add event listener to the "Load Users" button.
     if (loadUsersButton) {
       loadUsersButton.addEventListener('click', loadUsers);
     }
 
-    /**
-     * Closes the edit user modal.
-     */
     function closeEditModal() {
       if (editModal) {
-        editModal.style.display = 'none'; // Hide the modal.
+        editModal.style.display = 'none';
+        editModal.querySelector('.modal-content').classList.remove('animated-modal'); // Remove bounce class
       }
     }
-    // Make closeEditModal globally accessible if the modal's close button (X)
-    // uses it directly in HTML (e.g., onclick="closeEditModal()").
     window.closeEditModal = closeEditModal;
 
-    /**
-     * Handles the click event for an "Edit User" button.
-     * Populates the edit modal with the user's data and displays the modal.
-     * @param {Event} event - The click event object.
-     */
     function handleEditUser(event) {
-      const btn = event.target.closest('.edit-user-btn'); // Get the button that was clicked.
-      if (!btn) return; // Should not happen if listener is correctly attached.
+      const btn = event.target.closest('.edit-user-btn');
+      if (!btn) return;
 
-      // Retrieve user data stored in the button's data attributes.
-      editUserIdInput.value = btn.dataset.userid;       // Auth0 User ID (sub).
+      editUserIdInput.value = btn.dataset.userid;
       editFirstNameInput.value = btn.dataset.firstname;
       editLastNameInput.value = btn.dataset.lastname;
-      editEmailInput.value = btn.dataset.email;         // Email is often not updatable or requires special permissions.
-                                                        // The backend should handle what can be updated.
-      displayMessage(editMessage, '', 'info'); // Clear any previous messages in the modal.
-      if (editModal) editModal.style.display = 'flex'; // Display the modal (use 'flex' for CSS centering).
+      editEmailInput.value = btn.dataset.email;
+
+      displayMessage(editMessage, '', 'info');
+      if (editModal) {
+        editModal.style.display = 'flex';
+        editModal.querySelector('.modal-content').classList.add('animated-modal'); // Add bounce class
+      }
     }
 
-    // Add event listener for the "Save Changes" button in the edit modal.
     if (saveEditButton) {
       saveEditButton.addEventListener('click', async () => {
-        const userIdToUpdate = editUserIdInput.value; // Get the Auth0 User ID.
-        // Prepare the 'updates' payload for the Auth0 Management API (PATCH users endpoint).
-        // Only include fields that are intended to be updated.
-        // Email updates are sensitive and might be disallowed or require specific handling by the backend.
+        const userIdToUpdate = editUserIdInput.value;
         const updates = {
           given_name: editFirstNameInput.value,
           family_name: editLastNameInput.value
-          // email: editEmailInput.value, // Example: If email updates were allowed.
         };
-        displayMessage(editMessage, 'Saving changes...', 'info'); // Show saving message.
+        displayMessage(editMessage, 'Saving changes...', 'info');
 
-        if (saveEditButton) saveEditButton.classList.add('loading'); // Set button to loading.
+        if (saveEditButton) saveEditButton.classList.add('loading');
         try {
-          // Call the backend API to update the user.
-          // The backend should use the 'PATCH' method for Auth0 user updates.
-          // Frontend sends 'PUT' here, backend's /api/auth0-user-management maps this to PATCH for Auth0.
           const response = await fetch('/api/auth0-user-management', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -570,71 +569,54 @@ document.addEventListener('DOMContentLoaded', () => {
           });
 
           if (response.ok) {
-            displayMessage(editMessage, 'User updated successfully!', 'success', 'message-area', 3000);
-            closeEditModal(); // Close the modal on success.
-            loadUsers();      // Refresh the user list to show changes.
+            showToast('User updated successfully!', 'success'); // Use toast
+            closeEditModal();
+            loadUsers();
           } else {
-            // Handle update errors from the backend.
             const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-            displayMessage(editMessage, `Error: ${error.error || error.message || 'Failed to update user.'}`, 'error');
+            displayMessage(editMessage, `Error: ${error.error || error.message || 'Failed to update user.'}`, 'error', 'message-area', 0, true); // Shake on error
           }
         } catch (err) {
-          // Handle network errors.
           console.error("Update user network error:", err);
-          displayMessage(editMessage, `Network error: ${err.message}`, 'error');
+          displayMessage(editMessage, `Network error: ${err.message}`, 'error', 'message-area', 0, true); // Shake on error
         } finally {
-          if (saveEditButton) saveEditButton.classList.remove('loading'); // Reset button loading state.
+          if (saveEditButton) saveEditButton.classList.remove('loading');
         }
       });
     }
 
-    /**
-     * Handles the click event for a "Delete User" button.
-     * Prompts for confirmation and then calls the backend to delete the user.
-     * @async
-     * @param {Event} event - The click event object.
-     */
     async function handleDeleteUser(event) {
-      const btn = event.target.closest('.delete-user-btn'); // Get the button that was clicked.
+      const btn = event.target.closest('.delete-user-btn');
       if (!btn) return;
-      const userIdToDelete = btn.dataset.userid; // Get the Auth0 User ID from the button's data attribute.
+      const userIdToDelete = btn.dataset.userid;
 
-      // Confirm with the user before deleting, as this is irreversible.
       if (confirm(`Are you sure you want to delete user with ID: ${userIdToDelete}? This action cannot be undone.`)) {
-        displayMessage(listMessage, 'Deleting user...', 'info'); // Show deleting message.
-        btn.classList.add('loading'); // Set the specific delete button to loading state.
+        displayMessage(listMessage, 'Deleting user...', 'info');
+        btn.classList.add('loading');
         try {
-          // Call the backend API to delete the user.
           const response = await fetch('/api/auth0-user-management', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
           });
 
-          // Auth0 Management API returns 204 No Content on successful deletion.
           if (response.ok) {
-            displayMessage(listMessage, 'User deleted successfully.', 'success', 'message-area', 3000);
-            loadUsers(); // Refresh the user list.
+            showToast('User deleted successfully.', 'success'); // Use toast
+            loadUsers();
           } else {
-            // Handle deletion errors from the backend.
             const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-            displayMessage(listMessage, `Error deleting user: ${error.error || error.message || 'Failed to delete.'}`, 'error');
+            displayMessage(listMessage, `Error deleting user: ${error.error || error.message || 'Failed to delete.'}`, 'error', 'message-area', 0, true); // Shake on error
           }
         } catch (err) {
-          // Handle network errors.
           console.error("Delete user network error:", err);
           displayMessage(listMessage, `Network error: ${err.message}`, 'error');
         } finally {
-          btn.classList.remove('loading'); // Reset button loading state.
+          btn.classList.remove('loading');
         }
       }
     }
-    // Optionally, load all users when the CRUD page initially loads:
-    // loadUsers();
   }
 
   // Call checkAuthAndRedirect on every page load.
-  // This ensures the user's authentication state is checked, UI is updated accordingly,
-  // and redirection rules are applied consistently across the application.
   checkAuthAndRedirect();
 });

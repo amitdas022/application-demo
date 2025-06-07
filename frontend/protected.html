@@ -1,19 +1,12 @@
-<!-- frontend/protected.html -->
-<!-- This page serves as the main dashboard for authenticated users.
-     It displays user-specific information (profile, roles) and provides access
-     to administrative tools if the user has an 'admin' role.
-     Dynamic content and visibility are managed by frontend/app.js. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Dashboard</title>
-    <!-- Main stylesheet for general layout, dashboard styling, and component styling -->
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <!-- Common application header with page title and logout button -->
     <header class="app-header">
         <div class="container header-content">
             <h1 class="app-title">My Dashboard</h1>
@@ -21,44 +14,33 @@
         </div>
     </header>
 
-    <!-- Main content area for the user dashboard -->
     <main class="dashboard-page">
         <div class="container animated-container">
-            <!-- Welcome banner, personalized with the user's name by app.js -->
             <section class="welcome-banner">
+                <img id="user-profile-picture" class="user-profile-avatar" src="assets/default-avatar.png" alt="User Profile Picture">
                 <h2>Welcome back, <span id="user-profile-name" class="highlight">User</span>!</h2>
-                <!-- <p>This is your personal space. Explore and manage your account.</p> -->
+                <p>This is your personal space. Explore and manage your account.</p>
             </section>
 
-            <!-- Section displaying user profile details, populated by app.js -->
             <section id="user-info-details" class="user-details-card card">
                 <h3 class="card-title">Your Profile</h3>
                 <div class="detail-item">
                     <span class="detail-label">Email:</span>
-                    <!-- User's email will be inserted here by app.js -->
                     <span id="user-profile-email" class="detail-value">N/A</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Roles:</span>
-                    <!-- User's roles will be inserted here by app.js -->
                     <span id="user-profile-roles" class="detail-value">N/A</span>
                 </div>
             </section>
 
-            <!-- Section for Administrator Tools.
-                 This section's visibility (display:none; by default) is controlled by app.js
-                 based on whether the authenticated user has an 'admin' role. -->
             <section id="admin-links-container" class="admin-section card" style="display:none;">
                 <h3 class="card-title admin-title">Administrator Tools</h3>
                 <p>Access the main administration panel to manage users and groups.</p>
-                <!-- Link to the main admin panel -->
                 <a href="admin.html" id="admin-panel-btn" class="btn btn-primary btn-block">Go to Admin Panel</a>
             </section>
         </div>
     </main>
-    <!-- Main application JavaScript file.
-         Handles authentication checks, populating user-specific data (name, email, roles),
-         and controlling the visibility of admin-specific sections. -->
     <script src="app.js"></script>
 </body>
 </html>

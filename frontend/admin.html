@@ -1,64 +1,46 @@
-<!-- frontend/admin.html -->
-<!-- This page serves as the main dashboard for administrators, providing links
-     to various administrative sections like User Management and Group Management.
-     It relies on frontend/app.js for authentication checks and logout functionality. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Control Panel</title>
-    <!-- Main stylesheet for general layout and component styling -->
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <!-- Common application header with navigation and logout -->
     <header class="app-header">
         <div class="container header-content">
-            <a href="protected.html" class="btn btn-outline-light header-nav-link">
-                &larr; Back to Dashboard
-            </a>
+            <div class="header-nav-links">
+                <a href="protected.html" class="btn btn-outline-light header-nav-link">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
             <h1 class="app-title">Admin Control Panel</h1>
             <button id="logout-button" class="btn btn-outline-light">Logout</button>
         </div>
     </header>
 
-    <!-- Main content area for the admin panel -->
     <main class="admin-page">
         <div class="container animated-container">
-            <!-- Introductory section for the admin panel -->
             <section class="admin-intro">
                 <h2>Administration Area</h2>
                 <p>Welcome! From here, you can manage various aspects of the application. Please select a task below to get started.</p>
             </section>
 
-            <!-- Section containing links to different admin management tools -->
             <section class="admin-features">
                 <h3 class="section-title">Management Tools</h3>
-                <!-- Grid layout for feature cards -->
                 <div class="feature-grid">
-                    <!-- Card linking to User CRUD Management page -->
                     <a href="admin-user-crud.html" class="feature-card card btn-animated-border">
                         <h4>User Management</h4>
                         <p>Create, view, update, and delete user accounts.</p>
                     </a>
-                    <!-- Card linking to Group (Role) Management page -->
                     <a href="admin-group.html" class="feature-card card btn-animated-border">
                         <h4>Group Management</h4>
                         <p>Define and manage user groups and their permissions (e.g., assign 'admin' role).</p>
                     </a>
-                    <!-- Additional feature cards can be added here following the same pattern -->
-                    <!-- Example:
-                    <a href="admin-settings.html" class="feature-card card btn-animated-border">
-                        <h4>Application Settings</h4>
-                        <p>Configure global application settings.</p>
-                    </a>
-                    -->
-                </div>
+                    </div>
             </section>
         </div>
     </main>
-    <!-- Main application JavaScript file: handles UI interactions, API calls, authentication state (including logout) -->
     <script src="app.js"></script>
 </body>
 </html>
