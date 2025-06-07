@@ -20,17 +20,8 @@ body {
   font-family: var(--font-family-sans-serif);
   line-height: var(--line-height-base);
   color: var(--color-text);
-  /* Use the new soft background color for the page */
-  background-color: var(--color-background);
-  /* Dynamic background gradient for visual interest - now softer, more aligned with image */
-  background-image: linear-gradient(
-    135deg,
-    var(--color-background) 0%,
-    var(--color-primary-light) 50%,
-    var(--color-background) 100%
-  );
-  background-size: 200% 200%;
-  animation: backgroundPan 30s linear infinite alternate; /* Subtle, slow animation */
+  background-color: var(--color-background); /* Solid base color */
+  /* REMOVE or comment out: background-image: linear-gradient(...) and animation: backgroundPan ... */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
@@ -592,11 +583,16 @@ a:hover {
 
 /* --- Application Header --- */
 .app-header {
-  background-color: var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb), 0.3); /* Primary color but semi-transparent */
+  backdrop-filter: blur(10px); /* Subtle blur for the header */
+  -webkit-backdrop-filter: blur(10px);
   color: var(--color-text-on-primary);
   padding: var(--spacing-md) 0;
-  box-shadow: var(--box-shadow);
-  animation: slideDownFadeIn 0.5s ease-out;
+  box-shadow: var(--box-shadow-sm); /* Softer shadow */
+  position: sticky; /* Make header sticky */
+  top: 0;
+  z-index: 10; /* Ensure header is above other content */
+  /* animation: slideDownFadeIn 0.5s ease-out; */ /* Animation might conflict with sticky, can be removed or adjusted */
 }
 .app-header .header-content {
   display: flex;
@@ -764,6 +760,52 @@ a:hover {
   justify-content: center;
 }
 
+/* New style for glassy content cards on various pages */
+.glassy-content-card {
+    background-color: rgba(255, 255, 255, var(--glass-background-alpha)); /* Semi-transparent white */
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Semi-transparent border */
+    backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
+    -webkit-backdrop-filter: blur(var(--glass-blur)); /* For Safari compatibility */
+    border-radius: var(--border-radius); /* From variables.css */
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
+    padding: var(--spacing-xl); /* Consistent padding */
+    position: relative; /* Needed for z-index and stacking context */
+    z-index: 1; /* Ensure it's above the background scene elements */
+    overflow: hidden; /* Recommended for backdrop-filter containers */
+    margin-top: var(--spacing-xl); /* Add some top margin if needed below a fixed header */
+    margin-bottom: var(--spacing-xl); /* Add some bottom margin */
+}
+
+/* Adjustments for cards within the glassy container */
+.glassy-content-card .card {
+    background-color: rgba(255, 255, 255, 0.1); /* Even more transparent than the main glass */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Fainter border */
+    box-shadow: none; /* Remove individual card shadow if the main glassy card has one */
+    /* Potentially adjust padding if the parent glassy-content-card already provides enough */
+}
+
+.glassy-content-card .card .card-title {
+    color: var(--color-primary-dark); /* Ensure it's readable */
+}
+.glassy-content-card .card .card-title::after {
+    background-color: var(--color-primary); /* Ensure underline is visible */
+}
+
+.glassy-content-card .card p,
+.glassy-content-card .card .detail-label,
+.glassy-content-card .card .detail-value,
+.glassy-content-card .card label {
+    color: var(--color-dark); /* Or a color that ensures good contrast */
+}
+
+.glassy-content-card .card a {
+     color: var(--color-primary-dark);
+}
+.glassy-content-card .card a:hover {
+     color: var(--color-primary);
+}
+
+
 .animated-container {
   animation: slideUpFadeIn 0.7s 0.2s ease-out forwards;
   opacity: 0;
@@ -851,6 +893,42 @@ a:hover {
   transform: translateY(30px); /* Start further down */
   animation: slideUpFadeIn 0.6s ease forwards; /* Slightly slower and more pronounced */
   animation-delay: var(--form-field-delay); /* JS will set this */
+}
+
+/* --- Text Readability Enhancements --- */
+
+/* General text within glassy content card */
+.glassy-content-card > p,
+.glassy-content-card > ul > li,
+.glassy-content-card > ol > li {
+    color: var(--color-dark); /* Ensure dark text for readability */
+}
+
+/* Text in admin-intro on admin.html */
+.glassy-content-card .admin-intro p {
+    color: var(--color-dark);
+}
+
+/* Placeholder text styling for input fields */
+.styled-form input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8; /* Ensure it's visible but distinct from entered text */
+}
+.styled-form input::-webkit-input-placeholder { /* WebKit, Blink, Edge */
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+.styled-form input::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+.styled-form input:-ms-input-placeholder { /* Internet Explorer 10-11 */
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+.styled-form input::-ms-input-placeholder { /* Microsoft Edge */
+    color: var(--color-text-muted);
+    opacity: 0.8;
 }
 
 /* Dashboard & Admin Pages */
@@ -1063,33 +1141,6 @@ a:hover {
   overflow-x: auto;
   margin-top: var(--spacing-lg);
 }
-.styled-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: var(--spacing-lg);
-}
-.styled-table th,
-.styled-table td {
-  text-align: left;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
-}
-.styled-table th {
-  background-color: var(--color-light);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-}
-.styled-table tr:hover {
-  background-color: var(--color-background);
-}
-/* Staggered entry for table rows */
-.styled-table tr.animated-item {
-  opacity: 0;
-  transform: translateY(20px); /* Uses enhanced itemSlideUpFadeIn */
-  animation: itemSlideUpFadeIn 0.5s ease-out forwards;
-  animation-delay: var(--item-index);
-  will-change: transform, opacity;
-}
 
 .list-container {
   margin-top: var(--spacing-lg);
@@ -1249,21 +1300,8 @@ input[type="email"] {
   box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
-/* The error class for general use, now more integrated with message-area */
-.error {
-  color: var(--color-danger);
-  margin-top: var(--spacing-md); /* Use spacing variable */
-  font-weight: var(--font-weight-medium);
-}
-
 /* The #message div should now use the message-area styles */
-#message.success {
-  color: var(--color-success);
-}
-
-#message.error {
-  color: var(--color-danger);
-}
+/* These rules were removed as no element with id="message" was found. */
 
 .form-wrapper {
   position: relative;
