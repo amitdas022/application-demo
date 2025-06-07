@@ -11,10 +11,11 @@
   to { opacity: 0; }
 }
 
+/* Adjusted for a more pronounced "slide up" and "fade in" effect */
 @keyframes slideUpFadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(40px); /* Start further down */
   }
   to {
     opacity: 1;
@@ -22,10 +23,11 @@
   }
 }
 
+/* Adjusted for a more pronounced "slide down" and "fade in" effect */
 @keyframes slideDownFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-40px); /* Start further up */
   }
   to {
     opacity: 1;
@@ -33,16 +35,16 @@
   }
 }
 
-/* Welcome Title Animation */
+/* Welcome Title Animation - More bouncy */
 @keyframes letterWave {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-15px); } /* Increased bounce height */
 }
 
-/* Button Glow Animation */
+/* Button Glow Animation - More prominent */
 @keyframes subtleGlow {
-  0%, 100% { box-shadow: 0 0 5px rgba(var(--color-primary-rgb), 0.3), 0 0 10px rgba(var(--color-primary-rgb), 0.2); }
-  50% { box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.5), 0 0 20px rgba(var(--color-primary-rgb), 0.3); }
+  0%, 100% { box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4), 0 0 15px rgba(var(--color-primary-rgb), 0.3); }
+  50% { box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.6), 0 0 30px rgba(var(--color-primary-rgb), 0.4); }
 }
 
 /* Input Focus Underline Animation */
@@ -67,7 +69,7 @@
 /* Simple Pulse for Attention */
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
+  50% { transform: scale(1.05); } /* Slightly stronger pulse */
 }
 
 /* Loading Spinner (example) */
@@ -75,32 +77,44 @@
   to { transform: rotate(360deg); }
 }
 
-/* --- NEW ANIMATIONS --- */
-
-/* Dynamic Background Gradient */
-@keyframes backgroundPan {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* --- New: Page Transition Animations --- */
+@keyframes slideInLeftAndRight {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  30% { /* Full opacity and across screen quickly */
+    transform: translateX(0%);
+    opacity: 1;
+  }
+  70% { /* Hold full opacity across screen */
+    transform: translateX(0%);
+    opacity: 1;
+  }
+  100% { /* Slide out to the right */
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
+
 
 /* Input Field Glow on Focus (enhancement) */
 @keyframes inputGlow {
   from { box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0.25); }
-  to { box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.4); }
+  to { box-shadow: 0 0 0 0.3rem rgba(var(--color-primary-rgb), 0.4); } /* Stronger glow */
 }
 
-/* Button Click Ripple Effect */
+/* Button Click Ripple Effect - Slightly faster and more distinct */
 @keyframes buttonRipple {
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(2); opacity: 0; }
+  0% { transform: scale(0); opacity: 0.7; } /* Start with more opacity */
+  100% { transform: scale(2.5); opacity: 0; } /* Larger spread */
 }
 
 /* Error Message Shake */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); } /* Increased shake distance */
+  20%, 40%, 60%, 80% { transform: translateX(8px); }
 }
 
 /* Toast Notification Entry/Exit */
@@ -121,23 +135,31 @@
   100% { background-color: var(--color-border); }
 }
 
-/* Staggered Item Entry (for lists/tables) */
+/* Staggered Item Entry (for lists/tables) - Slightly more pronounced */
 @keyframes itemSlideUpFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Modal Bounce/Overshoot (applied to modal-content) */
+/* Modal Bounce In (applied to modal-content.modal-open) - More bouncy and noticeable */
 @keyframes modalBounceIn {
-  0% { opacity: 0; transform: translateY(50px) scale(0.9); }
-  75% { opacity: 1; transform: translateY(-10px) scale(1.02); }
+  0% { opacity: 0; transform: translateY(100px) scale(0.8); } /* Start lower and smaller */
+  60% { opacity: 1; transform: translateY(-20px) scale(1.05); } /* Overshoot higher */
+  80% { transform: translateY(10px) scale(0.98); } /* Slight undershoot */
   100% { transform: translateY(0) scale(1); }
 }
 
-/* Background Logo Pulse/Drift */
+/* NEW: Modal Bounce Out (applied to modal-content.modal-closing) */
+@keyframes modalBounceOut {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  20% { transform: translateY(-10px) scale(1.02); } /* Slight bounce up before exit */
+  100% { opacity: 0; transform: translateY(80px) scale(0.8); } /* Exit lower and smaller */
+}
+
+/* Background Logo Pulse/Drift - More active movement */
 @keyframes logoPulseDrift {
   0%, 100% { transform: translate(0, 0) scale(0.9); opacity: 0.5; }
-  25% { transform: translate(5px, 5px) scale(1); opacity: 0.6; }
-  50% { transform: translate(-5px, -5px) scale(0.9); opacity: 0.5; }
-  75% { transform: translate(5px, -5px) scale(1); opacity: 0.6; }
+  25% { transform: translate(10px, 10px) scale(1.1); opacity: 0.7; } /* More movement and scale */
+  50% { transform: translate(-10px, -10px) scale(0.9); opacity: 0.5; }
+  75% { transform: translate(10px, -10px) scale(1.1); opacity: 0.7; }
 }

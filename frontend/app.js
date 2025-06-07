@@ -135,9 +135,9 @@ function checkAuthAndRedirect() {
     }
     // New: Set profile picture
     if (userProfilePictureEl && authenticatedUser.profile?.picture) {
-        userProfilePictureEl.src = authenticatedUser.profile.picture;
+      userProfilePictureEl.src = authenticatedUser.profile.picture;
     } else if (userProfilePictureEl) {
-        userProfilePictureEl.src = 'assets/default-avatar.png'; // Fallback to default
+      userProfilePictureEl.src = 'assets/default-avatar.png'; // Fallback to default
     }
 
     if (userProfileRolesEl) {
@@ -150,9 +150,10 @@ function checkAuthAndRedirect() {
     // Show or hide the admin links container based on whether the user is an admin.
     if (adminLinksContainerEl) {
       adminLinksContainerEl.style.display = isAdmin ? 'block' : 'none';
-      // New: Staggered entry for dashboard cards if on protected.html
+      // Staggered entry for dashboard cards if on protected.html
       if (currentPage.endsWith('protected.html')) {
         const userInfoCard = document.getElementById('user-info-details');
+        // Delay applied directly to the card elements to trigger animation
         if (userInfoCard) userInfoCard.style.animationDelay = '0.4s';
         if (adminLinksContainerEl) adminLinksContainerEl.style.animationDelay = '0.6s';
       }
@@ -245,6 +246,116 @@ function showToast(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
+/**
+ * Creates and displays a custom confirmation modal.
+ * @param {string} title - The title of the confirmation.
+ * @param {string} message - The message body of the confirmation.
+ * @param {function} onConfirmCallback - Function to execute if user confirms.
+ * @param {function} [onCancelCallback] - Optional function to execute if user cancels.
+ */
+function showConfirmModal(title, message, onConfirmCallback, onCancelCallback = () => { }) {
+  // Remove any existing modal first to prevent duplicates
+  let existingModal = document.getElementById('custom-confirm-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const modalHTML = `
+        <div id="custom-confirm-modal" class="modal" aria-labelledby="confirm-modal-title" aria-modal="true" role="dialog">
+            <div class="modal-content card">
+                <header class="modal-header">
+                    <h3 id="confirm-modal-title" class="card-title">${title}</h3>
+                    <button class="modal-close-btn" aria-label="Close dialog">&times;</button>
+                </header>
+                <div class="modal-body">
+                    <p>${message}</p>
+                </div>
+                <footer class="modal-footer">
+                    <button id="confirm-yes-btn" class="btn btn-danger">Confirm</button>
+                    <button id="confirm-no-btn" class="btn btn-secondary">Cancel</button>
+                </footer>
+            </div>
+        </div>
+    `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  const modalElement = document.getElementById('custom-confirm-modal');
+  const confirmYesBtn = document.getElementById('confirm-yes-btn');
+  const confirmNoBtn = document.getElementById('confirm-no-btn');
+  const closeModalBtn = modalElement.querySelector('.modal-close-btn');
+  const modalContent = modalElement.querySelector('.modal-content');
+
+  // Show the modal container and trigger open animations
+  modalElement.classList.remove('modal-closing-backdrop'); // Ensure no lingering closing class
+  modalElement.classList.add('modal-active');
+  modalContent.classList.remove('modal-closing'); // Ensure no lingering closing class
+  modalContent.classList.add('modal-open');
+
+
+  const closeAndCleanup = () => {
+    // Trigger closing animations
+    modalContent.classList.remove('modal-open');
+    modalContent.classList.add('modal-closing');
+    modalElement.classList.remove('modal-active');
+    modalElement.classList.add('modal-closing-backdrop');
+
+    // Wait for animations to finish before removing from DOM
+    let animationEndCount = 0;
+    const totalAnimations = 2; // one for modalContent, one for modalElement
+
+    const onAnimationEnd = () => {
+      animationEndCount++;
+      if (animationEndCount === totalAnimations) {
+        modalContent.removeEventListener('animationend', onContentAnimationEnd);
+        modalElement.removeEventListener('animationend', onElementAnimationEnd);
+        modalElement.remove(); // Remove modal from DOM after all animations
+      }
+    };
+
+    const onContentAnimationEnd = (event) => {
+      // Ensure this is the bounce animation, not some other child animation
+      if (event.animationName === 'modalBounceOut' || event.animationName === 'fadeOut') {
+        onAnimationEnd();
+      }
+    };
+
+    const onElementAnimationEnd = (event) => {
+      // Ensure this is the backdrop fade out
+      if (event.animationName === 'fadeOut') {
+        onAnimationEnd();
+      }
+    };
+
+    modalContent.addEventListener('animationend', onContentAnimationEnd, { once: true });
+    modalElement.addEventListener('animationend', onElementAnimationEnd, { once: true });
+  };
+
+
+  confirmYesBtn.addEventListener('click', () => {
+    onConfirmCallback();
+    closeAndCleanup();
+  });
+
+  confirmNoBtn.addEventListener('click', () => {
+    onCancelCallback();
+    closeAndCleanup();
+  });
+
+  closeModalBtn.addEventListener('click', () => {
+    onCancelCallback();
+    closeAndCleanup();
+  });
+
+  // Close modal if clicking outside content (on overlay)
+  modalElement.addEventListener('click', (event) => {
+    if (event.target === modalElement) { // Ensure click is on the modal container itself
+      onCancelCallback();
+      closeAndCleanup();
+    }
+  });
+}
+
 
 // Main event listener that runs when the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', () => {
@@ -263,17 +374,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname.endsWith('login.html')) {
     const loginForm = document.getElementById('login-form');
     const loginButton = document.querySelector('.login-button'); // Get the login button
-    const bgLogos = document.querySelectorAll('.login-page > .bg-logo'); // Global logos
+    const formWrapper = document.querySelector('.form-wrapper'); // Parent of bg-logos
 
     // Event listener for global background logo animation on button hover
-    if (loginButton) {
+    if (loginButton && formWrapper) {
       loginButton.addEventListener('mouseenter', () => {
-        bgLogos.forEach(logo => logo.classList.add('reveal')); // This class should trigger the `logoPulseDrift` animation.
+        formWrapper.classList.add('hovered-by-button'); // Add a class to the form-wrapper or button
       });
       loginButton.addEventListener('mouseleave', () => {
-        bgLogos.forEach(logo => logo.classList.remove('reveal'));
+        formWrapper.classList.remove('hovered-by-button');
       });
     }
+
 
     if (loginForm) {
       // Form field entrance animation
@@ -291,8 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = loginForm.querySelector('button[type="submit"]');
 
         if (submitButton) {
-            submitButton.classList.add('loading');
-            submitButton.classList.remove('ripple-active'); // Ensure no lingering ripple
+          submitButton.classList.add('loading');
+          submitButton.classList.remove('ripple-active'); // Ensure no lingering ripple
         }
 
         try {
@@ -312,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Add ripple effect to all buttons
   document.querySelectorAll('.btn').forEach(button => {
-    button.addEventListener('click', function(e) {
+    button.addEventListener('click', function (e) {
       // Only apply ripple if not loading
       if (!this.classList.contains('loading')) {
         this.classList.add('ripple-active');
@@ -330,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addToAdminRoleButton = document.getElementById('add-to-admin-role-button');
     const removeFromAdminRoleButton = document.getElementById('remove-from-admin-role-button');
     const userIdInput = document.getElementById('admin-role-userId');
-    const messageDiv = document.getElementById('admin-role-message');
+    const messageDiv = document.getElementById('admin-role-message'); // Renamed from messageDiv for clarity
     const loadAdminUsersButton = document.getElementById('load-admin-users-button');
     const adminUsersList = document.getElementById('admin-users-list');
     const loadAdminUsersMessage = document.getElementById('load-admin-users-message');
@@ -389,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const li = document.createElement('li');
               li.textContent = `${user.name || user.email} (ID: ${user.user_id || user.id})`;
               li.classList.add('animated-item'); // Add class for animation
-              li.style.setProperty('--item-index', index); // Set delay
+              li.style.setProperty('--item-index', `${index * 0.05}s`); // Set delay for staggered animation
               adminUsersList.appendChild(li);
             });
           }
@@ -408,6 +520,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loadAdminUsersButton) {
       loadAdminUsersButton.addEventListener('click', loadAdminUsers);
+      // Trigger initial load on page load if the list is empty (optional)
+      if (adminUsersList.children.length === 0) { // Check if the container has content
+        loadAdminUsers();
+      }
     }
   }
 
@@ -428,6 +544,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveEditButton = document.getElementById('save-edit-button');
     const editMessage = document.getElementById('edit-message');
     const createUserSubmitButton = createUserForm ? createUserForm.querySelector('button[type="submit"]') : null;
+
+    // --- Modal Control Functions for Edit User Modal ---
+    function showEditModal() {
+      if (editModal) {
+        const modalContent = editModal.querySelector('.modal-content');
+        // Ensure no closing animation classes are present
+        editModal.classList.remove('modal-closing-backdrop');
+        modalContent.classList.remove('modal-closing');
+
+        editModal.style.display = 'flex'; // Make it visible
+        editModal.classList.add('modal-active'); // Activate backdrop fade-in
+        modalContent.classList.add('modal-open'); // Trigger content bounce-in
+      }
+    }
+
+    function closeEditModal() {
+      if (editModal) {
+        const modalContent = editModal.querySelector('.modal-content');
+
+        // Trigger closing animations
+        modalContent.classList.remove('modal-open');
+        modalContent.classList.add('modal-closing');
+        editModal.classList.remove('modal-active'); // Start backdrop fade-out
+        editModal.classList.add('modal-closing-backdrop');
+
+        // Wait for both animations to finish before hiding display
+        let animationEndCount = 0;
+        const totalAnimations = 2; // For modalContent and editModal (backdrop)
+
+        const onAnimationEnd = () => {
+          animationEndCount++;
+          if (animationEndCount === totalAnimations) {
+            modalContent.removeEventListener('animationend', onContentAnimationEnd);
+            editModal.removeEventListener('animationend', onElementAnimationEnd);
+            editModal.style.display = 'none'; // Finally hide the modal
+            // Clean up closing classes
+            modalContent.classList.remove('modal-closing');
+            editModal.classList.remove('modal-closing-backdrop');
+          }
+        };
+
+        const onContentAnimationEnd = (event) => {
+          // Ensure this is the correct animation (e.g., modalBounceOut or fadeOut)
+          if (event.animationName === 'modalBounceOut' || event.animationName === 'fadeOut') {
+            onAnimationEnd();
+          }
+        };
+
+        const onElementAnimationEnd = (event) => {
+          // Ensure this is the correct animation (e.g., fadeOut for backdrop)
+          if (event.animationName === 'fadeOut') {
+            onAnimationEnd();
+          }
+        };
+
+        modalContent.addEventListener('animationend', onContentAnimationEnd, { once: true });
+        editModal.addEventListener('animationend', onElementAnimationEnd, { once: true });
+      }
+    }
+    // Make closeEditModal globally accessible for HTML `onclick` (if any, though prefer JS listener)
+    window.closeEditModal = closeEditModal;
+
 
     if (createUserForm) {
       createUserForm.addEventListener('submit', async (event) => {
@@ -501,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
               `;
               li.classList.add('animated-item'); // Add class for animation
-              li.style.setProperty('--item-index', index); // Set delay
+              li.style.setProperty('--item-index', `${index * 0.05}s`); // Set delay for staggered animation
               ul.appendChild(li);
             });
             userListContainer.appendChild(ul);
@@ -525,15 +703,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loadUsersButton) {
       loadUsersButton.addEventListener('click', loadUsers);
-    }
-
-    function closeEditModal() {
-      if (editModal) {
-        editModal.style.display = 'none';
-        editModal.querySelector('.modal-content').classList.remove('animated-modal'); // Remove bounce class
+      // Trigger initial load on page load if the list is empty (optional)
+      if (userListContainer.children.length === 0) { // Check if the container has content
+        loadUsers();
       }
     }
-    window.closeEditModal = closeEditModal;
+
+    // Event listener for the 'x' button on the edit modal
+    const editModalCloseBtn = editModal.querySelector('.modal-close-btn');
+    if (editModalCloseBtn) {
+      editModalCloseBtn.addEventListener('click', closeEditModal);
+    }
+    // Event listener for clicking outside the modal content (on the overlay)
+    editModal.addEventListener('click', (event) => {
+      if (event.target === editModal) { // Check if the click was directly on the modal backdrop
+        closeEditModal();
+      }
+    });
+
 
     function handleEditUser(event) {
       const btn = event.target.closest('.edit-user-btn');
@@ -545,10 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
       editEmailInput.value = btn.dataset.email;
 
       displayMessage(editMessage, '', 'info');
-      if (editModal) {
-        editModal.style.display = 'flex';
-        editModal.querySelector('.modal-content').classList.add('animated-modal'); // Add bounce class
-      }
+      showEditModal(); // Call the new function to show modal smoothly
     }
 
     if (saveEditButton) {
@@ -590,33 +774,97 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!btn) return;
       const userIdToDelete = btn.dataset.userid;
 
-      if (confirm(`Are you sure you want to delete user with ID: ${userIdToDelete}? This action cannot be undone.`)) {
-        displayMessage(listMessage, 'Deleting user...', 'info');
-        btn.classList.add('loading');
-        try {
-          const response = await fetch('/api/auth0-user-management', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
-          });
+      // Replace confirm() with custom modal
+      showConfirmModal(
+        'Confirm Deletion',
+        `Are you sure you want to delete user with ID: ${userIdToDelete}? This action cannot be undone.`,
+        async () => { // On Confirm Callback
+          displayMessage(listMessage, 'Deleting user...', 'info');
+          btn.classList.add('loading');
+          try {
+            const response = await fetch('/api/auth0-user-management', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
+            });
 
-          if (response.ok) {
-            showToast('User deleted successfully.', 'success'); // Use toast
-            loadUsers();
-          } else {
-            const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-            displayMessage(listMessage, `Error deleting user: ${error.error || error.message || 'Failed to delete.'}`, 'error', 'message-area', 0, true); // Shake on error
+            if (response.ok) {
+              showToast('User deleted successfully.', 'success'); // Use toast
+              loadUsers();
+            } else {
+              const error = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
+              displayMessage(listMessage, `Error deleting user: ${error.error || error.message || 'Failed to delete.'}`, 'error', 'message-area', 0, true); // Shake on error
+            }
+          } catch (err) {
+            console.error("Delete user network error:", err);
+            displayMessage(listMessage, `Network error: ${err.message}`, 'error');
+          } finally {
+            btn.classList.remove('loading');
           }
-        } catch (err) {
-          console.error("Delete user network error:", err);
-          displayMessage(listMessage, `Network error: ${err.message}`, 'error');
-        } finally {
-          btn.classList.remove('loading');
+        },
+        () => { // On Cancel Callback
+          showToast('User deletion cancelled.', 'info');
         }
-      }
+      );
     }
   }
 
   // Call checkAuthAndRedirect on every page load.
   checkAuthAndRedirect();
+
+  // *************  Animations   *************** //
+
+  /**
+  * This function makes a given HTML element move to random positions within the visible browser window.
+  * Each element animated by this function will move independently, with its own random initial delay
+  * and subsequent random intervals between movements, ensuring they don't move in sync.
+  *
+  * @param {HTMLElement} element - The HTML element to be animated.
+  */
+  function moveLandingPageElementIndependently() {
+    const els = [...document.querySelectorAll('.scene-element')];
+    const scene = { w: window.innerWidth, h: window.innerHeight };
+    window.onresize = () => {
+      scene.w = window.innerWidth;
+      scene.h = window.innerHeight;
+    };
+
+    const objs = els.map(el => ({
+      el,
+      w: el.offsetWidth,
+      h: el.offsetHeight,
+      x: Math.random() * (scene.w - el.offsetWidth),
+      y: Math.random() * (scene.h - el.offsetHeight),
+      vx: (Math.random() - 0.5) * 3,
+      vy: (Math.random() - 0.5) * 3,
+      angle: Math.random() * 360,
+      rotationSpeed: 0.5 + Math.random() * 1.5,    // random rotation speed per element
+      morphSpeed: 300 + Math.random() * 700,       // random morph period (ms)
+      morphPhase: Math.random() * 2 * Math.PI       // random morph phase offset
+    }));
+
+    function animate(time = 0) {
+      objs.forEach(o => {
+        o.x += o.vx;
+        o.y += o.vy;
+        if (o.x < 0 || o.x + o.w > scene.w) o.vx *= -1;
+        if (o.y < 0 || o.y + o.h > scene.h) o.vy *= -1;
+
+        o.angle = (o.angle + o.rotationSpeed) % 360;
+        const morphProgress = Math.sin((time / o.morphSpeed) + o.morphPhase);
+        const scale = 0.9 + 0.1 * morphProgress;
+
+        o.el.style.transform = `translate(${o.x}px,${o.y}px) scale(${scale}) rotate(${o.angle}deg)`;
+
+        // Morph border-radius with randomized morphing
+        const r1 = 20 + 30 * Math.abs(morphProgress);
+        const r2 = 100 - r1;
+        o.el.style.borderRadius = `${r1}% ${r2}% ${r2}% ${r1}% / ${r2}% ${r1}% ${r1}% ${r2}%`;
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+  moveLandingPageElementIndependently();
+
 });
