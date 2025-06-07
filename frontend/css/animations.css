@@ -77,14 +77,26 @@
   to { transform: rotate(360deg); }
 }
 
-/* --- NEW ANIMATIONS --- */
-
-/* Dynamic Background Gradient */
-@keyframes backgroundPan {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* --- New: Page Transition Animations --- */
+@keyframes slideInLeftAndRight {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  30% { /* Full opacity and across screen quickly */
+    transform: translateX(0%);
+    opacity: 1;
+  }
+  70% { /* Hold full opacity across screen */
+    transform: translateX(0%);
+    opacity: 1;
+  }
+  100% { /* Slide out to the right */
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
+
 
 /* Input Field Glow on Focus (enhancement) */
 @keyframes inputGlow {

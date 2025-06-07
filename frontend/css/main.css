@@ -1,6 +1,6 @@
 /* frontend/css/main.css */
-@import url('./variables.css');
-@import url('./animations.css');
+@import url("./variables.css");
+@import url("./animations.css");
 
 /* --- Basic Reset & Global Styles --- */
 *,
@@ -23,7 +23,12 @@ body {
   /* Use the new soft background color for the page */
   background-color: var(--color-background);
   /* Dynamic background gradient for visual interest - now softer, more aligned with image */
-  background-image: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary-light) 50%, var(--color-background) 100%);
+  background-image: linear-gradient(
+    135deg,
+    var(--color-background) 0%,
+    var(--color-primary-light) 50%,
+    var(--color-background) 100%
+  );
   background-size: 200% 200%;
   animation: backgroundPan 30s linear infinite alternate; /* Subtle, slow animation */
   -webkit-font-smoothing: antialiased;
@@ -35,17 +40,30 @@ body {
 }
 
 /* --- Typography --- */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin-bottom: var(--spacing-md);
   font-weight: var(--font-weight-bold);
   line-height: 1.2;
   color: var(--color-primary); /* Headings use the primary color */
 }
 
-h1 { font-size: 2.8rem; } /* Larger and more impactful */
-h2 { font-size: 2.2rem; }
-h3 { font-size: 1.85rem; }
-h4 { font-size: 1.35rem; }
+h1 {
+  font-size: 2.8rem;
+} /* Larger and more impactful */
+h2 {
+  font-size: 2.2rem;
+}
+h3 {
+  font-size: 1.85rem;
+}
+h4 {
+  font-size: 1.35rem;
+}
 
 p {
   margin-bottom: var(--spacing-md);
@@ -61,6 +79,7 @@ a:hover {
   color: var(--color-primary-dark);
   text-decoration: underline;
 }
+
 
 /* --- Layout Helpers --- */
 .container {
@@ -91,7 +110,9 @@ a:hover {
   border: 1px solid transparent;
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: 1rem;
-  border-radius: var(--border-radius); /* Use new border-radius from variables */
+  border-radius: var(
+    --border-radius
+  ); /* Use new border-radius from variables */
   transition: var(--transition-base);
   text-decoration: none !important;
   position: relative; /* For ripple effect */
@@ -174,7 +195,7 @@ a:hover {
 
 /* Button Ripple Effect */
 .btn::after {
-  content: '';
+  content: "";
   position: absolute;
   border-radius: 50%;
   background-color: rgba(var(--color-white), 0.6); /* More visible ripple */
@@ -192,7 +213,6 @@ a:hover {
   animation: buttonRipple 0.6s ease-out forwards; /* Uses enhanced ripple animation */
 }
 
-
 /* Spinner for loading buttons */
 .btn-submit-animated,
 .btn-load-animated {
@@ -200,7 +220,7 @@ a:hover {
 }
 .btn-submit-animated.loading::after,
 .btn-load-animated.loading::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 1.2em;
   height: 1.2em;
@@ -223,7 +243,9 @@ a:hover {
 .card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius); /* Use new border-radius from variables */
+  border-radius: var(
+    --border-radius
+  ); /* Use new border-radius from variables */
   box-shadow: var(--box-shadow); /* Use new stronger shadow by default */
   padding: var(--spacing-xl); /* More generous padding for all cards */
   margin-bottom: var(--spacing-lg);
@@ -243,8 +265,9 @@ a:hover {
   position: relative;
   padding-bottom: var(--spacing-xs);
 }
-.card-title::after { /* Decorative underline for titles */
-  content: '';
+.card-title::after {
+  /* Decorative underline for titles */
+  content: "";
   position: absolute;
   left: 0;
   bottom: 0;
@@ -253,7 +276,6 @@ a:hover {
   background-color: var(--color-primary-light);
   border-radius: 2px;
 }
-
 
 /* --- Forms --- */
 .styled-form .form-group {
@@ -270,46 +292,61 @@ a:hover {
 
 /* New: Wrapper for input with icon */
 .input-with-icon {
-    position: relative;
-    display: flex; /* Allow icon and input to sit side-by-side */
-    align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent white border */
-    border-radius: var(--border-radius); /* Inherit from variables */
-    background-color: rgba(255, 255, 255, 0.1); /* Very light, semi-transparent background */
-    box-shadow: var(--box-shadow-sm); /* Subtle shadow for depth */
-    backdrop-filter: blur(5px); /* Less blur for inputs than card */
-    -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
-    transition: var(--transition-base);
-    overflow: hidden; /* Ensure focus animation stays within bounds */
+  position: relative;
+  display: flex; /* Allow icon and input to sit side-by-side */
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent white border */
+  border-radius: var(--border-radius); /* Inherit from variables */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.1
+  ); /* Very light, semi-transparent background */
+  box-shadow: var(--box-shadow-sm); /* Subtle shadow for depth */
+  backdrop-filter: blur(5px); /* Less blur for inputs than card */
+  -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
+  transition: var(--transition-base);
+  overflow: hidden; /* Ensure focus animation stays within bounds */
 }
 
 .input-with-icon:focus-within {
-    border-color: rgba(var(--color-primary-rgb), 0.6); /* Primary color on focus */
-    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2), var(--box-shadow); /* Glow effect */
-    background-color: rgba(255, 255, 255, 0.2); /* Slightly more opaque on focus */
+  border-color: rgba(
+    var(--color-primary-rgb),
+    0.6
+  ); /* Primary color on focus */
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2), var(--box-shadow); /* Glow effect */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.2
+  ); /* Slightly more opaque on focus */
 }
 
 .input-icon {
-    width: 50px; /* Icon size as requested */
-    height: 50px; /* Icon size as requested */
-    margin-left: var(--spacing-xs); /* Space from left edge */
-    margin-right: var(--spacing-xs); /* Space between icon and input */
-    color: var(--color-primary); /* Primary color for icons */
-    flex-shrink: 0; /* Prevent icon from shrinking */
-    z-index: 1; /* Ensure icon is above input-focus-animation */
+  width: 50px; /* Icon size as requested */
+  height: 50px; /* Icon size as requested */
+  margin-left: var(--spacing-xs); /* Space from left edge */
+  margin-right: var(--spacing-xs); /* Space between icon and input */
+  color: var(--color-primary); /* Primary color for icons */
+  flex-shrink: 0; /* Prevent icon from shrinking */
+  z-index: 1; /* Ensure icon is above input-focus-animation */
 }
-
 
 .styled-form input[type="text"],
 .styled-form input[type="password"],
 .styled-form input[type="email"] {
   display: block;
   width: 100%; /* Take remaining width */
-  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xs); /* Adjust padding for icon */
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md)
+    var(--spacing-xs); /* Adjust padding for icon */
   font-size: 1.1rem; /* Slightly larger text in inputs */
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-base);
-  color: var(--color-dark); /* Darker text for readability on light background */
+  color: var(
+    --color-dark
+  ); /* Darker text for readability on light background */
   background-color: transparent; /* Make input itself transparent within wrapper */
   border: none; /* Remove default border, handled by parent .input-with-icon */
   outline: none; /* Remove default outline */
@@ -328,7 +365,10 @@ a:hover {
   animation: none; /* Remove glow animation, handled by parent wrapper */
 }
 .styled-form input[readonly] {
-  background-color: rgba(var(--color-light), 0.5); /* Semi-transparent for glassy effect */
+  background-color: rgba(
+    var(--color-light),
+    0.5
+  ); /* Semi-transparent for glassy effect */
   opacity: 0.9;
   cursor: not-allowed;
 }
@@ -339,7 +379,11 @@ a:hover {
   left: 0;
   right: 0;
   height: 3px; /* Thicker focus line */
-  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary)); /* Gradient focus line */
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-light),
+    var(--color-primary)
+  ); /* Gradient focus line */
   transform: scaleX(0);
   transform-origin: center;
   transition: transform 0.3s ease;
@@ -368,7 +412,8 @@ a:hover {
 }
 
 /* --- Messages & Toasts --- */
-.message-area, .error-message {
+.message-area,
+.error-message {
   padding: var(--spacing-md);
   margin-top: var(--spacing-lg);
   border-radius: var(--border-radius);
@@ -378,16 +423,19 @@ a:hover {
   transition: opacity 0.3s ease, transform 0.3s ease;
   text-align: left;
 }
-.message-area.show, .error-message.show {
+.message-area.show,
+.error-message.show {
   opacity: 1;
   transform: translateY(0);
 }
-.message-area.success, .error-message.success {
+.message-area.success,
+.error-message.success {
   color: var(--color-success);
   background-color: #d4edda;
   border: 1px solid #c3e6cb;
 }
-.message-area.error, .error-message:not(.success) {
+.message-area.error,
+.error-message:not(.success) {
   color: var(--color-danger);
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
@@ -396,7 +444,6 @@ a:hover {
 .error-message.shake {
   animation: shake 0.5s ease-in-out;
 }
-
 
 /* Toast Notifications */
 #toast-container {
@@ -448,7 +495,10 @@ a:hover {
   align-items: center;
   justify-content: center;
   z-index: 1050;
-  background-color: rgba(var(--color-black), 0.6); /* Darker overlay for strong focus */
+  background-color: rgba(
+    var(--color-black),
+    0.6
+  ); /* Darker overlay for strong focus */
   opacity: 0; /* Default hidden state */
   visibility: hidden; /* Default hidden state */
   transition: opacity 0.3s ease, visibility 0s linear 0.3s; /* Fade out, then hide visibility */
@@ -464,11 +514,10 @@ a:hover {
 
 /* Modal closing backdrop animation */
 .modal.modal-closing-backdrop {
-    animation: fadeOut 0.3s ease forwards; /* Fade out backdrop */
-    visibility: hidden;
-    transition: visibility 0s linear 0.3s; /* Hide visibility after fade out */
+  animation: fadeOut 0.3s ease forwards; /* Fade out backdrop */
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s; /* Hide visibility after fade out */
 }
-
 
 /* Modal content box */
 .modal-content {
@@ -497,7 +546,6 @@ a:hover {
   animation: modalBounceOut 0.4s ease-in forwards; /* New bounce out animation */
 }
 
-
 .modal-header {
   display: flex;
   align-items: flex-start;
@@ -505,7 +553,9 @@ a:hover {
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
 }
-.modal-header .card-title { margin-bottom: 0; }
+.modal-header .card-title {
+  margin-bottom: 0;
+}
 
 .modal-close-btn {
   background: transparent;
@@ -557,7 +607,7 @@ a:hover {
   color: var(--color-text-on-primary);
   font-size: 2.2rem; /* Larger title */
   margin-bottom: 0;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Subtle text shadow */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
 }
 .app-header .header-nav-links {
   display: flex;
@@ -570,42 +620,41 @@ a:hover {
 }
 .app-header .header-nav-link:hover {
   opacity: 1;
-  background-color: rgba(var(--color-white), 0.2); /* Slightly more opaque background */
+  background-color: rgba(
+    var(--color-white),
+    0.2
+  ); /* Slightly more opaque background */
   color: var(--color-white);
   transform: translateY(-3px); /* More lift */
 }
 
 /* --- Page Specific Styles & Animated Containers --- */
-.welcome-page, .login-page {
+.welcome-page,
+.login-page {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   flex-grow: 1;
   padding: var(--spacing-xl);
-  position: relative; /* For background logos */
-  overflow: hidden; /* Ensure logos don't spill */
-}
-.welcome-page .container {
-  background-color: var(--color-surface); /* Keep welcome page opaque for now */
-  padding: var(--spacing-xl);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  text-align: center;
-  width: 100%;
-  max-width: 550px;
-  z-index: 1;
-  position: relative;
-  overflow: hidden;
+  position: relative; /* For background logos / scene */
+  overflow: hidden; /* Ensure elements don't spill */
 }
 
 /* Login Page Specific Styling for Glassmorphism */
 .login-page .form-container {
   /* Glassmorphism effect */
-  background-color: rgba(255, 255, 255, var(--glass-background-alpha)); /* Semi-transparent white */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    var(--glass-background-alpha)
+  ); /* Semi-transparent white */
   border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Semi-transparent border */
   backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
-  -webkit-backdrop-filter: blur(var(--glass-blur)); /* For Safari compatibility */
+  -webkit-backdrop-filter: blur(
+    var(--glass-blur)
+  ); /* For Safari compatibility */
   border-radius: var(--border-radius);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
   transition: var(--transition-base); /* Smooth transitions for hover/focus */
@@ -622,12 +671,105 @@ a:hover {
   justify-content: center;
 }
 
+/* Styles for the new illustrative scene on index.html */
+.welcome-page {
+  background-image: none; /* Remove background gradient from body, scene handles it */
+  background-color: var(--color-background); /* Keep a solid base color */
+}
+
+.welcome-scene {
+  position: fixed; /* Fix it relative to viewport */
+  top: 0; left: 0; right: 0; bottom: 0; /* fill full screen */
+  pointer-events: none; /* so it doesn’t interfere with clicks */
+  z-index: 0; /* behind content */
+}
+
+.scene-element {
+  position: absolute;
+  opacity: 0.4;
+  filter: blur(10px);
+  will-change: transform;
+  z-index: 0;
+}
+
+/* Different sizes & unique volumetric shapes */
+
+.scene-element.element-1 {
+  width: 250px;
+  height: 250px;
+  border-radius: 50%; /* Perfect circle / sphere */
+  background: radial-gradient(circle at 30% 30%, #a3d5ff, #3a7bd5);
+  box-shadow: 0 0 30px rgba(58, 123, 213, 0.5);
+}
+
+.scene-element.element-2 {
+  width: 280px;
+  height: 220px;
+  border-radius: 40% 60% 60% 40% / 50% 50% 70% 70%; /* Slightly squished organic blob */
+  background: radial-gradient(circle at 40% 40%, #ffb3ba, #ff758f);
+  box-shadow: 0 0 30px rgba(255, 117, 143, 0.5);
+}
+
+.scene-element.element-3 {
+  width: 230px;
+  height: 270px;
+  border-radius: 55% 45% 65% 35% / 60% 40% 60% 40%; /* Taller, elongated blob */
+  background: radial-gradient(circle at 30% 30%, #b5ead7, #66cdaa);
+  box-shadow: 0 0 30px rgba(102, 205, 170, 0.5);
+}
+
+.scene-element.element-4 {
+  width: 260px;
+  height: 240px;
+  border-radius: 50% 30% 50% 30% / 40% 60% 40% 60%; /* Wobbly rounded blob */
+  background: radial-gradient(circle at 25% 25%, #ffd6a5, #ffad33);
+  box-shadow: 0 0 30px rgba(255, 173, 51, 0.5);
+}
+
+.scene-element.element-5 {
+  width: 270px;
+  height: 260px;
+  border-radius: 60% 40% 70% 30% / 60% 70% 40% 50%; /* Another asymmetric organic shape */
+  background: radial-gradient(circle at 35% 35%, #d4a5ff, #7f5af0);
+  box-shadow: 0 0 30px rgba(127, 90, 240, 0.5);
+}
+
+
+.welcome-page .welcome-content-card {
+  /* Glassmorphism effect for the welcome card */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    var(--glass-background-alpha)
+  ); /* Semi-transparent white */
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Semi-transparent border */
+  backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
+  -webkit-backdrop-filter: blur(
+    var(--glass-blur)
+  ); /* For Safari compatibility */
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
+  transition: var(--transition-base); /* Smooth transitions for hover/focus */
+
+  padding: var(--spacing-xl);
+  text-align: center;
+  width: 100%;
+  max-width: 550px; /* Consistent width for the card */
+  z-index: 1; /* Ensure it's above the scene elements */
+  position: relative;
+  overflow: hidden;
+  display: flex; /* Ensure content stacks correctly */
+  flex-direction: column;
+  justify-content: center;
+}
+
 .animated-container {
   animation: slideUpFadeIn 0.7s 0.2s ease-out forwards;
   opacity: 0;
 }
 
-/* Welcome Page */
+/* Welcome Page Content */
 .welcome-title {
   font-size: 3.5rem; /* Larger and more impactful */
   letter-spacing: -3px; /* Tighter letter spacing */
@@ -638,7 +780,7 @@ a:hover {
   display: inline-block;
   animation: letterWave 0.6s ease-in-out forwards; /* Slightly slower wave */
   animation-delay: calc(0.1s * var(--letter-index));
-  opacity: 0;
+  opacity: 1;
   transform: translateY(30px); /* Start further down */
   text-shadow: 2px 2px 5px rgba(var(--color-primary-rgb), 0.4); /* Add shadow */
 }
@@ -693,7 +835,7 @@ a:hover {
 
 .bg-logo.logo-bottom-right {
   bottom: -5%;
-  right:25%;
+  right: 25%;
 }
 
 /* Animation trigger for background logos based on form-wrapper hover */
@@ -703,7 +845,6 @@ a:hover {
   filter: blur(5px); /* Less blur on hover, making them a bit clearer */
 }
 
-
 /* Form field entrance for login page */
 .login-page .styled-form .form-group {
   opacity: 0;
@@ -712,9 +853,10 @@ a:hover {
   animation-delay: var(--form-field-delay); /* JS will set this */
 }
 
-
 /* Dashboard & Admin Pages */
-.dashboard-page, .admin-page, .admin-crud-page {
+.dashboard-page,
+.admin-page,
+.admin-crud-page {
   padding-top: var(--spacing-xl);
   padding-bottom: var(--spacing-xl);
   flex-grow: 1;
@@ -728,9 +870,12 @@ a:hover {
   max-width: 900px; /* Optimal width for content pages */
 }
 
-
 .welcome-banner {
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%); /* Deeper gradient */
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary) 100%
+  ); /* Deeper gradient */
   color: var(--color-white);
   padding: var(--spacing-xl) var(--spacing-xl);
   border-radius: var(--border-radius);
@@ -744,14 +889,20 @@ a:hover {
   gap: var(--spacing-md);
   text-align: left;
 }
-.welcome-banner::before { /* Animated overlay for subtle shimmer */
-  content: '';
+.welcome-banner::before {
+  /* Animated overlay for subtle shimmer */
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15) 50%, transparent); /* More visible shimmer */
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent
+  ); /* More visible shimmer */
   transition: left 0.8s ease;
   pointer-events: none; /* Ensure clicks pass through */
 }
@@ -763,7 +914,7 @@ a:hover {
   color: var(--color-white);
   margin-top: 0;
   margin-bottom: var(--spacing-xs); /* Reduced margin for subtitle */
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.4); /* Stronger text shadow */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); /* Stronger text shadow */
   font-size: 2rem;
 }
 .welcome-banner p {
@@ -798,7 +949,8 @@ a:hover {
 .user-details-card .detail-value {
   color: var(--color-text-muted);
 }
-.user-profile-avatar { /* New style for profile picture */
+.user-profile-avatar {
+  /* New style for profile picture */
   width: 90px; /* Larger avatar */
   height: 90px;
   border-radius: 50%;
@@ -813,7 +965,6 @@ a:hover {
   transform: scale(1.1) rotate(7deg); /* More pronounced scale and rotate */
   box-shadow: var(--box-shadow);
 }
-
 
 .admin-section .admin-title {
   color: var(--color-primary-dark);
@@ -849,7 +1000,10 @@ a:hover {
 }
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Slightly wider min column */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(320px, 1fr)
+  ); /* Slightly wider min column */
   gap: var(--spacing-lg);
 }
 .feature-card {
@@ -875,11 +1029,20 @@ a:hover {
 .btn-animated-border::before {
   content: "";
   position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: -1;
   margin: -6px; /* Thicker border animation */
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary), var(--color-primary-dark), var(--color-primary-light)); /* More colors in gradient */
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-light),
+    var(--color-primary),
+    var(--color-primary-dark),
+    var(--color-primary-light)
+  ); /* More colors in gradient */
   background-size: 300% 300%; /* Larger background for smoother animation */
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
@@ -892,7 +1055,8 @@ a:hover {
 }
 
 /* Admin CRUD Pages */
-.form-section, .list-section {
+.form-section,
+.list-section {
   margin-bottom: var(--spacing-xl);
 }
 .table-responsive {
@@ -904,7 +1068,8 @@ a:hover {
   border-collapse: collapse;
   margin-bottom: var(--spacing-lg);
 }
-.styled-table th, .styled-table td {
+.styled-table th,
+.styled-table td {
   text-align: left;
   padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
@@ -925,7 +1090,6 @@ a:hover {
   animation-delay: var(--item-index);
   will-change: transform, opacity;
 }
-
 
 .list-container {
   margin-top: var(--spacing-lg);
@@ -959,7 +1123,8 @@ a:hover {
   will-change: transform, opacity;
 }
 
-.user-item-info { /* Flex layout for user item details */
+.user-item-info {
+  /* Flex layout for user item details */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
@@ -970,7 +1135,8 @@ a:hover {
   gap: var(--spacing-sm);
   margin-top: var(--spacing-sm); /* Adjust spacing */
 }
-@media (min-width: 768px) { /* Adjust for larger screens */
+@media (min-width: 768px) {
+  /* Adjust for larger screens */
   .styled-list li {
     display: flex;
     justify-content: space-between;
@@ -1008,32 +1174,62 @@ a:hover {
   width: 100%;
 }
 
-
 /* --- Accessibility --- */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .btn-glow { animation: none; }
-  .btn-animated-border::before { animation: none; }
-  .btn.ripple-active::after { animation: none !important; opacity: 0 !important;}
-  .welcome-banner::before { transition: none !important; }
-  .bg-logo { animation: none !important; } /* Reverted to .bg-logo */
-  .login-page .styled-form .form-group { animation: none !important; opacity: 1 !important; transform: none !important;}
-  .styled-list li.animated-item, .styled-table tr.animated-item { animation: none !important; opacity: 1 !important; transform: none !important; }
-  .user-profile-avatar { transition: none !important; }
-  .modal-close-btn { transition: none !important; transform: none !important; }
+  .btn-glow {
+    animation: none;
+  }
+  .btn-animated-border::before {
+    animation: none;
+  }
+  .btn.ripple-active::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .welcome-banner::before {
+    transition: none !important;
+  }
+  .bg-logo {
+    animation: none !important;
+  } /* Reverted to .bg-logo */
+  .login-page .styled-form .form-group {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .styled-list li.animated-item,
+  .styled-table tr.animated-item {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .user-profile-avatar {
+    transition: none !important;
+  }
+  .modal-close-btn {
+    transition: none !important;
+    transform: none !important;
+  }
 
   /* Ensure modals appear instantly in reduced motion */
-  .modal, .modal.modal-active, .modal.modal-closing-backdrop {
+  .modal,
+  .modal.modal-active,
+  .modal.modal-closing-backdrop {
     opacity: 1 !important;
     visibility: visible !important;
     transition: none !important;
   }
-  .modal-content, .modal-content.modal-open, .modal-content.modal-closing {
+  .modal-content,
+  .modal-content.modal-open,
+  .modal-content.modal-closing {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
@@ -1049,8 +1245,8 @@ a:hover {
 input[type="text"],
 input[type="password"],
 input[type="email"] {
-    width: 100%; /* Ensure full width within its container */
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  width: 100%; /* Ensure full width within its container */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
 /* The error class for general use, now more integrated with message-area */
@@ -1062,11 +1258,11 @@ input[type="email"] {
 
 /* The #message div should now use the message-area styles */
 #message.success {
-    color: var(--color-success);
+  color: var(--color-success);
 }
 
 #message.error {
-    color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 .form-wrapper {
@@ -1080,13 +1276,28 @@ input[type="email"] {
 
 /* Media queries for responsiveness */
 @media (max-width: 768px) {
-  h1 { font-size: 2.2rem; }
-  h2 { font-size: 1.8rem; }
-  h3 { font-size: 1.5rem; }
-  .welcome-title { font-size: 2.8rem; letter-spacing: -1px; }
-  .welcome-message { font-size: 1rem; }
-  .form-container .form-title { font-size: 2rem; }
-  .form-container .form-subtitle { font-size: 1rem; }
+  h1 {
+    font-size: 2.2rem;
+  }
+  h2 {
+    font-size: 1.8rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+  }
+  .welcome-title {
+    font-size: 2.8rem;
+    letter-spacing: -1px;
+  }
+  .welcome-message {
+    font-size: 1rem;
+  }
+  .form-container .form-title {
+    font-size: 2rem;
+  }
+  .form-container .form-subtitle {
+    font-size: 1rem;
+  }
 
   .btn-lg {
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -1131,7 +1342,8 @@ input[type="email"] {
     width: 95%; /* Ensure modal is responsive */
   }
 
-  .bg-logo { /* Adjust logos for smaller screens */
+  .bg-logo {
+    /* Adjust logos for smaller screens */
     width: 180px; /* Smaller size for mobile */
     height: auto;
     filter: blur(8px); /* Less blur */
@@ -1143,6 +1355,38 @@ input[type="email"] {
   .bg-logo.logo-bottom-right {
     bottom: 0%;
     right: 0%;
+  }
+
+  /* Scene elements adjustments for mobile */
+  .scene-element.element-1 {
+    width: 150px;
+    height: 150px;
+    top: 5%;
+    left: 0%;
+  }
+  .scene-element.element-2 {
+    width: 120px;
+    height: 120px;
+    bottom: 5%;
+    right: 0%;
+  }
+  .scene-element.element-3 {
+    width: 70px;
+    height: 70px;
+    top: 15%;
+    right: 5%;
+  }
+  .scene-element.element-4 {
+    width: 200px;
+    height: 20px;
+    top: 30%;
+    left: -15%;
+  }
+  .scene-element.element-5 {
+    width: 100px;
+    height: 100px;
+    bottom: 10%;
+    left: 10%;
   }
 }
 
