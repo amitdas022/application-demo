@@ -402,15 +402,57 @@ document.addEventListener('DOMContentLoaded', () => {
         const errorMessageElement = document.getElementById('error-message');
         const submitButton = loginForm.querySelector('button[type="submit"]');
 
-        if (submitButton) {
-          submitButton.classList.add('loading');
-          submitButton.classList.remove('ripple-active'); // Ensure no lingering ripple
+        // Prevent re-animation/submission
+        if (submitButton.classList.contains('login-button-morphing') || submitButton.classList.contains('login-button-pulse-active')) {
+            return;
         }
 
-        try {
-          await login(usernameInput.value, passwordInput.value, errorMessageElement);
-        } finally {
-          if (submitButton) submitButton.classList.remove('loading');
+        submitButton.classList.add('login-button-pulse-active');
+        submitButton.classList.remove('ripple-active'); // Stop ripple if it's somehow active
+
+        // Define pulseEndHandler here to be able to remove it by reference in the fallback
+        function pulseEndHandler() {
+            submitButton.removeEventListener('animationend', pulseEndHandler);
+            submitButton.classList.remove('login-button-pulse-active');
+            submitButton.classList.add('login-button-morphing');
+            performLogin();
+        }
+
+        submitButton.addEventListener('animationend', pulseEndHandler, { once: true });
+
+        // Fallback for pulse animation
+        const pulseFallbackTimeout = setTimeout(() => {
+            if (submitButton.classList.contains('login-button-pulse-active') && !submitButton.classList.contains('login-button-morphing')) {
+                console.warn('Login button pulse animation fallback triggered.');
+                submitButton.removeEventListener('animationend', pulseEndHandler); // Remove listener
+                submitButton.classList.remove('login-button-pulse-active');
+                submitButton.classList.add('login-button-morphing');
+                performLogin();
+            }
+        }, 260); // Pulse duration + buffer
+
+        async function performLogin() {
+            // Clear the fallback timeout if performLogin is called, e.g. by animationend
+            clearTimeout(pulseFallbackTimeout);
+            try {
+                // The original login function already handles displaying errors.
+                await login(usernameInput.value, passwordInput.value, errorMessageElement);
+                // If login is successful, page redirects, so button state reset might not be visible or necessary here.
+            } catch (error) {
+                // This catch block might not be strictly necessary if login() handles all its errors.
+                console.error("Error during performLogin:", error);
+            } finally {
+                // Reset button state ONLY if login failed and we are still on the page.
+                // A simple way to check is if the morphing class is still present,
+                // implying an error occurred before redirection.
+                if (submitButton.classList.contains('login-button-morphing')) {
+                    submitButton.classList.remove('login-button-morphing');
+                    // Text will reappear due to text-indent no longer applying from CSS.
+                    // If text was manually cleared, it would need to be restored here.
+                }
+                 // Ensure pulse class is also cleaned up in case of very fast errors or edge cases
+                submitButton.classList.remove('login-button-pulse-active');
+            }
         }
       });
     }
