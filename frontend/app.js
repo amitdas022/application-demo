@@ -400,55 +400,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const usernameInput = loginForm.querySelector('input[name="username"]');
         const passwordInput = loginForm.querySelector('input[name="password"]');
         const errorMessageElement = document.getElementById('error-message');
-        const submitButton = loginForm.querySelector('button[type="submit"]'); // This is the login-button
+        const submitButton = loginForm.querySelector('button[type="submit"]');
 
-        // Start: New animation logic for login button
-        if (submitButton && !submitButton.classList.contains('loading') && !submitButton.classList.contains('login-button-clicked')) {
-          // Add the click animation class
-          submitButton.classList.add('login-button-clicked');
-          submitButton.classList.remove('ripple-active'); // Stop ripple if it's somehow active
-
-          // Listen for the animation to end
-          submitButton.addEventListener('animationend', function handleAnimationEnd() {
-            // Remove this specific listener to avoid it firing multiple times
-            submitButton.removeEventListener('animationend', handleAnimationEnd);
-
-            // Now, add the loading class
-            // Check if still relevant (e.g. user hasn't spammed click)
-            if (submitButton.classList.contains('login-button-clicked')) {
-                submitButton.classList.add('loading');
-            }
-            // The login-button-clicked class can be removed after loading starts, or when login attempt finishes
-            // For now, let's remove it when the login attempt (success/failure) is done (in the finally block)
-
-          }, { once: true }); // Ensure the listener is called only once per click animation
-
-          // Fallback timeout in case animationend doesn't fire (e.g. if animation duration is 0 or display is none)
-          // Duration should match animation-duration (0.25s = 250ms)
-          setTimeout(() => {
-            if (submitButton.classList.contains('login-button-clicked') && !submitButton.classList.contains('loading')) {
-                console.warn('Login button animationend event fallback triggered.');
-                submitButton.classList.add('loading');
-            }
-          }, 260); // A bit longer than animation
-
-        } else if (submitButton && (submitButton.classList.contains('loading') || submitButton.classList.contains('login-button-clicked'))) {
-          // If button is already loading or animating, don't do anything
-          return;
+        // Prevent re-animation/submission
+        if (submitButton.classList.contains('login-button-morphing') || submitButton.classList.contains('login-button-pulse-active')) {
+            return;
         }
-        // End: New animation logic
 
-        try {
-          // Ensure login logic is not executed if button is already processing
-          // The 'loading' or 'login-button-clicked' check at the start of the event listener should prevent re-entry
-          // for the most part.
-          // The display of the spinner is now handled by the animationend/timeout callback.
-          await login(usernameInput.value, passwordInput.value, errorMessageElement);
-        } finally {
-          if (submitButton) {
-            submitButton.classList.remove('loading');
-            submitButton.classList.remove('login-button-clicked'); // Clean up animation class
-          }
+        submitButton.classList.add('login-button-pulse-active');
+        submitButton.classList.remove('ripple-active'); // Stop ripple if it's somehow active
+
+        // Define pulseEndHandler here to be able to remove it by reference in the fallback
+        function pulseEndHandler() {
+            submitButton.removeEventListener('animationend', pulseEndHandler);
+            submitButton.classList.remove('login-button-pulse-active');
+            submitButton.classList.add('login-button-morphing');
+            performLogin();
+        }
+
+        submitButton.addEventListener('animationend', pulseEndHandler, { once: true });
+
+        // Fallback for pulse animation
+        const pulseFallbackTimeout = setTimeout(() => {
+            if (submitButton.classList.contains('login-button-pulse-active') && !submitButton.classList.contains('login-button-morphing')) {
+                console.warn('Login button pulse animation fallback triggered.');
+                submitButton.removeEventListener('animationend', pulseEndHandler); // Remove listener
+                submitButton.classList.remove('login-button-pulse-active');
+                submitButton.classList.add('login-button-morphing');
+                performLogin();
+            }
+        }, 260); // Pulse duration + buffer
+
+        async function performLogin() {
+            // Clear the fallback timeout if performLogin is called, e.g. by animationend
+            clearTimeout(pulseFallbackTimeout);
+            try {
+                // The original login function already handles displaying errors.
+                await login(usernameInput.value, passwordInput.value, errorMessageElement);
+                // If login is successful, page redirects, so button state reset might not be visible or necessary here.
+            } catch (error) {
+                // This catch block might not be strictly necessary if login() handles all its errors.
+                console.error("Error during performLogin:", error);
+            } finally {
+                // Reset button state ONLY if login failed and we are still on the page.
+                // A simple way to check is if the morphing class is still present,
+                // implying an error occurred before redirection.
+                if (submitButton.classList.contains('login-button-morphing')) {
+                    submitButton.classList.remove('login-button-morphing');
+                    // Text will reappear due to text-indent no longer applying from CSS.
+                    // If text was manually cleared, it would need to be restored here.
+                }
+                 // Ensure pulse class is also cleaned up in case of very fast errors or edge cases
+                submitButton.classList.remove('login-button-pulse-active');
+            }
         }
       });
     }

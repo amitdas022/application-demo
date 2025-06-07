@@ -184,10 +184,36 @@ a:hover {
   animation: subtleGlow 2s infinite ease-in-out;
 }
 
-.login-button.login-button-clicked {
+.login-button.login-button-pulse-active { /* Renamed from login-button-clicked */
   /* Important: Ensure this animation doesn't interfere with the :active state's transform if clicked multiple times quickly. */
   /* The 'forwards' fill mode will keep the 100% state until class is removed. */
   animation: loginButtonClickPulse 0.25s ease-out forwards; /* Short and crisp duration */
+}
+
+.login-button.login-button-morphing {
+    width: 50px; /* Target width for the circle (adjust as needed) */
+    height: 50px; /* Target height for the circle (match width) */
+    border-radius: 50%; /* Make it a circle */
+    padding: 0; /* Remove padding to help with sizing */
+    text-indent: -999px; /* Hide text content effectively */
+    overflow: hidden; /* Hide text that might overflow during shrink */
+    transition: width 0.3s ease-in-out, height 0.3s ease-in-out, border-radius 0.3s ease-in-out, padding 0.3s ease-in-out;
+    /* Add a border for the loader - one segment colored, rest transparent */
+    border-top-color: var(--color-white); /* Loader segment color */
+    border-right-color: rgba(var(--color-white-rgb), 0.3); /* Transparent or lighter segments */
+    border-bottom-color: rgba(var(--color-white-rgb), 0.3);
+    border-left-color: rgba(var(--color-white-rgb), 0.3);
+    border-style: solid;
+    border-width: 4px; /* Adjust loader thickness */
+    animation: spin 0.8s linear infinite; /* Reuse existing spin animation if suitable, or define new */
+}
+
+/* Hide the button's actual text content when morphing */
+/* This is now handled by text-indent, but can be a fallback or for other elements inside */
+.login-button.login-button-morphing > * {
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s 0.1s, opacity 0.1s linear; /* Quick fade out for text */
 }
 
 /* Button Ripple Effect */
@@ -1110,6 +1136,12 @@ a:hover {
   color: var(--color-text-muted);
   font-size: 1rem;
 }
+
+.feature-card:hover p {
+    color: var(--color-dark); /* Change from var(--color-text-muted) to var(--color-dark) on hover */
+    transition: color 0.3s ease; /* Optional: smooth color transition */
+}
+
 .btn-animated-border::before {
   content: "";
   position: absolute;
