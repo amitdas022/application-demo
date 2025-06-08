@@ -27,7 +27,7 @@ let tokenExpiry = 0; // Stores the expiration timestamp of the current M2M token
  * @param {object|string} [errorDetails] - Optional additional details about the error.
  */
 function sendError(res, statusCode, message, errorDetails) {
-    console.error("Auth0 Management API Error:", message, errorDetails);
+    console.error("[Auth0 Management API Error]", message, errorDetails); // Ensure this format is good.
     res.status(statusCode).json({ error: message, details: errorDetails?.message || errorDetails });
 }
 
@@ -52,30 +52,52 @@ async function getManagementApiToken() {
             client_id: AUTH0_M2M_CLIENT_ID,       // Client ID of your M2M application
             client_secret: AUTH0_M2M_CLIENT_SECRET, // Client Secret of your M2M application
             audience: AUTH0_MANAGEMENT_AUDIENCE,  // Audience identifier for the Auth0 Management API
+            client_id: AUTH0_M2M_CLIENT_ID,       // Client ID of your M2M application
+            // client_secret: AUTH0_M2M_CLIENT_SECRET, // Client Secret should not be logged
+            audience: AUTH0_MANAGEMENT_AUDIENCE,  // Audience identifier for the Auth0 Management API
             grant_type: 'client_credentials',   // Specifies the M2M grant type
         };
         const tokenRequestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tokenRequestPayload),
+            body: JSON.stringify({
+                client_id: tokenRequestPayload.client_id, // Log only client_id
+                audience: tokenRequestPayload.audience,
+                grant_type: tokenRequestPayload.grant_type,
+            }),
         };
+        console.log(`[Auth0 Management API] Requesting M2M token. URL: ${tokenUrl}, Payload:`, { client_id: AUTH0_M2M_CLIENT_ID, audience: AUTH0_MANAGEMENT_AUDIENCE, grant_type: 'client_credentials' }); // Log payload without secret
 
         // Fetch the M2M token from Auth0
-        const response = await fetch(tokenUrl, tokenRequestOptions);
+        const response = await fetch(tokenUrl, { // Use actual payload with secret for the fetch
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: AUTH0_M2M_CLIENT_ID,
+                client_secret: AUTH0_M2M_CLIENT_SECRET,
+                audience: AUTH0_MANAGEMENT_AUDIENCE,
+                grant_type: 'client_credentials',
+            }),
+        });
+
+        const responseBodyForLogging = await response.clone().json().catch(() => response.text());
+        console.log(`[Auth0 Management API] M2M token response. Status: ${response.status}, Body:`, responseBodyForLogging);
+
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Failed to get Auth0 Management API token:', errorData);
-            throw new Error(`Auth0 Token Error: ${errorData.error_description || response.statusText}`);
+            // console.error already called by sendError or generic catch, specific log here for token failure context
+            console.error('Failed to get Auth0 Management API token detailed body:', responseBodyForLogging);
+            throw new Error(`Auth0 Token Error: ${responseBodyForLogging.error_description || response.statusText}`);
         }
 
         // Parse the successful token response
-        const data = await response.json();
+        const data = await response.json(); // Use original response
         managementApiToken = data.access_token; // Cache the new token
+        console.log('[Auth0 Management API] M2M token acquired successfully.');
         // Calculate expiry: current time + (token lifetime in seconds - 5 minutes buffer) * 1000 ms
         tokenExpiry = Date.now() + (data.expires_in - 300) * 1000;
         return managementApiToken;
     } catch (error) {
-        console.error('Error fetching Auth0 Management API token:', error);
+        console.error('[Auth0 Management API] Error fetching Auth0 Management API token:', error);
         managementApiToken = null; // Clear token on error
         tokenExpiry = 0;
         throw error; // Re-throw to be caught by the main handler
@@ -90,9 +112,18 @@ async function getManagementApiToken() {
  */
 export default async function handler(req, res) {
     // Extract action and parameters from request body (for POST, PUT, DELETE) or query string (for GET)
-    const { action, userId, userData, updates, roles } = req.query; // For POST, PUT, DELETE
-    const queryAction = req.query.action; // For GET actions
-    const queryUserId = req.query.userId; // For GET actions requiring a user ID
+    let action, userId, userData, updates, roles;
+    let queryAction, queryUserId;
+
+    console.log(`[Auth0 Management API Handler] Received request: ${req.method} ${req.url}`);
+    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
+      ({ action, userId, userData, updates, roles } = req.body);
+      console.log(`[Auth0 Management API Handler] Action: ${action}, Body:`, req.body);
+    } else if (req.method === 'GET') {
+      queryAction = req.query.action;
+      queryUserId = req.query.userId;
+      console.log(`[Auth0 Management API Handler] Action: ${queryAction}, Query:`, req.query);
+    }
 
     try {
         // Obtain a valid M2M token for authenticating with the Auth0 Management API
@@ -124,10 +155,13 @@ export default async function handler(req, res) {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(createUserData),
                 };
+                console.log(`[Auth0 Management API] Creating user. URL: ${baseUrl}, Payload:`, createUserData);
                 const response = await fetch(baseUrl, reqOptions);
-                // Handle response from Auth0
-                if (!response.ok) return sendError(res, response.status, 'Failed to create user in Auth0', await response.json());
-                res.status(201).json(await response.json()); // Send back the created user object
+                // After fetch:
+                const responseBody = await response.clone().json().catch(() => response.text()); // Clone to read body safely
+                console.log(`[Auth0 Management API] Create user response. Status: ${response.status}, Body:`, responseBody);
+                if (!response.ok) return sendError(res, response.status, 'Failed to create user in Auth0', responseBody);
+                res.status(201).json(await response.json()); // Original response.json() call
             } else {
                 sendError(res, 400, 'Invalid action for POST request.');
             }
@@ -135,15 +169,21 @@ export default async function handler(req, res) {
         } else if (req.method === 'GET') {
             // Action: List all users
             if (queryAction === 'listUsers') {
+                console.log(`[Auth0 Management API] Listing users. URL: ${baseUrl}`);
                 const response = await fetch(baseUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-                if (!response.ok) return sendError(res, response.status, 'Failed to list users from Auth0', await response.json());
+                const responseBody = await response.clone().json().catch(() => response.text());
+                console.log(`[Auth0 Management API] List users response. Status: ${response.status}, Body:`, responseBody);
+                if (!response.ok) return sendError(res, response.status, 'Failed to list users from Auth0', responseBody);
                 res.status(200).json(await response.json());
             // Action: Get a specific user by ID
             } else if (queryAction === 'getUser') {
                 if (!queryUserId) return sendError(res, 400, 'User ID (Auth0 sub) is required for getUser.');
                 const getUserUrl = `${baseUrl}/${encodeURIComponent(queryUserId)}`; // URL for specific user
+                console.log(`[Auth0 Management API] Getting user. URL: ${getUserUrl}`);
                 const response = await fetch(getUserUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-                if (!response.ok) return sendError(res, response.status, 'Failed to get user from Auth0', await response.json());
+                const responseBody = await response.clone().json().catch(() => response.text());
+                console.log(`[Auth0 Management API] Get user response. Status: ${response.status}, Body:`, responseBody);
+                if (!response.ok) return sendError(res, response.status, 'Failed to get user from Auth0', responseBody);
                 res.status(200).json(await response.json());
             // Action: List users assigned to a specific role
             } else if (queryAction === 'listUsersInRole') {
@@ -154,17 +194,24 @@ export default async function handler(req, res) {
                 // Auth0 Management API requires Role ID to list users in a role.
                 const rolesApiUrl = `${AUTH0_MANAGEMENT_AUDIENCE}roles`;
                 const getRoleUrl = `${rolesApiUrl}?name_filter=${encodeURIComponent(roleName)}`;
+                console.log(`[Auth0 Management API] Getting role ID for role name '${roleName}'. URL: ${getRoleUrl}`);
                 const rolesResponse = await fetch(getRoleUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-                if (!rolesResponse.ok) return sendError(res, rolesResponse.status, `Failed to find role '${roleName}' in Auth0`, await rolesResponse.json());
+                const rolesResponseBody = await rolesResponse.clone().json().catch(() => rolesResponse.text());
+                console.log(`[Auth0 Management API] Get role ID response. Status: ${rolesResponse.status}, Body:`, rolesResponseBody);
+                if (!rolesResponse.ok) return sendError(res, rolesResponse.status, `Failed to find role '${roleName}' in Auth0`, rolesResponseBody);
                 
-                const rolesData = await rolesResponse.json();
+                const rolesData = await rolesResponse.json(); // Use original response
                 if (!rolesData || rolesData.length === 0) return sendError(res, 404, `Role '${roleName}' not found in Auth0.`);
                 const roleId = rolesData[0].id; // Assume the first role found with the name is the correct one.
+                console.log(`[Auth0 Management API] Role ID for '${roleName}' is '${roleId}'.`);
 
                 // Step 2: Get Users for that Role ID.
                 const usersInRoleApiUrl = `${AUTH0_MANAGEMENT_AUDIENCE}roles/${roleId}/users`;
+                console.log(`[Auth0 Management API] Listing users in role '${roleName}' (ID: '${roleId}'). URL: ${usersInRoleApiUrl}`);
                 const usersInRoleResponse = await fetch(usersInRoleApiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-                if (!usersInRoleResponse.ok) return sendError(res, usersInRoleResponse.status, `Failed to list users in role '${roleName}' from Auth0`, await usersInRoleResponse.json());
+                const usersInRoleResponseBody = await usersInRoleResponse.clone().json().catch(() => usersInRoleResponse.text());
+                console.log(`[Auth0 Management API] List users in role response. Status: ${usersInRoleResponse.status}, Body:`, usersInRoleResponseBody);
+                if (!usersInRoleResponse.ok) return sendError(res, usersInRoleResponse.status, `Failed to list users in role '${roleName}' from Auth0`, usersInRoleResponseBody);
                 
                 res.status(200).json(await usersInRoleResponse.json()); // Send back the list of users in the role
             } else {
@@ -185,8 +232,11 @@ export default async function handler(req, res) {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatePayload),
                 };
+                console.log(`[Auth0 Management API] Updating user. URL: ${updateUrl}, Payload:`, updatePayload);
                 const response = await fetch(updateUrl, reqOptions);
-                if (!response.ok) return sendError(res, response.status, 'Failed to update user in Auth0', await response.json());
+                const responseBody = await response.clone().json().catch(() => response.text());
+                console.log(`[Auth0 Management API] Update user response. Status: ${response.status}, Body:`, responseBody);
+                if (!response.ok) return sendError(res, response.status, 'Failed to update user in Auth0', responseBody);
                 res.status(200).json(await response.json()); // Send back the updated user object
             // Action: Assign roles to or Unassign roles from a user
             } else if (action === 'assignRoles' || action === 'unassignRoles') {
@@ -198,14 +248,22 @@ export default async function handler(req, res) {
                 if (roles.includes('admin')) { // Check if 'admin' role is being assigned/unassigned
                     const rolesApiUrl = `${AUTH0_MANAGEMENT_AUDIENCE}roles`;
                     const getAdminRoleUrl = `${rolesApiUrl}?name_filter=admin`; // Find the 'admin' role ID
+                    console.log(`[Auth0 Management API] Looking up 'admin' role ID. URL: ${getAdminRoleUrl}`);
                     const adminRoleResponse = await fetch(getAdminRoleUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                    const adminRoleResponseBody = await adminRoleResponse.clone().json().catch(() => adminRoleResponse.text());
+                    console.log(`[Auth0 Management API] 'admin' role ID lookup response. Status: ${adminRoleResponse.status}, Body:`, adminRoleResponseBody);
+
                     if (adminRoleResponse.ok) {
-                        const adminRolesData = await adminRoleResponse.json();
+                        const adminRolesData = await adminRoleResponse.json(); // Use original response
                         if (adminRolesData && adminRolesData.length > 0) {
                             roleIdsPayload.push(adminRolesData[0].id); // Add admin role ID to payload
-                        } else { console.warn("Admin role not found in Auth0 when trying to assign/unassign."); }
+                            console.log(`[Auth0 Management API] 'admin' role ID found: ${adminRolesData[0].id}`);
+                        } else {
+                            console.warn("[Auth0 Management API] Admin role not found in Auth0 when trying to assign/unassign.");
+                        }
                     } else {
-                        console.error("Failed to fetch admin role ID from Auth0:", await adminRoleResponse.json());
+                        // Error already logged with body by the general log above
+                        console.error("[Auth0 Management API] Failed to fetch admin role ID from Auth0.");
                     }
                 }
                  // If no valid role IDs were found for the given role names (and roles were provided)
@@ -217,14 +275,18 @@ export default async function handler(req, res) {
                  const userRolesUrl = `${AUTH0_MANAGEMENT_AUDIENCE}users/${encodeURIComponent(userId)}/roles`;
                  // Determine HTTP method based on action: POST to assign, DELETE to unassign
                  const methodForRoles = action === 'assignRoles' ? 'POST' : 'DELETE';
+                 const rolesPayload = { roles: roleIdsPayload };
                  const rolesRequestOptions = {
                      method: methodForRoles,
                      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ roles: roleIdsPayload }) // Payload is an object with a 'roles' array of role IDs
+                     body: JSON.stringify(rolesPayload) // Payload is an object with a 'roles' array of role IDs
                  };
+                 console.log(`[Auth0 Management API] ${action} for user ${userId}. URL: ${userRolesUrl}, Method: ${methodForRoles}, Payload:`, rolesPayload);
                  const rolesResponse = await fetch(userRolesUrl, rolesRequestOptions);
+                 const rolesResponseBody = await rolesResponse.clone().text(); // Use text() for 204 or error
+                 console.log(`[Auth0 Management API] ${action} response. Status: ${rolesResponse.status}, Body:`, rolesResponseBody);
                  // Auth0 returns 204 No Content on successful role assignment/unassignment
-                 if (!rolesResponse.ok) return sendError(res, rolesResponse.status, `Failed to ${action} in Auth0`, await rolesResponse.json());
+                 if (!rolesResponse.ok) return sendError(res, rolesResponse.status, `Failed to ${action} in Auth0`, rolesResponseBody);
                  res.status(204).send(); // Success, no content to return
             } else {
                 sendError(res, 400, 'Invalid action for PUT request.');
@@ -235,12 +297,15 @@ export default async function handler(req, res) {
             if (action === 'deleteUser') {
                 if (!userId) return sendError(res, 400, 'User ID (Auth0 sub) is required for deletion.');
                 const deleteUrl = `${baseUrl}/${encodeURIComponent(userId)}`; // URL to delete a specific user
+                console.log(`[Auth0 Management API] Deleting user. URL: ${deleteUrl}`);
                 const response = await fetch(deleteUrl, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
+                const responseBody = await response.clone().text(); // Use text() for 204 or error
+                console.log(`[Auth0 Management API] Delete user response. Status: ${response.status}, Body:`, responseBody);
                 // Auth0 returns 204 No Content on successful deletion
-                if (!response.ok) return sendError(res, response.status, 'Failed to delete user in Auth0', await response.json());
+                if (!response.ok) return sendError(res, response.status, 'Failed to delete user in Auth0', responseBody);
                 res.status(204).send(); // Success, no content to return
             } else {
                 sendError(res, 400, 'Invalid action for DELETE request.');
