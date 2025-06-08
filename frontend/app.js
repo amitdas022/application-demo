@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname.endsWith('login.html')) {
     const loginForm = document.getElementById('login-form');
     const loginButton = document.querySelector('.login-button'); // Get the login button
-    const formWrapper = document.querySelector('.form-wrapper'); // Parent of bg-logos
+    const formWrapper = document.querySelector('.login-wrapper'); // Parent of bg-logos
 
     // Event listener for global background logo animation on button hover
     if (loginButton && formWrapper) {

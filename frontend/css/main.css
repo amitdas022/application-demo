@@ -1124,10 +1124,9 @@ button.login-button-morphing::before span:nth-child(3) {
   position: absolute;
   width: 250px; /* Make logos large to fill space and be partially visible */
   height: auto;
-  opacity: 1; /* Subtly visible by default */
-  filter: blur(2px); /* Initial blur so visible parts are also soft */
+  opacity: 0.5; /* Subtly visible by default */
+  filter: blur(1px); /* Initial blur so visible parts are also soft */
   z-index: 0; /* Ensure they are behind the glassy form */
-  pointer-events: none;
   transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
   will-change: transform, opacity, filter;
 }
@@ -1143,9 +1142,9 @@ button.login-button-morphing::before span:nth-child(3) {
 }
 
 /* Animation trigger for background logos based on form-wrapper hover */
-.form-wrapper.hovered-by-button .bg-logo {
+.login-wrapper.hovered-by-button .bg-logo {
   opacity: 0.3; /* Slightly more visible on hover */
-  transform: scale(1.1) rotate(0deg); /* Subtle growth/reset on hover */
+  transform: scale(1.5) rotate(0deg); /* Subtle growth/reset on hover */
   filter: blur(5px); /* Less blur on hover, making them a bit clearer */
 }
 
@@ -2013,12 +2012,6 @@ input[type="email"] {
     width: 95%; /* Ensure modal is responsive */
   }
 
-  .bg-logo {
-    /* Adjust logos for smaller screens */
-    width: 180px; /* Smaller size for mobile */
-    height: auto;
-    filter: blur(8px); /* Less blur */
-  }
   .bg-logo.logo-top-left {
     top: 0%;
     left: 0%;
