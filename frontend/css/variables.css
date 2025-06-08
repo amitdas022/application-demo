@@ -4,17 +4,23 @@
   --color-primary-dark: #634C9E; /* Darker shade for hovers/active */
   --color-primary-light: #9F83E1; /* Lighter shade for accents/focus */
   --color-primary-rgb: 122, 92, 186; /* For rgba() usage */
+  --color-primary-dark-rgb: 99, 76, 158; /* For rgba() usage of darker shade */
 
   --color-secondary: #6c757d; /* A neutral secondary color (can remain standard) */
   --color-secondary-dark: #5a6268;
+  --color-secondary-rgb: 108, 117, 125; /* For rgba() usage */
+  --color-secondary-dark-rgb: 90, 98, 104; /* For rgba() usage of darker shade */
 
   --color-success: #28a745; /* Green for success */
   --color-danger: #dc3545;  /* Red for errors/danger */
+  --color-danger-rgb: 220, 53, 69; /* For rgba() usage */
   --color-warning: #ffc107; /* Yellow for warnings */
 
   --color-light: #f8f9fa;      /* Very light grey / off-white */
+  --color-light-rgb: 248, 249, 250; /* For rgba() usage */
   --color-dark: #343a40;       /* Dark grey for text or dark elements */
   --color-white: #ffffff;
+  --color-white-rgb: 255, 255, 255; /* For rgba() usage */
   --color-black: #000000;
 
   --color-text: #333333;
@@ -53,9 +59,10 @@
   --box-shadow-lg: 0 16px 48px rgba(0,0,0,0.18);
 
   /* Glassmorphism specific variables */
-  --glass-background-alpha: 0.2; /* Controls transparency of the glass effect */
+  --glass-background-alpha: 0.3; /* Controls transparency of the glass effect */
   --glass-border-alpha: 0.3; /* Controls transparency of the border */
-  --glass-blur: 15px; /* Amount of blur for the backdrop-filter */
+  --glass-blur: 20px; /* Amount of blur for the backdrop-filter */
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Shadow for glass elements */
 
   /* Transitions */
   --transition-base: all 0.3s ease-in-out; /* Slightly longer transition for smoother effects */

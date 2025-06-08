@@ -10,6 +10,10 @@
 // IMPORTANT: Ensure this is false or removed for production or real authentication testing.
 // No Okta Auth JS initialization is used; authentication is handled via backend and localStorage.
 
+// Global variables for parallax effect, updated by a single window event listener.
+let mouseParallaxX = 0;
+let mouseParallaxY = 0;
+
 /**
  * Handles user login by sending credentials to the backend /api/auth endpoint.
  * @async
@@ -359,6 +363,15 @@ function showConfirmModal(title, message, onConfirmCallback, onCancelCallback = 
 
 // Main event listener that runs when the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', () => {
+  // Global mouse move listener for parallax effects - This updates the global variables
+  window.addEventListener('mousemove', (event) => {
+    const screenCenterX = window.innerWidth / 2;
+    const screenCenterY = window.innerHeight / 2;
+    // Update global parallax variables
+    window.mouseParallaxX = (event.clientX - screenCenterX) * -0.005;
+    window.mouseParallaxY = (event.clientY - screenCenterY) * -0.005;
+  });
+
   // Code for welcome page title animation.
   if (window.location.pathname.endsWith('/') || window.location.pathname.endsWith('index.html')) {
     const welcomeTitle = document.querySelector('.welcome-title');
@@ -903,6 +916,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     animate();
   }
-  moveLandingPageElementIndependently();
+  moveLandingPageElementIndependently(); // No longer need to pass parallax values
 
+  // Initialize Card Tilt Effect
+  initTiltEffect();
 });
+
+
+// Adjusted function to use global parallax values
+function moveLandingPageElementIndependently() {
+  const els = [...document.querySelectorAll('.scene-element')];
+  const scene = { w: window.innerWidth, h: window.innerHeight };
+  window.onresize = () => {
+    scene.w = window.innerWidth;
+    scene.h = window.innerHeight;
+  };
+
+  const objs = els.map((el, index) => ({
+    el,
+    w: el.offsetWidth,
+    h: el.offsetHeight,
+    baseX: Math.random() * (scene.w - el.offsetWidth), // Base X for random movement
+    baseY: Math.random() * (scene.h - el.offsetHeight),// Base Y for random movement
+    vx: (Math.random() - 0.5) * 1, // Reduced speed for random drift
+    vy: (Math.random() - 0.5) * 1, // Reduced speed for random drift
+    angle: Math.random() * 360,
+    rotationSpeed: 0.2 + Math.random() * 0.5, // Slower rotation
+    morphSpeed: 600 + Math.random() * 800, // Slower morphing
+    morphPhase: Math.random() * 2 * Math.PI,
+    // Increased depthMultiplier range for more pronounced parallax on some elements
+    depthMultiplier: 0.2 + Math.random() * 1.3 // Random depth (0.2 to 1.5)
+  }));
+
+  function animate(time = 0) {
+    objs.forEach(o => {
+      // Update base position for random drift
+      o.baseX += o.vx;
+      o.baseY += o.vy;
+      if (o.baseX < 0 || o.baseX + o.w > scene.w) o.vx *= -1;
+      if (o.baseY < 0 || o.baseY + o.h > scene.h) o.vy *= -1;
+
+      o.angle = (o.angle + o.rotationSpeed) % 360;
+      const morphProgress = Math.sin((time / o.morphSpeed) + o.morphPhase);
+      const scale = 0.95 + 0.05 * morphProgress; // More subtle scale
+
+      // Combine base random position with mouse-driven parallax
+      // Use the globally updated mouseParallaxX and mouseParallaxY
+      const currentX = o.baseX + (window.mouseParallaxX || 0) * o.depthMultiplier * (scene.w / 150); // Adjusted scaling factor
+      const currentY = o.baseY + (window.mouseParallaxY || 0) * o.depthMultiplier * (scene.h / 150); // Adjusted scaling factor
+
+
+      o.el.style.transform = `translate(${currentX}px,${currentY}px) scale(${scale}) rotate(${o.angle}deg)`;
+
+      // Morph border-radius with randomized morphing
+      const r1 = 30 + 20 * Math.abs(morphProgress); // Adjusted morphing parameters
+      const r2 = 100 - r1;
+      o.el.style.borderRadius = `${r1}% ${r2}% ${r2}% ${r1}% / ${r2}% ${r1}% ${r1}% ${r2}%`;
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+
+/**
+ * Initializes the tilt effect for specified card-like elements.
+ * On mousemove, elements tilt slightly. On mouseleave, they reset.
+ */
+function initTiltEffect() {
+  const tiltElements = document.querySelectorAll(
+    '.card, .feature-card, .welcome-page .welcome-content-card, .login-page .form-container'
+  );
+
+  tiltElements.forEach(element => {
+    element.addEventListener('mousemove', (event) => {
+      const rect = element.getBoundingClientRect();
+      const x = event.clientX - rect.left; // x position within the element.
+      const y = event.clientY - rect.top;  // y position within the element.
+
+      const elementWidth = rect.width;
+      const elementHeight = rect.height;
+
+      const centerX = elementWidth / 2;
+      const centerY = elementHeight / 2;
+
+      const rotateX = ((y - centerY) / (elementHeight / 2)) * -7; // Max rotation 7 degrees
+      const rotateY = ((x - centerX) / (elementWidth / 2)) * 7;  // Max rotation 7 degrees
+
+      // Apply a slight scale for a "pop-out" 3D effect along with tilt
+      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
+    });
+
+    element.addEventListener('mouseleave', () => {
+      // Reset transform to default (or to its base hover state if applicable)
+      // For simplicity, resetting to a common base state. CSS hover will re-apply if needed.
+      element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    });
+  });
+}

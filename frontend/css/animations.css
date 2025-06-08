@@ -41,10 +41,14 @@
   50% { transform: translateY(-15px); } /* Increased bounce height */
 }
 
-/* Button Glow Animation - More prominent */
+/* Button Glow Animation - Softer, more volumetric */
 @keyframes subtleGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4), 0 0 15px rgba(var(--color-primary-rgb), 0.3); }
-  50% { box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.6), 0 0 30px rgba(var(--color-primary-rgb), 0.4); }
+  0%, 100% {
+    box-shadow: inset 0 0 3px rgba(var(--color-primary-rgb),0.15), 0px 0px 4px rgba(var(--color-primary-rgb), 0.1);
+  }
+  50% {
+    box-shadow: inset 0 0 6px rgba(var(--color-primary-rgb),0.25), 0px 0px 8px rgba(var(--color-primary-rgb), 0.15);
+  }
 }
 
 /* Input Focus Underline Animation */
@@ -141,19 +145,19 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Modal Bounce In (applied to modal-content.modal-open) - More bouncy and noticeable */
+/* Modal Bounce In (applied to modal-content.modal-open) - Refined for quicker, smoother bounce */
+/* Suggested duration: 0.5s, Easing: cubic-bezier(0.25, 0.46, 0.45, 0.94) or similar ease-out */
 @keyframes modalBounceIn {
-  0% { opacity: 0; transform: translateY(100px) scale(0.8); } /* Start lower and smaller */
-  60% { opacity: 1; transform: translateY(-20px) scale(1.05); } /* Overshoot higher */
-  80% { transform: translateY(10px) scale(0.98); } /* Slight undershoot */
+  0% { opacity: 0; transform: translateY(50px) scale(0.95); }
+  70% { opacity: 1; transform: translateY(-10px) scale(1.03); }
   100% { transform: translateY(0) scale(1); }
 }
 
-/* NEW: Modal Bounce Out (applied to modal-content.modal-closing) */
+/* NEW: Modal Bounce Out (applied to modal-content.modal-closing) - Refined for quicker dismissal */
+/* Suggested duration: 0.3s, Easing: cubic-bezier(0.55, 0.085, 0.68, 0.53) (easeInQuint) */
 @keyframes modalBounceOut {
-  0% { opacity: 1; transform: translateY(0) scale(1); }
-  20% { transform: translateY(-10px) scale(1.02); } /* Slight bounce up before exit */
-  100% { opacity: 0; transform: translateY(80px) scale(0.8); } /* Exit lower and smaller */
+  0% { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.9) translateY(40px); }
 }
 
 /* Background Logo Pulse/Drift - More active movement */
