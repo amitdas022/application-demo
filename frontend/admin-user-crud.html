@@ -21,7 +21,16 @@
                 <a href="admin.html" class="btn btn-outline-light header-nav-link">Admin Panel</a>
             </div>
             <h1 class="app-title">User Management</h1>
-            <button id="logout-button" class="btn btn-outline-light">Logout</button>
+            <div class="header-actions"> <!-- Wrapper for theme switch and logout -->
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch" for="theme-checkbox" aria-label="Theme switch">
+                        <input type="checkbox" id="theme-checkbox" />
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="theme-switch-label" style="color: var(--color-light); font-size: 0.9rem; margin-left: 0.5rem;">Dark Mode</span>
+                </div>
+                <button id="logout-button" class="btn btn-outline-light">Logout</button>
+            </div>
         </div>
     </header>
 

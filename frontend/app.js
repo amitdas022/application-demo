@@ -920,7 +920,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize Card Tilt Effect
   initTiltEffect();
+
+  // Initialize Theme Toggle
+  initThemeToggle();
 });
+
+/**
+ * Applies the selected theme to the document body.
+ * @param {string} theme - The theme to apply ('light-mode' or 'dark-mode').
+ */
+function applyTheme(theme) {
+  if (theme === 'dark-mode') {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+}
+
+/**
+ * Toggles the theme between light and dark mode.
+ * Updates localStorage and the toggle switch's state.
+ */
+function toggleTheme() {
+  const currentTheme = localStorage.getItem('theme') || 'light-mode';
+  const newTheme = currentTheme === 'dark-mode' ? 'light-mode' : 'dark-mode';
+
+  applyTheme(newTheme);
+  localStorage.setItem('theme', newTheme);
+
+  const themeCheckbox = document.getElementById('theme-checkbox');
+  if (themeCheckbox) {
+    themeCheckbox.checked = (newTheme === 'dark-mode');
+  }
+}
+
+/**
+ * Initializes the theme toggle functionality.
+ * Sets the initial theme based on localStorage and attaches event listeners.
+ */
+function initThemeToggle() {
+  const themeCheckbox = document.getElementById('theme-checkbox');
+  const storedTheme = localStorage.getItem('theme') || 'light-mode';
+
+  applyTheme(storedTheme);
+
+  if (themeCheckbox) {
+    themeCheckbox.checked = (storedTheme === 'dark-mode');
+    themeCheckbox.addEventListener('change', toggleTheme);
+  }
+}
 
 
 // Adjusted function to use global parallax values
@@ -1000,16 +1048,15 @@ function initTiltEffect() {
       const centerX = elementWidth / 2;
       const centerY = elementHeight / 2;
 
-      const rotateX = ((y - centerY) / (elementHeight / 2)) * -7; // Max rotation 7 degrees
-      const rotateY = ((x - centerX) / (elementWidth / 2)) * 7;  // Max rotation 7 degrees
+      const rotateX = ((y - centerY) / (elementHeight / 2)) * -3; // Max rotation reduced to 3 degrees
+      const rotateY = ((x - centerX) / (elementWidth / 2)) * 3;  // Max rotation reduced to 3 degrees
 
-      // Apply a slight scale for a "pop-out" 3D effect along with tilt
-      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
+      // Apply a very subtle scale for a "pop-out" 3D effect along with tilt
+      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
     });
 
     element.addEventListener('mouseleave', () => {
-      // Reset transform to default (or to its base hover state if applicable)
-      // For simplicity, resetting to a common base state. CSS hover will re-apply if needed.
+      // Reset transform to default
       element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
     });
   });

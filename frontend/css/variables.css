@@ -5,6 +5,7 @@
   --color-primary-light: #9F83E1; /* Lighter shade for accents/focus */
   --color-primary-rgb: 122, 92, 186; /* For rgba() usage */
   --color-primary-dark-rgb: 99, 76, 158; /* For rgba() usage of darker shade */
+  --color-primary-light-rgb: 159, 131, 225; /* For rgba() usage of lighter shade */
 
   --color-secondary: #6c757d; /* A neutral secondary color (can remain standard) */
   --color-secondary-dark: #5a6268;
@@ -67,4 +68,20 @@
   /* Transitions */
   --transition-base: all 0.3s ease-in-out; /* Slightly longer transition for smoother effects */
   --transition-transform: transform 0.2s ease;
+
+  /* --- Dark Theme Palette --- */
+  --color-background-dark: #121212; /* Very dark grey/black */
+  --color-surface-dark: #1E1E1E;    /* Slightly lighter surface for cards in dark mode */
+  --color-text-dark: #EAEAEA;       /* Light grey for text in dark mode */
+  --color-text-muted-dark: #A0A0A0; /* Softer grey for muted text in dark mode */
+  --color-primary-dark-theme: var(--color-primary-light); /* Use light primary for accents in dark mode */
+  --color-primary-dark-theme-rgb: var(--color-primary-light-rgb); /* RGB version for consistency */
+  --color-border-dark: #333343;    /* Darker, subtly tinted border */
+
+  /* Dark Theme Glassmorphism specific variables */
+  --glass-background-rgb-dark: 30, 30, 50; /* Darker, slightly bluish/purplish tint for glass background */
+  --glass-background-alpha-dark: 0.15; /* Transparency of the glass effect in dark mode */
+  --glass-border-alpha-dark: 0.25;   /* Transparency of the glass border in dark mode */
+  /* Lighter shadow for dark mode, perhaps with a cool tint */
+  --glass-shadow-dark: 0 8px 32px 0 rgba(180, 190, 255, 0.15);
 }
