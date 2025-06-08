@@ -1127,7 +1127,10 @@ button.login-button-morphing::before span:nth-child(3) {
   opacity: 0.5; /* Subtly visible by default */
   filter: blur(1px); /* Initial blur so visible parts are also soft */
   z-index: 0; /* Ensure they are behind the glassy form */
-  transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+  transition: 
+    opacity 0.6s ease,
+    transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1), /* smoother "rise" */
+    filter 0.6s ease;
   will-change: transform, opacity, filter;
 }
 
@@ -1143,9 +1146,17 @@ button.login-button-morphing::before span:nth-child(3) {
 
 /* Animation trigger for background logos based on form-wrapper hover */
 .login-wrapper.hovered-by-button .bg-logo {
-  opacity: 0.3; /* Slightly more visible on hover */
-  transform: scale(1.5) rotate(0deg); /* Subtle growth/reset on hover */
-  filter: blur(5px); /* Less blur on hover, making them a bit clearer */
+  opacity: 0.3;
+  transform: scale(1.6) translateY(-8px) rotate(4deg);
+  filter: blur(4px) brightness(1.1) saturate(1.2) hue-rotate(8deg);
+}
+
+.login-wrapper.hovered-by-button .logo-top-left {
+  transform: scale(1.6) rotate(-6deg) translate(-10px, -10px);
+}
+
+.login-wrapper.hovered-by-button .logo-bottom-right {
+  transform: scale(1.7) rotate(6deg) translate(12px, -8px);
 }
 
 /* Form field entrance for login page */
