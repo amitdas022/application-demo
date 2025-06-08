@@ -607,11 +607,11 @@ button.login-button-morphing::before span:nth-child(3) {
 }
 
 .toast {
-  background-color: rgba(255, 255, 255, 0.6); /* Increased opacity for readability */
-  backdrop-filter: blur(15px); /* Slightly less blur for toasts */
-  -webkit-backdrop-filter: blur(15px); /* For Safari */
-  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
-  box-shadow: var(--glass-shadow);
+  background-color: rgba(var(--color-surface-rgb), 0.95); /* High opacity for readability */
+  backdrop-filter: blur(5px); /* Minimal blur */
+  -webkit-backdrop-filter: blur(5px); /* Minimal blur */
+  border: 1px solid rgba(var(--color-black), 0.1); /* Softer border */
+  box-shadow: var(--box-shadow-lg); /* Standard shadow for opaque look */
   color: var(--color-text); /* Ensure text is readable */
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--border-radius);
@@ -696,11 +696,11 @@ button.login-button-morphing::before span:nth-child(3) {
   max-width: 600px; /* Larger max width for modals */
   display: flex;
   flex-direction: column;
-  background-color: rgba(255, 255, 255, 0.5); /* Increased opacity for readability */
-  backdrop-filter: blur(10px); /* Reduced blur for readability */
-  -webkit-backdrop-filter: blur(10px); /* Reduced blur for readability */
-  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
-  box-shadow: var(--glass-shadow); /* Use standard glass shadow */
+  background-color: rgba(var(--color-surface-rgb), 0.9); /* High opacity for readability */
+  backdrop-filter: blur(5px); /* Minimal blur for readability */
+  -webkit-backdrop-filter: blur(5px); /* Minimal blur for readability */
+  border: 1px solid rgba(var(--color-black), 0.1); /* Softer border for more opaque surface */
+  box-shadow: var(--box-shadow-lg); /* Use a more standard shadow if almost opaque */
   border-radius: var(--border-radius);
   opacity: 0; /* Hidden by default */
   transform: translateY(50px) scale(0.9); /* Start position for bounce-in */
@@ -1397,7 +1397,7 @@ button.login-button-morphing::before span:nth-child(3) {
   ); /* More colors in gradient */
   background-size: 300% 300%; /* Larger background for smoother animation */
   opacity: 0;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.15s ease-out; /* Faster fade-out for the border glow */
   animation: animatedBorder 6s linear infinite paused; /* Slower animation for subtlety */
   will-change: background-position, opacity;
 }
@@ -1572,11 +1572,11 @@ body.dark-mode .app-header .header-nav-link:focus {
 
 /* Dark Mode Modals */
 body.dark-mode .modal-content {
-  background-color: rgba(var(--glass-background-rgb-dark), 0.6); /* More opaque than general cards */
-  backdrop-filter: blur(15px); /* Can adjust blur if needed */
-  -webkit-backdrop-filter: blur(15px);
-  border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark));
-  box-shadow: var(--glass-shadow-dark);
+  background-color: rgba(var(--color-surface-dark-rgb), 0.92); /* High opacity */
+  backdrop-filter: blur(5px); /* Minimal blur */
+  -webkit-backdrop-filter: blur(5px);
+  border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
+  box-shadow: var(--glass-shadow-dark); /* Keep glass shadow for dark mode, it's lighter */
 }
 body.dark-mode .modal-content::before { /* Reflection on dark modal */
   background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
@@ -1591,11 +1591,11 @@ body.dark-mode .modal-footer {
 
 /* Dark Mode Toasts */
 body.dark-mode .toast {
-  background-color: rgba(var(--glass-background-rgb-dark), 0.7); /* Even more opaque for toasts */
-  backdrop-filter: blur(10px); /* Less blur for toasts */
-  -webkit-backdrop-filter: blur(10px);
-  border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark));
-  box-shadow: var(--glass-shadow-dark);
+  background-color: rgba(var(--color-surface-dark-rgb), 0.95); /* High opacity */
+  backdrop-filter: blur(5px); /* Minimal blur */
+  -webkit-backdrop-filter: blur(5px);
+  border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
+  box-shadow: var(--glass-shadow-dark); /* Keep glass shadow, it's lighter */
   color: var(--color-text-dark);
 }
 body.dark-mode .toast::before { /* Reflection on dark toast */

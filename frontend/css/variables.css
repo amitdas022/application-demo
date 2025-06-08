@@ -32,6 +32,7 @@
   /* Background color for the page, supportive of glassmorphism */
   --color-background: #E2D9F3; /* A soft, very light purple background */
   --color-surface: var(--color-white); /* For opaque cards (will be overridden for glassy) */
+  --color-surface-rgb: 255, 255, 255; /* RGB for --color-surface */
   --color-border: #e0e0e0;
   --color-input-border: #ced4da; /* Will be adjusted for glassy inputs in main.css */
 
@@ -72,6 +73,7 @@
   /* --- Dark Theme Palette --- */
   --color-background-dark: #121212; /* Very dark grey/black */
   --color-surface-dark: #1E1E1E;    /* Slightly lighter surface for cards in dark mode */
+  --color-surface-dark-rgb: 30, 30, 30; /* RGB for --color-surface-dark */
   --color-text-dark: #EAEAEA;       /* Light grey for text in dark mode */
   --color-text-muted-dark: #A0A0A0; /* Softer grey for muted text in dark mode */
   --color-primary-dark-theme: var(--color-primary-light); /* Use light primary for accents in dark mode */

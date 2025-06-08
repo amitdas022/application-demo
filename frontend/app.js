@@ -1048,15 +1048,24 @@ function initTiltEffect() {
       const centerX = elementWidth / 2;
       const centerY = elementHeight / 2;
 
-      const rotateX = ((y - centerY) / (elementHeight / 2)) * -3; // Max rotation reduced to 3 degrees
-      const rotateY = ((x - centerX) / (elementWidth / 2)) * 3;  // Max rotation reduced to 3 degrees
+      let maxRotate = 2; // Default subtle rotation
+      let scaleAmount = 1.005; // Default subtle scale
 
-      // Apply a very subtle scale for a "pop-out" 3D effect along with tilt
-      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
+      if (element.classList.contains('admin-showcase-tilt')) {
+        maxRotate = 7; // More pronounced rotation for showcase cards
+        scaleAmount = 1.03; // More pronounced scale for showcase cards
+      }
+
+      const rotateX = ((y - centerY) / (elementHeight / 2)) * -maxRotate;
+      const rotateY = ((x - centerX) / (elementWidth / 2)) * maxRotate;
+
+      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${scaleAmount}, ${scaleAmount}, ${scaleAmount})`;
     });
 
     element.addEventListener('mouseleave', () => {
       // Reset transform to default
+      // Note: If different resting scales were desired for different cards, this would also need to be conditional.
+      // For now, all reset to scale(1). CSS :hover will apply its own scale if mouse re-enters.
       element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
     });
   });
