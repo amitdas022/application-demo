@@ -193,12 +193,14 @@ To set up this project with a new or different Auth0 account, or for initial set
         *   Grant Types: Ensure "Password" (Resource Owner Password Credentials) is enabled.
         *   (Optional but Recommended for SPAs if not using ROPG from backend): Enable "Authorization Code" and "Refresh Token".
     *   **Connections Tab:** Enable your desired database connection (e.g., "Username-Password-Authentication").
+    *   **Go to Dashboard Settings Menu (IMP)** Dashboard => Settings => API Authorization Settings => Default Directory => Username-Password-Authentication(or the name of the DB you are using) => Save
 
 3.  **Create a "Machine-to-Machine Application" (for Management API Access):**
     *   Go to Applications => Applications => Create Application.
     *   Choose "Machine to Machine Applications". Name: e.g., "My App Management API Access".
     *   Authorize for: "Auth0 Management API".
     *   Grant Scopes (Permissions): Select necessary scopes like `read:users`, `create:users`, `update:users`, `delete:users`, `read:roles`, `update:roles` (for assigning roles).
+    *   Chosse the option Client Secret(Basic) option under Authentication Method.
     *   **Settings Tab:** Note down `Client ID`, `Client Secret`.
 
 4.  **(Optional but Recommended) Create an Auth0 API (for ROPG Audience):**
@@ -225,12 +227,12 @@ To set up this project with a new or different Auth0 account, or for initial set
         };
         ```
     *   **Important**: For the Action script above, you must configure an Action secret (e.g., name it `AUTH0_ROLES_NAMESPACE`) with the value of your chosen namespace (e.g., `https://myapp.example.com/`). This namespace value must also be set as the `AUTH0_ROLES_NAMESPACE` environment variable in your `.env` file and Vercel deployment.
-    *   Deploy the Action. Then, go to Actions => Flows => Login. Drag your custom Action into the flow.
+    *   Deploy the Action. Then, go to Actions => Triggers => Post Login. Drag your custom Action into the flow.
     *   The `/api/auth.js` file will look for this custom claim using the `AUTH0_ROLES_NAMESPACE` (e.g., `decodedAccessToken[process.env.AUTH0_ROLES_NAMESPACE + 'roles']`).
 
-7.  **Set Default Directory for ROPG:**
-    *   Go to Tenant Settings (click tenant name in top right) => API Authorization Settings.
-    *   Default Directory: Select your primary user database connection (e.g., "Username-Password-Authentication"). Save.
+7.  **Check Default Directory for ROPG:**
+    *   Go to Authentication => Database => Username-Password-Authentication => Applications
+    *   Check if the Login Application and the M2M application are enabled for this DB connection.
 
 8.  **Configure Application URLs (for the RWA used in ROPG):**
     *   In your "Regular Web Application" settings in Auth0:
