@@ -22,12 +22,21 @@
                 </a>
             </div>
             <h1 class="app-title">Admin Control Panel</h1>
-            <button id="logout-button" class="btn btn-outline-light">Logout</button>
+            <div class="header-actions"> <!-- Wrapper for theme switch and logout -->
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch" for="theme-checkbox" aria-label="Theme switch">
+                        <input type="checkbox" id="theme-checkbox" />
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="theme-switch-label" style="color: var(--color-light); font-size: 0.9rem; margin-left: 0.5rem;">Dark Mode</span>
+                </div>
+                <button id="logout-button" class="btn btn-outline-light">Logout</button>
+            </div>
         </div>
     </header>
 
     <main class="admin-page">
-        <div class="container animated-container">
+        <div class="container animated-container glass-pane">
             <section class="admin-intro">
                 <h2>Administration Area</h2>
                 <p>Welcome! From here, you can manage various aspects of the application. Please select a task below to get started.</p>
@@ -36,11 +45,11 @@
             <section class="admin-features">
                 <h3 class="section-title">Management Tools</h3>
                 <div class="feature-grid">
-                    <a href="admin-user-crud.html" class="feature-card card btn-animated-border">
+                    <a href="admin-user-crud.html" class="feature-card card btn-animated-border admin-showcase-tilt">
                         <h4>User Management</h4>
                         <p>Create, view, update, and delete user accounts.</p>
                     </a>
-                    <a href="admin-group.html" class="feature-card card btn-animated-border">
+                    <a href="admin-group.html" class="feature-card card btn-animated-border admin-showcase-tilt">
                         <h4>Group Management</h4>
                         <p>Define and manage user groups and their permissions (e.g., assign 'admin' role).</p>
                     </a>

@@ -63,12 +63,42 @@ p {
 
 a {
   color: var(--color-primary);
-  text-decoration: none;
+  text-decoration: none; /* Base links have no underline */
   transition: var(--transition-base);
+  position: relative; /* For animated underline */
 }
-a:hover {
+a:not(.btn):not(.header-nav-link):not(.feature-card):hover { /* Exclude buttons and other specially styled links */
   color: var(--color-primary-dark);
-  text-decoration: underline;
+  /* text-decoration: underline; Removed in favor of animated underline */
+}
+
+/* Animated underline for general text links */
+a:not(.btn):not(.header-nav-link):not(.feature-card)::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1.5px; /* Slightly thicker for visibility */
+  bottom: -3px; /* Adjust vertical position */
+  left: 0;
+  background-color: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left; /* Animation from left to right */
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+a:not(.btn):not(.header-nav-link):not(.feature-card):hover::after {
+  transform: scaleX(1);
+}
+
+/* Accessibility: Clear focus indication for keyboard users */
+a:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 3px;
+  border-radius: 3px; /* Optional: for rounded outline corners */
+}
+/* Remove outline for mouse focus if :focus-visible is supported and default outline is also removed */
+a:focus:not(:focus-visible) {
+  outline: none;
 }
 
 
@@ -97,8 +127,8 @@ a:hover {
   vertical-align: middle;
   cursor: pointer;
   user-select: none;
-  background-color: transparent;
-  border: 1px solid transparent;
+  background-color: rgba(255, 255, 255, 0.1); /* Subtle glass background */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Light border for glass effect */
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: 1rem;
   border-radius: var(
@@ -109,65 +139,73 @@ a:hover {
   position: relative; /* For ripple effect */
   overflow: hidden; /* For ripple effect */
   z-index: 1; /* For ripple effect */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.1); /* Inner shadow + subtle outer */
 }
 
 .btn:hover {
   transform: translateY(-5px); /* More pronounced lift on hover */
-  box-shadow: var(--box-shadow-sm); /* Subtle shadow on hover */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.15), 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.1); /* Enhanced lift and glow */
+  background-color: rgba(255, 255, 255, 0.15); /* Slightly more opaque on hover */
 }
 .btn:active {
   transform: translateY(0px) scale(0.95); /* Deeper press on active */
-  box-shadow: none;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); /* Pressed-in shadow */
 }
 .btn:focus {
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.35); /* More prominent focus ring */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.35), 0 2px 4px rgba(0,0,0,0.1); /* Prominent focus ring and existing shadow */
 }
 
 .btn-primary {
   color: var(--color-text-on-primary);
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 10px rgba(var(--color-primary-rgb), 0.2); /* Initial shadow for primary buttons */
+  background-color: rgba(var(--color-primary-rgb), 0.8); /* Primary color with alpha */
+  border: 1px solid transparent; /* Transparent border or very subtle primary border */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 15px rgba(var(--color-primary-rgb), 0.3); /* Inner highlight and primary shadow */
 }
 .btn-primary:hover {
-  background-color: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
+  background-color: rgba(var(--color-primary-dark-rgb), 0.85); /* Darker primary on hover */
+  border-color: transparent;
   color: var(--color-text-on-primary);
-  box-shadow: 0 8px 15px rgba(var(--color-primary-rgb), 0.3); /* Deeper shadow on hover */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 8px 25px rgba(var(--color-primary-dark-rgb), 0.35); /* Enhanced shadow */
 }
 
 .btn-secondary {
   color: var(--color-text-on-primary);
-  background-color: var(--color-secondary);
-  border-color: var(--color-secondary);
+  background-color: rgba(var(--color-secondary-rgb), 0.8);
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 15px rgba(var(--color-secondary-rgb), 0.3);
 }
 .btn-secondary:hover {
-  background-color: var(--color-secondary-dark);
-  border-color: var(--color-secondary-dark);
+  background-color: rgba(var(--color-secondary-dark-rgb), 0.85);
+  border-color: transparent;
   color: var(--color-text-on-primary);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 8px 25px rgba(var(--color-secondary-dark-rgb), 0.35);
 }
 
 .btn-danger {
   color: var(--color-text-on-primary);
-  background-color: var(--color-danger);
-  border-color: var(--color-danger);
+  background-color: rgba(var(--color-danger-rgb), 0.8);
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 15px rgba(var(--color-danger-rgb), 0.3);
 }
 .btn-danger:hover {
-  filter: brightness(90%); /* Subtle darken */
-  border-color: var(--color-danger);
+  background-color: rgba(var(--color-danger-rgb), 0.7); /* Darken by reducing alpha */
+  border-color: transparent;
   color: var(--color-text-on-primary);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 8px 25px rgba(var(--color-danger-rgb), 0.35);
 }
 
 .btn-outline-light {
   color: var(--color-light);
-  border-color: var(--color-light);
-  background-color: transparent;
+  border: 1px solid var(--color-light); /* Keep existing border */
+  background-color: transparent; /* Explicitly transparent */
+  /* box-shadow is inherited from .btn, which is good for a base */
 }
 .btn-outline-light:hover {
   color: var(--color-primary-dark); /* Changed text color to dark on hover */
-  background-color: var(--color-light);
-  border-color: var(--color-light);
+  background-color: rgba(var(--color-white-rgb), 0.15); /* Subtle white glass hover */
+  border-color: var(--color-light); /* Keep border color */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.15), 0 0 0 0.2rem rgba(var(--color-light-rgb), 0.3); /* Use light color for glow */
 }
 
 .btn-lg {
@@ -213,7 +251,8 @@ a:hover {
 .login-button.login-button-morphing > * {
     visibility: hidden;
     opacity: 0;
-    transition: visibility 0s 0.1s, opacity 0.1s linear; /* Quick fade out for text */
+    /* Slightly smoother fade-out for text/icons inside the button during morph */
+    transition: visibility 0s 0.2s, opacity 0.2s cubic-bezier(0.55, 0.085, 0.68, 0.53);
 }
 
 /* Button Ripple Effect */
@@ -233,7 +272,7 @@ a:hover {
 }
 
 .btn.ripple-active::after {
-  animation: buttonRipple 0.6s ease-out forwards; /* Uses enhanced ripple animation */
+  animation: buttonRipple 0.45s cubic-bezier(0.23, 1, 0.32, 1) forwards; /* Faster, more explosive ripple */
 }
 
 /* Spinner for loading buttons */
@@ -322,13 +361,32 @@ button.login-button-morphing::before span:nth-child(3) {
   box-shadow: var(--box-shadow); /* Use new stronger shadow by default */
   padding: var(--spacing-xl); /* More generous padding for all cards */
   margin-bottom: var(--spacing-lg);
-  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  transition: transform 0.1s ease-out, box-shadow 0.3s ease-out; /* Adjusted for tilt */
   position: relative;
   overflow: hidden;
   will-change: transform, box-shadow; /* Optimize for animations */
+  overflow: hidden; /* Needed for light reflection pseudo-element */
+}
+.card::before { /* Light reflection pseudo-element */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%; /* Start off-screen */
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  opacity: 0;
+  transition: left 0.6s ease-in-out, opacity 0.6s ease-in-out;
+  pointer-events: none;
+  z-index: 1; /* Above background, below content */
+}
+.card:hover::before {
+  left: 120%; /* Sweep across */
+  opacity: 0.6; /* Make it visible - adjust opacity for desired subtlety */
 }
 .card:hover:not(.no-hover-effect) {
-  transform: translateY(-10px) scale(1.005); /* More pronounced lift and subtle scale */
+  transform: translateY(-10px) scale(1.05); /* Slightly more scale for hover, tilt will be additive */
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); /* Deeper shadow on hover */
 }
 .card-title {
@@ -368,27 +426,40 @@ button.login-button-morphing::before span:nth-child(3) {
   position: relative;
   display: flex; /* Allow icon and input to sit side-by-side */
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent white border */
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Use glass border alpha */
   border-radius: var(--border-radius); /* Inherit from variables */
   background-color: rgba(
     255,
     255,
     255,
-    0.1
-  ); /* Very light, semi-transparent background */
+    0.15
+  ); /* Slightly more present light, semi-transparent background */
   box-shadow: var(--box-shadow-sm); /* Subtle shadow for depth */
-  backdrop-filter: blur(5px); /* Less blur for inputs than card */
-  -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
+  backdrop-filter: blur(10px); /* Slightly more blur for inputs */
+  -webkit-backdrop-filter: blur(10px); /* For Safari compatibility */
   transition: var(--transition-base);
   overflow: hidden; /* Ensure focus animation stays within bounds */
+  /* position: relative; is already set */
 }
-
+.input-with-icon::before { /* Static glare for inputs */
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  border-radius: var(--border-radius); /* Match parent's border-radius */
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 60%);
+  pointer-events: none;
+  z-index: 0; /* Behind actual input field and icon */
+  opacity: 0.85; /* Adjust for desired subtlety */
+}
 .input-with-icon:focus-within {
   border-color: rgba(
     var(--color-primary-rgb),
-    0.6
-  ); /* Primary color on focus */
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2), var(--box-shadow); /* Glow effect */
+    0.7
+  ); /* Primary color on focus - slightly more opaque */
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb), 0.25), var(--glass-shadow); /* Glass lift effect on focus */
   background-color: rgba(
     255,
     255,
@@ -405,6 +476,11 @@ button.login-button-morphing::before span:nth-child(3) {
   color: var(--color-primary); /* Primary color for icons */
   flex-shrink: 0; /* Prevent icon from shrinking */
   z-index: 1; /* Ensure icon is above input-focus-animation */
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease; /* Added transition */
+}
+.input-with-icon:focus-within .input-icon {
+  transform: scale(1.1);
+  opacity: 0.85;
 }
 
 .styled-form input[type="text"],
@@ -531,17 +607,37 @@ button.login-button-morphing::before span:nth-child(3) {
 }
 
 .toast {
-  background-color: var(--color-surface);
-  color: var(--color-text);
+  background-color: rgba(var(--color-surface-rgb), 0.95); /* High opacity for readability */
+  backdrop-filter: blur(5px); /* Minimal blur */
+  -webkit-backdrop-filter: blur(5px); /* Minimal blur */
+  border: 1px solid rgba(var(--color-black), 0.1); /* Softer border */
+  box-shadow: var(--box-shadow-lg); /* Standard shadow for opaque look */
+  color: var(--color-text); /* Ensure text is readable */
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
   opacity: 0;
   transform: translateY(-100%);
-  animation: toastSlideIn 0.5s ease-out forwards;
+  animation: toastSlideIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   max-width: 350px; /* Slightly wider toast */
   pointer-events: auto; /* Re-enable pointer events for the toast itself */
   will-change: transform, opacity; /* Optimize for animations */
+  position: relative; /* For pseudo-element positioning */
+  overflow: hidden; /* For light reflection */
+}
+.toast::before { /* Light reflection */
+  content: '';
+  position: absolute;
+  top: 0; left: -80%; width: 70%; height: 100%; /* Adjusted width for smaller element */
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  opacity: 0;
+  transition: left 0.6s ease-in-out, opacity 0.6s ease-in-out;
+  pointer-events: none;
+  z-index: 0;
+}
+.toast:hover::before {
+  left: 120%;
+  opacity: 0.7;
 }
 .toast.info {
   border-left: 6px solid var(--color-primary); /* Thicker border */
@@ -553,7 +649,7 @@ button.login-button-morphing::before span:nth-child(3) {
   border-left: 6px solid var(--color-danger);
 }
 .toast.hide {
-  animation: toastSlideOut 0.5s ease-in forwards;
+  animation: toastSlideOut 0.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
 }
 
 /* --- Modals --- */
@@ -570,8 +666,8 @@ button.login-button-morphing::before span:nth-child(3) {
   z-index: 1050;
   background-color: rgba(
     var(--color-black),
-    0.6
-  ); /* Darker overlay for strong focus */
+    0.7
+  ); /* Even darker overlay for strong focus */
   opacity: 0; /* Default hidden state */
   visibility: hidden; /* Default hidden state */
   transition: opacity 0.3s ease, visibility 0s linear 0.3s; /* Fade out, then hide visibility */
@@ -600,23 +696,43 @@ button.login-button-morphing::before span:nth-child(3) {
   max-width: 600px; /* Larger max width for modals */
   display: flex;
   flex-direction: column;
-  background-color: var(--color-surface);
+  background-color: rgba(var(--color-surface-rgb), 0.9); /* High opacity for readability */
+  backdrop-filter: blur(5px); /* Minimal blur for readability */
+  -webkit-backdrop-filter: blur(5px); /* Minimal blur for readability */
+  border: 1px solid rgba(var(--color-black), 0.1); /* Softer border for more opaque surface */
+  box-shadow: var(--box-shadow-lg); /* Use a more standard shadow if almost opaque */
   border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow-lg); /* More prominent shadow */
   opacity: 0; /* Hidden by default */
   transform: translateY(50px) scale(0.9); /* Start position for bounce-in */
   will-change: transform, opacity;
+  overflow: hidden; /* For light reflection */
+  /* position: relative; is already set */
+}
+.modal-content::before { /* Light reflection */
+  content: '';
+  position: absolute;
+  top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  opacity: 0;
+  transition: left 0.8s ease-in-out, opacity 0.8s ease-in-out; /* Slightly slower for larger surface */
+  pointer-events: none;
+  z-index: 0; /* Behind modal body content */
+}
+.modal-content:hover::before {
+  left: 120%;
+  opacity: 0.6;
 }
 
 /* Modal content open animation (triggered by JS) */
 .modal-content.modal-open {
-  animation: modalBounceIn 0.7s ease-out forwards; /* Use the bounce animation */
+  animation: modalBounceIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Use the bounce animation */
   opacity: 1; /* Ensure it's visible during animation */
 }
 
 /* Modal content closing animation (triggered by JS) */
 .modal-content.modal-closing {
-  animation: modalBounceOut 0.4s ease-in forwards; /* New bounce out animation */
+  animation: modalBounceOut 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; /* New bounce out animation */
 }
 
 .modal-header {
@@ -665,16 +781,39 @@ button.login-button-morphing::before span:nth-child(3) {
 
 /* --- Application Header --- */
 .app-header {
-  background-color: rgba(var(--color-primary-rgb), 0.3); /* Primary color but semi-transparent */
-  backdrop-filter: blur(10px); /* Subtle blur for the header */
-  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(var(--color-primary-rgb), var(--glass-background-alpha)); /* Primary color tint with glass alpha */
+  backdrop-filter: blur(var(--glass-blur)); /* Standard glass blur */
+  -webkit-backdrop-filter: blur(var(--glass-blur)); /* Standard glass blur for Safari */
   color: var(--color-text-on-primary);
   padding: var(--spacing-md) 0;
-  box-shadow: var(--box-shadow-sm); /* Softer shadow */
+  box-shadow: var(--glass-shadow); /* Standard glass shadow */
   position: sticky; /* Make header sticky */
   top: 0;
   z-index: 10; /* Ensure header is above other content */
+  border-bottom: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Subtle bottom border */
   /* animation: slideDownFadeIn 0.5s ease-out; */ /* Animation might conflict with sticky, can be removed or adjusted */
+  overflow: hidden; /* For light reflection pseudo-element */
+  position: relative; /* Ensure pseudo-element is positioned relative to header */
+}
+.app-header .header-actions { /* Wrapper for theme switch and logout */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg); /* Increased gap for more space */
+}
+.app-header::before { /* Light reflection */
+  content: '';
+  position: absolute;
+  top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  opacity: 0;
+  transition: left 0.7s ease-in-out, opacity 0.7s ease-in-out;
+  pointer-events: none;
+  z-index: 0; /* Behind header content */
+}
+.app-header:hover::before {
+  left: 120%;
+  opacity: 0.5; /* Subtle on header */
 }
 .app-header .header-content {
   display: flex;
@@ -693,17 +832,25 @@ button.login-button-morphing::before span:nth-child(3) {
 }
 .app-header .header-nav-link {
   color: var(--color-light);
-  border-color: var(--color-light);
   opacity: 0.8;
+  padding: var(--spacing-xs) var(--spacing-sm); /* Add some padding for better click area & hover bg */
+  border-radius: var(--border-radius); /* Consistent rounding */
+  text-shadow: 0 0 5px rgba(0,0,0,0.5); /* Improved readability */
+  transition: var(--transition-base);
 }
 .app-header .header-nav-link:hover {
   opacity: 1;
-  background-color: rgba(
-    var(--color-white),
-    0.2
-  ); /* Slightly more opaque background */
+  background-color: rgba(var(--color-white-rgb), 0.15); /* Subtle background on hover */
   color: var(--color-white);
-  transform: translateY(-3px); /* More lift */
+  transform: translateY(-2px); /* Slight lift */
+  box-shadow: var(--box-shadow-sm); /* Subtle shadow on hover */
+}
+.app-header .header-nav-link:focus {
+  opacity: 1;
+  background-color: rgba(var(--color-white-rgb), 0.2);
+  color: var(--color-white);
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-white-rgb), 0.3), var(--box-shadow-sm); /* Focus ring */
 }
 
 /* --- Page Specific Styles & Animated Containers --- */
@@ -734,8 +881,9 @@ button.login-button-morphing::before span:nth-child(3) {
     var(--glass-blur)
   ); /* For Safari compatibility */
   border-radius: var(--border-radius);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
+  box-shadow: var(--glass-shadow); /* Use variable for glass shadow */
   transition: var(--transition-base); /* Smooth transitions for hover/focus */
+  will-change: transform, box-shadow; /* Optimize for tilt effect */
 
   padding: var(--spacing-xl);
   text-align: center;
@@ -827,8 +975,9 @@ button.login-button-morphing::before span:nth-child(3) {
     var(--glass-blur)
   ); /* For Safari compatibility */
   border-radius: var(--border-radius);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
+  box-shadow: var(--glass-shadow); /* Use variable for glass shadow */
   transition: var(--transition-base); /* Smooth transitions for hover/focus */
+  will-change: transform, box-shadow; /* Optimize for tilt effect */
 
   padding: var(--spacing-xl);
   text-align: center;
@@ -849,7 +998,7 @@ button.login-button-morphing::before span:nth-child(3) {
     backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
     -webkit-backdrop-filter: blur(var(--glass-blur)); /* For Safari compatibility */
     border-radius: var(--border-radius); /* From variables.css */
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Deeper, more distinct shadow */
+    box-shadow: var(--glass-shadow); /* Use variable for glass shadow */
     padding: var(--spacing-xl); /* Consistent padding */
     position: relative; /* Needed for z-index and stacking context */
     z-index: 1; /* Ensure it's above the background scene elements */
@@ -887,9 +1036,40 @@ button.login-button-morphing::before span:nth-child(3) {
      color: var(--color-primary);
 }
 
+/* New Utility Class for generic glass panes */
+.glass-pane {
+  background-color: rgba(255, 255, 255, var(--glass-background-alpha));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl); /* Default padding, can be overridden */
+  position: relative;
+  z-index: 1;
+  overflow: hidden; /* Already has overflow:hidden, good for pseudo-element */
+}
+.glass-pane::before { /* Light reflection pseudo-element */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  opacity: 0;
+  transition: left 0.7s ease-in-out, opacity 0.7s ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.glass-pane:hover::before {
+  left: 120%;
+  opacity: 0.7; /* Slightly more pronounced on generic glass panes */
+}
 
 .animated-container {
-  animation: slideUpFadeIn 0.7s 0.2s ease-out forwards;
+  animation: slideUpFadeIn 0.7s 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   opacity: 0;
 }
 
@@ -1176,6 +1356,12 @@ button.login-button-morphing::before span:nth-child(3) {
   text-align: center;
   padding: var(--spacing-xl) var(--spacing-lg);
   will-change: transform, box-shadow;
+  /* Override generic 'a' transition. Only transition transform and box-shadow. Opacity of pseudo-elements is handled separately. */
+  transition: transform 0.1s ease-out, box-shadow 0.3s ease-out;
+}
+.feature-card:hover {
+  transform: scale(1.05); /* Basic hover, JS will add tilt */
+  box-shadow: var(--box-shadow-lg);
 }
 .feature-card h4 {
   color: var(--color-primary); /* Use primary color for card titles */
@@ -1211,7 +1397,7 @@ button.login-button-morphing::before span:nth-child(3) {
   ); /* More colors in gradient */
   background-size: 300% 300%; /* Larger background for smoother animation */
   opacity: 0;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.15s ease-out; /* Faster fade-out for the border glow */
   animation: animatedBorder 6s linear infinite paused; /* Slower animation for subtlety */
   will-change: background-position, opacity;
 }
@@ -1257,9 +1443,368 @@ button.login-button-morphing::before span:nth-child(3) {
 .styled-list li.animated-item {
   opacity: 0;
   transform: translateY(20px); /* Uses enhanced itemSlideUpFadeIn */
-  animation: itemSlideUpFadeIn 0.5s ease-out forwards;
+  animation: itemSlideUpFadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   animation-delay: var(--item-index);
   will-change: transform, opacity;
+}
+
+/* --- Dark Mode Overrides --- */
+body.dark-mode {
+  background-color: var(--color-background-dark);
+  color: var(--color-text-dark);
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6 {
+  color: var(--color-primary-dark-theme); /* Uses light primary for headings in dark mode */
+}
+
+body.dark-mode p {
+  color: var(--color-text-muted-dark);
+}
+
+body.dark-mode a {
+  color: var(--color-primary-dark-theme);
+}
+
+body.dark-mode a:not(.btn):not(.header-nav-link):not(.feature-card):hover {
+  color: var(--color-primary); /* Slightly darker hover for links in dark mode */
+}
+
+body.dark-mode a:not(.btn):not(.header-nav-link):not(.feature-card)::after {
+  background-color: var(--color-primary-dark-theme);
+}
+
+/* Accessibility: Clear focus indication for keyboard users in dark mode */
+body.dark-mode a:focus-visible {
+  outline: 2px solid var(--color-primary-dark-theme); /* Use a light color for outline */
+}
+
+body.dark-mode .section-divider {
+  background-color: var(--color-border-dark);
+  opacity: 0.5;
+}
+
+/* Dark Mode Scene Elements (Welcome Page) */
+body.dark-mode .scene-element {
+  opacity: 0.5; /* Slightly more visible on dark background */
+  filter: blur(15px); /* Slightly less blur to make them pop a bit more */
+}
+/* Example of adjusting a specific element's gradient for dark mode if needed */
+/* body.dark-mode .scene-element.element-1 {
+  background: radial-gradient(circle at 30% 30%, #b3e5ff, #4a8bd5);
+} */
+
+
+/* Dark Mode Inputs */
+body.dark-mode .input-with-icon {
+  background-color: rgba(var(--glass-background-rgb-dark), 0.3); /* Darker glass for inputs */
+  border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark));
+  box-shadow: var(--box-shadow-sm); /* Keep subtle shadow, or use a very faint dark-mode glass shadow */
+}
+body.dark-mode .input-with-icon::before { /* Static glare */
+  background: linear-gradient(135deg, rgba(var(--color-white-rgb),0.06) 0%, rgba(var(--color-white-rgb),0.005) 60%);
+  opacity: 0.7;
+}
+body.dark-mode .input-with-icon:focus-within {
+  border-color: rgba(var(--color-primary-dark-theme-rgb), 0.7);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-dark-theme-rgb), 0.25), var(--glass-shadow-dark);
+  background-color: rgba(var(--glass-background-rgb-dark), 0.4);
+}
+body.dark-mode .input-with-icon .input-icon {
+  color: var(--color-primary-dark-theme);
+}
+body.dark-mode .styled-form input[type="text"],
+body.dark-mode .styled-form input[type="password"],
+body.dark-mode .styled-form input[type="email"] {
+  color: var(--color-text-dark);
+}
+body.dark-mode .styled-form input::placeholder {
+  color: var(--color-text-muted-dark);
+  opacity: 0.7;
+}
+body.dark-mode .styled-form input::-webkit-input-placeholder {
+  color: var(--color-text-muted-dark);
+  opacity: 0.7;
+}
+body.dark-mode .styled-form input::-moz-placeholder {
+  color: var(--color-text-muted-dark);
+  opacity: 0.7;
+}
+body.dark-mode .styled-form input:-ms-input-placeholder {
+  color: var(--color-text-muted-dark);
+  opacity: 0.7;
+}
+body.dark-mode .styled-form input::-ms-input-placeholder {
+  color: var(--color-text-muted-dark);
+  opacity: 0.7;
+}
+body.dark-mode .styled-form label {
+  color: var(--color-text-dark);
+}
+
+/* Dark Mode App Header */
+body.dark-mode .app-header {
+  background-color: rgba(var(--glass-background-rgb-dark), var(--glass-background-alpha-dark));
+  border-bottom-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark)); /* Match border style */
+  box-shadow: var(--glass-shadow-dark);
+}
+body.dark-mode .app-header .app-title {
+  color: var(--color-text-dark); /* Or a specific header title color for dark mode */
+}
+body.dark-mode .app-header .header-nav-link {
+  color: var(--color-text-muted-dark);
+  /* border-color for .btn-outline-light is handled by its specific dark mode override */
+}
+body.dark-mode .app-header .header-nav-link:hover {
+  color: var(--color-text-dark);
+  background-color: rgba(var(--color-white-rgb), 0.08);
+}
+body.dark-mode .app-header .header-nav-link:focus {
+  background-color: rgba(var(--color-white-rgb), 0.1);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-white-rgb), 0.2), var(--box-shadow-sm); /* Lighter focus ring */
+}
+
+
+/* Dark Mode Modals */
+body.dark-mode .modal-content {
+  background-color: rgba(var(--color-surface-dark-rgb), 0.92); /* High opacity */
+  backdrop-filter: blur(5px); /* Minimal blur */
+  -webkit-backdrop-filter: blur(5px);
+  border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
+  box-shadow: var(--glass-shadow-dark); /* Keep glass shadow for dark mode, it's lighter */
+}
+body.dark-mode .modal-content::before { /* Reflection on dark modal */
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
+}
+body.dark-mode .modal-content:hover::before {
+  opacity: 0.7;
+}
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+  border-color: var(--color-border-dark);
+}
+
+/* Dark Mode Toasts */
+body.dark-mode .toast {
+  background-color: rgba(var(--color-surface-dark-rgb), 0.95); /* High opacity */
+  backdrop-filter: blur(5px); /* Minimal blur */
+  -webkit-backdrop-filter: blur(5px);
+  border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
+  box-shadow: var(--glass-shadow-dark); /* Keep glass shadow, it's lighter */
+  color: var(--color-text-dark);
+}
+body.dark-mode .toast::before { /* Reflection on dark toast */
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0) 100%);
+}
+body.dark-mode .toast:hover::before {
+  opacity: 0.8;
+}
+/* Ensure colored borders on toasts are still visible and contrast well */
+body.dark-mode .toast.info { border-left-color: var(--color-primary-dark-theme); }
+body.dark-mode .toast.success { border-left-color: var(--color-success); } /* Success green usually fine */
+body.dark-mode .toast.error { border-left-color: var(--color-danger); } /* Danger red usually fine */
+
+
+/* Dark Mode Buttons */
+body.dark-mode .btn {
+  background-color: rgba(var(--color-white-rgb), 0.05); /* Very subtle light on dark */
+  border-color: rgba(var(--color-white-rgb), 0.1);
+  color: var(--color-text-dark);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.03), 0 2px 4px rgba(0,0,0,0.2);
+}
+body.dark-mode .btn:hover {
+  background-color: rgba(var(--color-white-rgb), 0.08);
+  border-color: rgba(var(--color-white-rgb), 0.15);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.03), 0 6px 20px rgba(0,0,0,0.25), 0 0 0 0.2rem rgba(var(--color-primary-dark-theme-rgb), 0.1);
+}
+body.dark-mode .btn:active {
+  background-color: rgba(var(--color-white-rgb), 0.03);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+body.dark-mode .btn:focus {
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.03), 0 0 0 0.2rem rgba(var(--color-primary-dark-theme-rgb), 0.35), 0 2px 4px rgba(0,0,0,0.2);
+}
+
+body.dark-mode .btn-primary {
+  background-color: rgba(var(--color-primary-light-rgb), 0.9); /* Use light primary, fairly opaque */
+  color: #1E1E1E; /* Dark text for contrast on light primary button */
+  border-color: transparent;
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.2), 0 4px 15px rgba(var(--color-primary-light-rgb), 0.25);
+}
+body.dark-mode .btn-primary:hover {
+  background-color: rgba(var(--color-primary-light-rgb), 1); /* Fully opaque on hover */
+  color: var(--color-background-dark);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.15), 0 8px 25px rgba(var(--color-primary-light-rgb), 0.3);
+}
+
+body.dark-mode .btn-secondary {
+  background-color: rgba(var(--color-secondary-rgb), 0.3); /* Darker base for secondary */
+  color: var(--color-text-dark);
+  border-color: rgba(var(--color-white-rgb), 0.1);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.05), 0 4px 15px rgba(0,0,0, 0.2);
+}
+body.dark-mode .btn-secondary:hover {
+  background-color: rgba(var(--color-secondary-rgb), 0.4);
+  border-color: rgba(var(--color-white-rgb), 0.15);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.05), 0 8px 25px rgba(0,0,0, 0.25);
+}
+
+body.dark-mode .btn-danger {
+  background-color: rgba(var(--color-danger-rgb), 0.7);
+  color: var(--color-white);
+  border-color: transparent;
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.15), 0 4px 15px rgba(var(--color-danger-rgb), 0.25);
+}
+body.dark-mode .btn-danger:hover {
+  background-color: rgba(var(--color-danger-rgb), 0.8);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.1), 0 8px 25px rgba(var(--color-danger-rgb), 0.3);
+}
+
+body.dark-mode .btn-outline-light {
+  color: var(--color-text-muted-dark);
+  border-color: var(--color-text-muted-dark);
+  background-color: transparent;
+}
+body.dark-mode .btn-outline-light:hover {
+  color: var(--color-text-dark);
+  background-color: rgba(var(--color-white-rgb), 0.05);
+  border-color: var(--color-text-dark);
+  box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.03), 0 6px 20px rgba(0,0,0,0.2), 0 0 0 0.2rem rgba(var(--color-light-rgb), 0.1);
+}
+
+/* --- Theme Switch Toggle --- */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+body.dark-mode .theme-switch-label {
+  color: var(--color-text-dark); /* Light text for dark mode */
+}
+
+.theme-switch-label {
+  color: var(--color-light); /* Assuming header text is light */
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px; /* Width of the toggle */
+  height: 26px; /* Height of the toggle */
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(var(--color-white-rgb), 0.3); /* Slightly transparent white track */
+  transition: .4s;
+  border-radius: 26px; /* Rounded ends for the track */
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px; /* Size of the toggle knob */
+  width: 20px;
+  left: 3px; /* Padding from left */
+  bottom: 3px; /* Padding from bottom */
+  background-color: var(--color-white); /* Knob color */
+  transition: .4s;
+  border-radius: 50%; /* Circular knob */
+  box-shadow: 0 0 3px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+  background-color: var(--color-primary); /* Primary color when active */
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--color-primary-light), 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+input:focus-visible + .slider { /* More prominent focus for keyboard nav */
+    outline: 2px solid var(--color-primary-light);
+    outline-offset: 2px;
+}
+
+
+input:checked + .slider:before {
+  transform: translateX(24px); /* How far the knob moves */
+}
+
+/* Dark Mode Cards & Glass Panes */
+body.dark-mode .card,
+body.dark-mode .glass-pane { /* .glass-pane might need its own specific overrides if different from .card */
+  background-color: rgba(var(--glass-background-rgb-dark), var(--glass-background-alpha-dark));
+  border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark));
+  box-shadow: var(--glass-shadow-dark);
+  color: var(--color-text-dark); /* Default text color for content within cards */
+}
+
+body.dark-mode .card .card-title {
+  color: var(--color-primary-dark-theme); /* Light primary for titles */
+}
+body.dark-mode .card .card-title::after {
+  background-color: var(--color-primary-dark-theme);
+}
+
+body.dark-mode .card p,
+body.dark-mode .card .detail-label,
+body.dark-mode .card .detail-value,
+body.dark-mode .card label,
+body.dark-mode .glass-pane p, /* For text directly in a glass-pane */
+body.dark-mode .glass-pane label {
+  color: var(--color-text-dark);
+}
+body.dark-mode .card .detail-value { /* Muted values slightly less than main text */
+    color: var(--color-text-muted-dark);
+}
+
+
+body.dark-mode .glassy-content-card .card { /* Nested card within a glassy container */
+    background-color: rgba(var(--glass-background-rgb-dark), calc(var(--glass-background-alpha-dark) * 0.5)); /* Even more transparent */
+    border-color: rgba(var(--color-white-rgb), calc(var(--glass-border-alpha-dark) * 0.7));
+}
+
+/* Light reflection on dark cards needs to be more prominent */
+body.dark-mode .card::before,
+body.dark-mode .glass-pane::before {
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+}
+body.dark-mode .card:hover::before,
+body.dark-mode .glass-pane:hover::before {
+  opacity: 0.7; /* Ensure it's visible enough */
+}
+
+/* Ensure welcome banner text is readable in dark mode (it's not a card) */
+body.dark-mode .welcome-banner h2,
+body.dark-mode .welcome-banner p {
+    color: var(--color-white); /* It has a dark gradient background, so white text is fine */
+}
+body.dark-mode .welcome-banner .highlight {
+    text-decoration-color: rgba(var(--color-white-rgb), 0.7);
+}
+
+/* User details card specific hover in dark mode */
+body.dark-mode .user-details-card .detail-item:hover {
+  background-color: rgba(var(--color-white-rgb), 0.03); /* Very subtle light hover */
 }
 
 .user-item-info {
