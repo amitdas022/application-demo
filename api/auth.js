@@ -59,9 +59,9 @@ export default async function handler(req, res) {
     // This endpoint is specifically designed to handle the POST request
     // from your frontend's /callback.html page.
     if (req.method === 'POST') {
-        // Extract the authorization `code` from the request body.
-        // The frontend sends this `code` after receiving it from Auth0's redirect.
-        const { code } = req.body;
+        // Extract the authorization `code` AND `redirect_uri` from the request body.
+        // The frontend sends these after receiving them from Auth0's redirect.
+        const { code, redirect_uri } = req.body; // <-- MODIFIED HERE: Now extracting redirect_uri from req.body
 
         // In a highly secure production application, the `state` parameter
         // (generated on the frontend before redirecting to Auth0) should also be
@@ -70,23 +70,19 @@ export default async function handler(req, res) {
         // (e.g., an HTTP-only cookie). This prevents Cross-Site Request Forgery (CSRF) attacks.
         // For simplicity in this demo, frontend handles state validation (using localStorage).
 
-        // Basic validation: Check if an authorization code was actually provided.
+        // Basic validation: Check if an authorization code and redirect_uri were actually provided.
         if (!code) {
             return sendError(res, 400, 'Authorization code is missing from the request body.');
         }
+        if (!redirect_uri) {
+            return sendError(res, 400, 'Redirect URI is missing from the request body. It is required for token exchange.');
+        }
+
 
         try {
             // --- Auth0 Authorization Code Exchange ---
             // Construct the URL for Auth0's token endpoint.
             const auth0TokenUrl = `https://${process.env.AUTH0_DOMAIN}/oauth/token`;
-
-            // Determine the `redirect_uri` dynamically based on the deployment environment.
-            // This `redirect_uri` MUST exactly match one of the "Allowed Callback URLs"
-            // configured in your Auth0 Application settings. It also MUST match the
-            // `redirect_uri` sent in the initial `/authorize` request from the frontend.
-            const AUTH0_REDIRECT_URI = process.env.VERCEL_URL ?
-                                       `https://${process.env.VERCEL_URL}/callback.html` :
-                                       `http://localhost:3000/callback.html`; // Default for local development
 
             // Log the details of the token exchange request being sent to Auth0.
             console.log(`[Auth API] Sending token exchange request to Auth0. URL: ${auth0TokenUrl}`);
@@ -94,7 +90,7 @@ export default async function handler(req, res) {
                 grant_type: 'authorization_code',
                 client_id: process.env.AUTH0_CLIENT_ID,
                 code: code,
-                redirect_uri: AUTH0_REDIRECT_URI,
+                redirect_uri: redirect_uri, // <-- MODIFIED HERE: Using the redirect_uri received from the frontend
                 audience: process.env.AUTH0_AUDIENCE,
                 scope: 'openid profile email offline_access'
             });
@@ -109,7 +105,7 @@ export default async function handler(req, res) {
                     client_id: process.env.AUTH0_CLIENT_ID,    // Your Auth0 Application's Client ID.
                     client_secret: process.env.AUTH0_CLIENT_SECRET, // Your Auth0 Application's Client Secret.
                     code: code,                                // The authorization code obtained from Auth0.
-                    redirect_uri: AUTH0_REDIRECT_URI,          // The exact URI Auth0 redirected to.
+                    redirect_uri: redirect_uri,                // <-- MODIFIED HERE: Using the redirect_uri received from the frontend
                     audience: process.env.AUTH0_AUDIENCE,      // The identifier of the API the token is for (optional for OIDC).
                     // Scopes must match what was requested in the initial /authorize call.
                     // 'openid' is required for ID Token, 'profile' and 'email' for user info,
