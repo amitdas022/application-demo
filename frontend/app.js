@@ -23,8 +23,18 @@ const AUTH0_CLIENT_ID = '3H2O07Y9h101Gpx2hINM0avLDO20fA77'; // Client ID of your
 const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // Optional: If you have a custom API, use its identifier (e.g., https://your-api.com)
 // The redirect_uri must exactly match one configured in your Auth0 Application's "Allowed Callback URLs".
 // It points to the HTML page in your frontend that will handle the Auth0 redirect.
-// const AUTH0_REDIRECT_URI = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/callback.html` : `http://localhost:3000/callback.html`; // Adjust port if different
-const AUTH0_REDIRECT_URI = window.location.origin + '/callback.html';
+// Determine the Auth0 Redirect URI dynamically based on the hostname.
+// This allows switching between localhost and your Vercel production URL.
+let AUTH0_REDIRECT_URI;
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // For local development
+    AUTH0_REDIRECT_URI = 'http://localhost:3000/callback.html';
+} else {
+    // For Vercel production deployment. Replace 'application-demo-gamma.vercel.app'
+    // with your actual canonical production domain if it changes.
+    // This assumes your Vercel production URL is stable and registered in Auth0.
+    AUTH0_REDIRECT_URI = 'https://application-demo-gamma.vercel.app/callback.html';
+}
 
 
 /**
