@@ -271,7 +271,7 @@ To set up this project with a new or different Auth0 account, or for initial set
 
         -   **Allowed Callback URLs**: Add `http://localhost:3000/callback.html` (for local development) and your production callback URL (e.g., `https://your-app.com/callback.html`). This is where Auth0 will redirect after successful login.
 
-        -   **Allowed Logout URLs**: Add `http://localhost:3000/login.html` (for local development) and your production login page URL (e.g., `https://your-app.com/login.html`). This is where Auth0 will redirect after successful logout.
+        -   **Allowed Logout URLs**: Add `http://localhost:3000/index.html` (for local development) and your production login page URL (e.g., `https://your-app.com/index.html`). This is where Auth0 will redirect after successful logout.
 
         -   Allowed Web Origins: Add `http://localhost:3000` (for local development) and your production app's origin (e.g., `https://your-app.com`).
 
