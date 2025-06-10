@@ -893,6 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
   * @param {HTMLElement} element - The HTML element to be animated.
   */
   // Adjusted function to use global parallax values
+  /*
   function moveLandingPageElementIndependently() {
     const els = [...document.querySelectorAll('.scene-element')];
     const scene = { w: window.innerWidth, h: window.innerHeight };
@@ -946,7 +947,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     animate();
   }
-  moveLandingPageElementIndependently(); // No longer need to pass parallax values
+  */
+  // moveLandingPageElementIndependently(); // No longer need to pass parallax values
 
   /**
    * Initializes the tilt effect for specified card-like elements.
