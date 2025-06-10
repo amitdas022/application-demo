@@ -24,7 +24,7 @@ const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // O
 // The redirect_uri must exactly match one configured in your Auth0 Application's "Allowed Callback URLs".
 // It points to the HTML page in your frontend that will handle the Auth0 redirect.
 // const AUTH0_REDIRECT_URI = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/callback.html` : `http://localhost:3000/callback.html`; // Adjust port if different
-const AUTH0_REDIRECT_URI = 'http://localhost:3000/callback.html';
+const AUTH0_REDIRECT_URI = window.location.origin + '/callback.html';
 
 
 /**
