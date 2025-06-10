@@ -1,6 +1,6 @@
 // frontend/app.js
 // This file manages client-side interactivity, user authentication state (via localStorage),
-// communication with backend APIs (/api/auth for login, /api/auth0-user-management for user admin tasks),
+// communication with backend APIs (/api/auth/callback for login, /api/auth0-user-management for user admin tasks),
 // and dynamic HTML updates based on application state and user actions.
 
 // LOCAL_TESTING_MODE:
@@ -14,63 +14,36 @@
 let mouseParallaxX = 0;
 let mouseParallaxY = 0;
 
-/**
- * Handles user login by sending credentials to the backend /api/auth endpoint.
- * @async
- * @param {string} username - The user's username (expected to be an email).
- * @param {string} password - The user's password.
- * @param {HTMLElement} errorMessageElement - The HTML element where error messages should be displayed.
- */
-async function login(username, password, errorMessageElement) {
-  try {
-    // Fetch call to the backend authentication endpoint.
-    const response = await fetch('/api/auth', {
-      method: 'POST', // HTTP method for sending data.
-      headers: { 'Content-Type': 'application/json' }, // Indicates the body format is JSON.
-      // Body contains the username and password. The backend /api/auth.js expects 'username'.
-      body: JSON.stringify({ username, password })
-    });
+// --- Auth0 Configuration (CLIENT-SIDE) ---
+// In a real application, these might be loaded from a build-time environment variable
+// or a dynamically generated config file to avoid hardcoding and provide flexibility.
+// For this demo, they are placeholders. Replace with your actual Auth0 values.
+const AUTH0_DOMAIN = 'dev-ky8umfzopcrqoft1.us.auth0.com'; // e.g., dev-abc1234.us.auth0.com
+const AUTH0_CLIENT_ID = '3H2O07Y9h101Gpx2hINM0avLDO20fA77'; // Client ID of your Auth0 SPA/Regular Web Application
+const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // Optional: If you have a custom API, use its identifier (e.g., https://your-api.com)
+// The redirect_uri must exactly match one configured in your Auth0 Application's "Allowed Callback URLs".
+// It points to the HTML page in your frontend that will handle the Auth0 redirect.
+// const AUTH0_REDIRECT_URI = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/callback.html` : `http://localhost:3000/callback.html`; // Adjust port if different
+const AUTH0_REDIRECT_URI = 'http://localhost:3000/callback.html';
 
-    // Handle successful login response.
-    if (response.ok) {
-      const user = await response.json(); // Parse the JSON response containing user data.
-      // Store user information (including tokens, profile, roles) in localStorage.
-      localStorage.setItem('authenticatedUser', JSON.stringify(user));
-      // Log received user data for debugging, especially to verify roles.
-      console.log('User data received from backend and stored:', user);
-
-      // Clear any previous error messages from the UI.
-      if (errorMessageElement) {
-        errorMessageElement.textContent = '';
-        errorMessageElement.className = 'error-message'; // Reset class to default.
-      }
-      // Redirect to the protected page after successful login.
-      window.location.href = 'protected.html';
-    } else {
-      // Handle login failure (e.g., invalid credentials).
-      // Attempt to parse error JSON from the backend, or use a default error message.
-      const error = await response.json().catch(() => ({ error: 'Unknown error from server.' }));
-      displayMessage(errorMessageElement, `Login failed: ${error.error || 'Invalid credentials.'}`, 'error', 'error-message', 0, true); // Added shake animation for error
-    }
-  } catch (error) {
-    // Handle network errors or other issues during the login process.
-    console.error('Login error:', error);
-    const message = 'Invalid credentials or error during login.';
-    displayMessage(errorMessageElement, message, 'error', 'error-message', 0, true); // Added shake animation for error
-  }
-}
 
 /**
  * Logs the user out by clearing their session information from localStorage and redirecting to the login page.
+ * This now also initiates a logout request with Auth0 to terminate their session there.
  * @async
  */
 async function logout() {
   // Clear the authenticatedUser item from localStorage, effectively ending the client-side session.
   localStorage.removeItem('authenticatedUser');
-  // Note: In a real application with server-side sessions or token revocation,
-  // you would also call a backend logout endpoint here (e.g., await fetch('/api/logout', { method: 'POST' });).
-  // Redirect the user to the login page after logout.
-  window.location.href = 'login.html';
+  localStorage.removeItem('auth0_state'); // Also clear any stored state
+
+  // IMPORTANT: For a proper logout, you must redirect to Auth0's /v2/logout endpoint.
+  // This terminates the user's session with Auth0.
+  // The 'returnTo' URL specifies where Auth0 should redirect the user AFTER they have been logged out.
+  // This 'returnTo' URL MUST be registered in your Auth0 Application's "Allowed Logout URLs".
+  const returnToUrl = window.location.origin + '/index.html'; // Redirect to your login page
+
+  window.location.href = `https://${AUTH0_DOMAIN}/v2/logout?client_id=${AUTH0_CLIENT_ID}&returnTo=${encodeURIComponent(returnToUrl)}`;
 }
 
 
@@ -87,12 +60,13 @@ function checkAuthAndRedirect() {
   if (window.LOCAL_TESTING_MODE) {
     console.warn("LOCAL_TESTING_MODE is active. Bypassing client-side authentication checks.");
     // If no 'authenticatedUser' is found in localStorage (meaning no real login or manual setup),
-    // and the current page is not a public page (login, index),
+    // and the current page is not a public page (login, index, callback),
     // then simulate a default user to allow access to protected UI elements.
     if (!localStorage.getItem('authenticatedUser') &&
       !window.location.pathname.endsWith('/login.html') && // Don't simulate on login page
       !window.location.pathname.endsWith('/index.html') && // Don't simulate on public index
-      !window.location.pathname.endsWith('/')              // Don't simulate on root if it's public
+      !window.location.pathname.endsWith('/') &&              // Don't simulate on root if it's public
+      !window.location.pathname.endsWith('/callback.html') // Don't simulate on callback page
     ) {
       // Create a default dummy user object. For testing non-admin views, ensure this user
       // does NOT have the 'admin' role. To test admin views, manually set an admin user
@@ -165,7 +139,7 @@ function checkAuthAndRedirect() {
 
     // Redirection logic for logged-in users.
     if (isAdmin) {
-      if (currentPage.endsWith('login.html')) {
+      if (currentPage.endsWith('login.html') || currentPage.endsWith('callback.html')) {
         window.location.href = 'protected.html';
       }
     } else {
@@ -175,7 +149,7 @@ function checkAuthAndRedirect() {
         showToast('Access Denied: You do not have permission to view this page.', 'error');
         window.location.href = 'protected.html';
       }
-      if (currentPage.endsWith('login.html')) {
+      if (currentPage.endsWith('login.html') || currentPage.endsWith('callback.html')) {
         window.location.href = 'protected.html';
       }
     }
@@ -183,6 +157,7 @@ function checkAuthAndRedirect() {
     // User is not authenticated
     const isProtectedPage = currentPage.endsWith('protected.html');
     const isAdminAreaPage = currentPage.includes('admin');
+    // Ensure we don't redirect from the login or callback page itself if not authenticated
     if (isProtectedPage || isAdminAreaPage) {
       window.location.href = 'login.html';
     }
@@ -383,89 +358,128 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Setup for the login page.
+  // --- Auth0 Authorization Code Flow Login Setup ---
+  // This block replaces the previous login form submission logic.
   if (window.location.pathname.endsWith('login.html')) {
-    const loginForm = document.getElementById('login-form');
-    const loginButton = document.querySelector('.login-button'); // Get the login button
-    const formWrapper = document.querySelector('.login-wrapper'); // Parent of bg-logos
+    const auth0LoginButton = document.getElementById('auth0-login-button');
 
-    // Event listener for global background logo animation on button hover
-    if (loginButton && formWrapper) {
-      loginButton.addEventListener('mouseenter', () => {
-        formWrapper.classList.add('hovered-by-button'); // Add a class to the form-wrapper or button
-      });
-      loginButton.addEventListener('mouseleave', () => {
-        formWrapper.classList.remove('hovered-by-button');
-      });
-    }
+    if (auth0LoginButton) {
+      // Event listener for global background logo animation on button hover
+      const formWrapper = document.querySelector('.login-wrapper'); // Parent of bg-logos
+      if (formWrapper) {
+        auth0LoginButton.addEventListener('mouseenter', () => {
+          formWrapper.classList.add('hovered-by-button'); // Add a class to the form-wrapper or button
+        });
+        auth0LoginButton.addEventListener('mouseleave', () => {
+          formWrapper.classList.remove('hovered-by-button');
+        });
+      }
 
+      auth0LoginButton.addEventListener('click', async () => {
+        // Generate a cryptographically random 'state' value
+        // This is crucial for CSRF protection. In a real app, you'd store this securely
+        // on the server-side (e.g., in a session) and validate it upon callback.
+        // For this frontend-initiated redirect, we'll generate it here and expect
+        // the backend to deal with its validation or handle it on the client-side for this demo.
+        const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        // Temporarily store state in localStorage for demonstration;
+        // production would typically use a secure server-side session (e.g., HTTP-only cookie).
+        localStorage.setItem('auth0_state', state);
 
-    if (loginForm) {
-      // Form field entrance animation
-      const formGroups = loginForm.querySelectorAll('.form-group');
-      formGroups.forEach((group, index) => {
-        group.style.setProperty('--form-field-delay', `${0.2 + index * 0.1}s`);
-      });
+        const auth0AuthorizeUrl = `https://${AUTH0_DOMAIN}/authorize?` +
+          `response_type=code&` +
+          `client_id=${AUTH0_CLIENT_ID}&` +
+          `redirect_uri=${encodeURIComponent(AUTH0_REDIRECT_URI)}&` +
+          `scope=openid%20profile%20email%20offline_access&` + // Request necessary scopes
+          (AUTH0_AUDIENCE ? `audience=${encodeURIComponent(AUTH0_AUDIENCE)}&` : '') +
+          `state=${state}`; // Include the state parameter
 
-      loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const usernameInput = loginForm.querySelector('input[name="username"]');
-        const passwordInput = loginForm.querySelector('input[name="password"]');
+        // Add a loading indicator to the button
+        auth0LoginButton.classList.add('loading');
+        // Visually clear previous messages if any
         const errorMessageElement = document.getElementById('error-message');
-        const submitButton = loginForm.querySelector('button[type="submit"]');
-
-        // Prevent re-animation/submission
-        if (submitButton.classList.contains('login-button-morphing') || submitButton.classList.contains('login-button-pulse-active')) {
-          return;
+        if (errorMessageElement) {
+          errorMessageElement.textContent = '';
+          errorMessageElement.className = 'error-message';
         }
 
-        submitButton.classList.add('login-button-pulse-active');
-        submitButton.classList.remove('ripple-active'); // Stop ripple if it's somehow active
-
-        // Define pulseEndHandler here to be able to remove it by reference in the fallback
-        function pulseEndHandler() {
-          submitButton.removeEventListener('animationend', pulseEndHandler);
-          submitButton.classList.remove('login-button-pulse-active');
-          submitButton.classList.add('login-button-morphing');
-          submitButton.innerHTML = '<span></span><span></span><span></span>'; // Inject bouncy dots
-          performLogin();
-        }
-
-        submitButton.addEventListener('animationend', pulseEndHandler, { once: true });
-
-        // Fallback for pulse animation
-        const pulseFallbackTimeout = setTimeout(() => {
-          if (submitButton.classList.contains('login-button-pulse-active') && !submitButton.classList.contains('login-button-morphing')) {
-            console.warn('Login button pulse animation fallback triggered.');
-            submitButton.removeEventListener('animationend', pulseEndHandler); // Remove listener
-            submitButton.classList.remove('login-button-pulse-active');
-            submitButton.classList.add('login-button-morphing');
-            submitButton.innerHTML = '<span></span><span></span><span></span>'; // Inject bouncy dots fallback
-            performLogin();
-          }
-        }, 260); // Pulse duration + buffer
-
-        async function performLogin() {
-          // Clear the fallback timeout if performLogin is called, e.g. by animationend
-          clearTimeout(pulseFallbackTimeout);
-          try {
-            await login(usernameInput.value, passwordInput.value, errorMessageElement);
-            // On success, page likely redirects
-          } catch (error) {
-            console.error("Error during performLogin:", error);
-          } finally {
-            if (submitButton.classList.contains('login-button-morphing')) {
-              submitButton.classList.remove('login-button-morphing');
-              submitButton.textContent = "Login"; // Reset button text
-            }
-            submitButton.classList.remove('login-button-pulse-active');
-          }
-        }
+        window.location.href = auth0AuthorizeUrl; // Redirect to Auth0 Universal Login
       });
     }
-
   }
+
+  // --- New: Callback Handler for Auth0 Redirect ---
+  if (window.location.pathname.endsWith('callback.html')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
+
+      const storedState = localStorage.getItem('auth0_state'); // Retrieve stored state
+
+      // Basic error handling for Auth0 redirect
+      if (error) {
+          showToast(`Auth0 Error: ${errorDescription || error}`, 'error');
+          console.error('Auth0 Callback Error:', error, errorDescription);
+          window.location.href = 'login.html'; // Redirect to login on error
+          return;
+      }
+
+      // State validation (CRITICAL for security)
+      if (!state || state !== storedState) {
+          showToast('Invalid state parameter. Possible CSRF attack detected.', 'error');
+          console.error('State mismatch: Expected', storedState, 'Received', state);
+          localStorage.removeItem('auth0_state'); // Clear potentially compromised state
+          window.location.href = 'login.html';
+          return;
+      }
+
+      localStorage.removeItem('auth0_state'); // State has been used, clear it
+
+      if (code) {
+          showToast('Authentication successful, exchanging code...', 'info');
+          // Now, send this code to your backend endpoint to exchange it for tokens
+          exchangeCodeWithBackend(code);
+      } else {
+          showToast('No authorization code found in callback URL.', 'error');
+          window.location.href = 'login.html';
+      }
+  }
+
+  /**
+   * Helper function to send the authorization code to the backend for token exchange.
+   * @param {string} code - The authorization code received from Auth0.
+   */
+  async function exchangeCodeWithBackend(code) {
+      try {
+          // This new backend endpoint will handle the token exchange with Auth0
+          // The fetch call now goes to /api/auth, which I've updated to act as the callback handler.
+          const response = await fetch('/api/auth', { // Corrected endpoint for the refactored api/auth.js
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code }) // Send the authorization code
+          });
+
+          if (response.ok) {
+              const user = await response.json();
+              localStorage.setItem('authenticatedUser', JSON.stringify(user));
+              console.log('User data received from backend after code exchange and stored:', user);
+              showToast('Successfully logged in!', 'success');
+              window.location.href = 'protected.html';
+          } else {
+              const error = await response.json().catch(() => ({ error: 'Unknown error from backend.' }));
+              showToast(`Login failed: ${error.error || 'Server error during code exchange.'}`, 'error');
+              console.error('Backend code exchange failed:', error);
+              window.location.href = 'login.html'; // Redirect to login on error
+          }
+      } catch (error) {
+          console.error('Network error during code exchange:', error);
+          showToast('Network error during login process.', 'error');
+          window.location.href = 'login.html'; // Redirect to login on network error
+      }
+  }
+
 
   // Add event listener for the global logout button if it exists.
   const globalLogoutButton = document.getElementById('logout-button');
@@ -852,9 +866,6 @@ document.addEventListener('DOMContentLoaded', () => {
           } finally {
             btn.classList.remove('loading');
           }
-        },
-        () => { // On Cancel Callback
-          showToast('User deletion cancelled.', 'info');
         }
       );
     }
@@ -863,7 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Call checkAuthAndRedirect on every page load.
   checkAuthAndRedirect();
 
-  // *************  Animations   *************** //
+  // ************* Animations   *************** //
 
   /**
   * This function makes a given HTML element move to random positions within the visible browser window.
@@ -872,6 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
   *
   * @param {HTMLElement} element - The HTML element to be animated.
   */
+  // Adjusted function to use global parallax values
   function moveLandingPageElementIndependently() {
     const els = [...document.querySelectorAll('.scene-element')];
     const scene = { w: window.innerWidth, h: window.innerHeight };
@@ -880,35 +892,44 @@ document.addEventListener('DOMContentLoaded', () => {
       scene.h = window.innerHeight;
     };
 
-    const objs = els.map(el => ({
+    const objs = els.map((el, index) => ({
       el,
       w: el.offsetWidth,
       h: el.offsetHeight,
-      x: Math.random() * (scene.w - el.offsetWidth),
-      y: Math.random() * (scene.h - el.offsetHeight),
-      vx: (Math.random() - 0.5) * 3,
-      vy: (Math.random() - 0.5) * 3,
+      baseX: Math.random() * (scene.w - el.offsetWidth), // Base X for random movement
+      baseY: Math.random() * (scene.h - el.offsetHeight),// Base Y for random movement
+      vx: (Math.random() - 0.5) * 1, // Reduced speed for random drift
+      vy: (Math.random() - 0.5) * 1, // Reduced speed for random drift
       angle: Math.random() * 360,
-      rotationSpeed: 0.5 + Math.random() * 1.5,    // random rotation speed per element
-      morphSpeed: 300 + Math.random() * 700,       // random morph period (ms)
-      morphPhase: Math.random() * 2 * Math.PI       // random morph phase offset
+      rotationSpeed: 0.2 + Math.random() * 0.5, // Slower rotation
+      morphSpeed: 600 + Math.random() * 800, // Slower morphing
+      morphPhase: Math.random() * 2 * Math.PI,
+      // Increased depthMultiplier range for more pronounced parallax on some elements
+      depthMultiplier: 0.2 + Math.random() * 1.3 // Random depth (0.2 to 1.5)
     }));
 
     function animate(time = 0) {
       objs.forEach(o => {
-        o.x += o.vx;
-        o.y += o.vy;
-        if (o.x < 0 || o.x + o.w > scene.w) o.vx *= -1;
-        if (o.y < 0 || o.y + o.h > scene.h) o.vy *= -1;
+        // Update base position for random drift
+        o.baseX += o.vx;
+        o.baseY += o.vy;
+        if (o.baseX < 0 || o.baseX + o.w > scene.w) o.vx *= -1;
+        if (o.baseY < 0 || o.y + o.h > scene.h) o.vy *= -1;
 
         o.angle = (o.angle + o.rotationSpeed) % 360;
         const morphProgress = Math.sin((time / o.morphSpeed) + o.morphPhase);
-        const scale = 0.9 + 0.1 * morphProgress;
+        const scale = 0.95 + 0.05 * morphProgress; // More subtle scale
 
-        o.el.style.transform = `translate(${o.x}px,${o.y}px) scale(${scale}) rotate(${o.angle}deg)`;
+        // Combine base random position with mouse-driven parallax
+        // Use the globally updated mouseParallaxX and mouseParallaxY
+        const currentX = o.baseX + (window.mouseParallaxX || 0) * o.depthMultiplier * (scene.w / 150); // Adjusted scaling factor
+        const currentY = o.baseY + (window.mouseParallaxY || 0) * o.depthMultiplier * (scene.h / 150); // Adjusted scaling factor
+
+
+        o.el.style.transform = `translate(${currentX}px,${currentY}px) scale(${scale}) rotate(${o.angle}deg)`;
 
         // Morph border-radius with randomized morphing
-        const r1 = 20 + 30 * Math.abs(morphProgress);
+        const r1 = 30 + 20 * Math.abs(morphProgress); // Adjusted morphing parameters
         const r2 = 100 - r1;
         o.el.style.borderRadius = `${r1}% ${r2}% ${r2}% ${r1}% / ${r2}% ${r1}% ${r1}% ${r2}%`;
       });
@@ -918,155 +939,94 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   moveLandingPageElementIndependently(); // No longer need to pass parallax values
 
-  // Initialize Card Tilt Effect
+  /**
+   * Initializes the tilt effect for specified card-like elements.
+   * On mousemove, elements tilt slightly. On mouseleave, they reset.
+   */
+  function initTiltEffect() {
+    const tiltElements = document.querySelectorAll(
+      '.card, .feature-card, .welcome-page .welcome-content-card, .login-page .form-container'
+    );
+
+    tiltElements.forEach(element => {
+      element.addEventListener('mousemove', (event) => {
+        const rect = element.getBoundingClientRect();
+        const x = event.clientX - rect.left; // x position within the element.
+        const y = event.clientY - rect.top;  // y position within the element.
+
+        const elementWidth = rect.width;
+        const elementHeight = rect.height;
+
+        const centerX = elementWidth / 2;
+        const centerY = elementHeight / 2;
+
+        let maxRotate = 2; // Default subtle rotation
+        let scaleAmount = 1.005; // Default subtle scale
+
+        if (element.classList.contains('admin-showcase-tilt')) {
+          maxRotate = 7; // More pronounced rotation for showcase cards
+          scaleAmount = 1.03; // More pronounced scale for showcase cards
+        }
+
+        const rotateX = ((y - centerY) / (elementHeight / 2)) * -maxRotate;
+        const rotateY = ((x - centerX) / (elementWidth / 2)) * maxRotate;
+
+        element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${scaleAmount}, ${scaleAmount}, ${scaleAmount})`;
+      });
+
+      element.addEventListener('mouseleave', () => {
+        // Reset transform to default
+        // Note: If different resting scales were desired for different cards, this would also need to be conditional.
+        // For now, all reset to scale(1). CSS :hover will apply its own scale if mouse re-enters.
+        element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      });
+    });
+  }
   initTiltEffect();
 
-  // Initialize Theme Toggle
-  initThemeToggle();
+  /**
+   * Applies the selected theme to the document body.
+   * @param {string} theme - The theme to apply ('light-mode' or 'dark-mode').
+   */
+  function applyTheme(theme) {
+    if (theme === 'dark-mode') {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }
+
+  /**
+   * Toggles the theme between light and dark mode.
+   * Updates localStorage and the toggle switch's state.
+   */
+  function toggleTheme() {
+    const currentTheme = localStorage.getItem('theme') || 'light-mode';
+    const newTheme = currentTheme === 'dark-mode' ? 'light-mode' : 'dark-mode';
+
+    applyTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    if (themeCheckbox) {
+      themeCheckbox.checked = (newTheme === 'dark-mode');
+    }
+  }
+
+  /**
+   * Initializes the theme toggle functionality.
+   * Sets the initial theme based on localStorage and attaches event listeners.
+   */
+  function initThemeToggle() {
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    const storedTheme = localStorage.getItem('theme') || 'light-mode';
+
+    applyTheme(storedTheme);
+
+    if (themeCheckbox) {
+      themeCheckbox.checked = (storedTheme === 'dark-mode');
+      themeCheckbox.addEventListener('change', toggleTheme);
+    }
+  }
+  initThemeToggle(); // Initialize theme toggle on DOMContentLoaded
 });
-
-/**
- * Applies the selected theme to the document body.
- * @param {string} theme - The theme to apply ('light-mode' or 'dark-mode').
- */
-function applyTheme(theme) {
-  if (theme === 'dark-mode') {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
-}
-
-/**
- * Toggles the theme between light and dark mode.
- * Updates localStorage and the toggle switch's state.
- */
-function toggleTheme() {
-  const currentTheme = localStorage.getItem('theme') || 'light-mode';
-  const newTheme = currentTheme === 'dark-mode' ? 'light-mode' : 'dark-mode';
-
-  applyTheme(newTheme);
-  localStorage.setItem('theme', newTheme);
-
-  const themeCheckbox = document.getElementById('theme-checkbox');
-  if (themeCheckbox) {
-    themeCheckbox.checked = (newTheme === 'dark-mode');
-  }
-}
-
-/**
- * Initializes the theme toggle functionality.
- * Sets the initial theme based on localStorage and attaches event listeners.
- */
-function initThemeToggle() {
-  const themeCheckbox = document.getElementById('theme-checkbox');
-  const storedTheme = localStorage.getItem('theme') || 'light-mode';
-
-  applyTheme(storedTheme);
-
-  if (themeCheckbox) {
-    themeCheckbox.checked = (storedTheme === 'dark-mode');
-    themeCheckbox.addEventListener('change', toggleTheme);
-  }
-}
-
-
-// Adjusted function to use global parallax values
-function moveLandingPageElementIndependently() {
-  const els = [...document.querySelectorAll('.scene-element')];
-  const scene = { w: window.innerWidth, h: window.innerHeight };
-  window.onresize = () => {
-    scene.w = window.innerWidth;
-    scene.h = window.innerHeight;
-  };
-
-  const objs = els.map((el, index) => ({
-    el,
-    w: el.offsetWidth,
-    h: el.offsetHeight,
-    baseX: Math.random() * (scene.w - el.offsetWidth), // Base X for random movement
-    baseY: Math.random() * (scene.h - el.offsetHeight),// Base Y for random movement
-    vx: (Math.random() - 0.5) * 1, // Reduced speed for random drift
-    vy: (Math.random() - 0.5) * 1, // Reduced speed for random drift
-    angle: Math.random() * 360,
-    rotationSpeed: 0.2 + Math.random() * 0.5, // Slower rotation
-    morphSpeed: 600 + Math.random() * 800, // Slower morphing
-    morphPhase: Math.random() * 2 * Math.PI,
-    // Increased depthMultiplier range for more pronounced parallax on some elements
-    depthMultiplier: 0.2 + Math.random() * 1.3 // Random depth (0.2 to 1.5)
-  }));
-
-  function animate(time = 0) {
-    objs.forEach(o => {
-      // Update base position for random drift
-      o.baseX += o.vx;
-      o.baseY += o.vy;
-      if (o.baseX < 0 || o.baseX + o.w > scene.w) o.vx *= -1;
-      if (o.baseY < 0 || o.baseY + o.h > scene.h) o.vy *= -1;
-
-      o.angle = (o.angle + o.rotationSpeed) % 360;
-      const morphProgress = Math.sin((time / o.morphSpeed) + o.morphPhase);
-      const scale = 0.95 + 0.05 * morphProgress; // More subtle scale
-
-      // Combine base random position with mouse-driven parallax
-      // Use the globally updated mouseParallaxX and mouseParallaxY
-      const currentX = o.baseX + (window.mouseParallaxX || 0) * o.depthMultiplier * (scene.w / 150); // Adjusted scaling factor
-      const currentY = o.baseY + (window.mouseParallaxY || 0) * o.depthMultiplier * (scene.h / 150); // Adjusted scaling factor
-
-
-      o.el.style.transform = `translate(${currentX}px,${currentY}px) scale(${scale}) rotate(${o.angle}deg)`;
-
-      // Morph border-radius with randomized morphing
-      const r1 = 30 + 20 * Math.abs(morphProgress); // Adjusted morphing parameters
-      const r2 = 100 - r1;
-      o.el.style.borderRadius = `${r1}% ${r2}% ${r2}% ${r1}% / ${r2}% ${r1}% ${r1}% ${r2}%`;
-    });
-    requestAnimationFrame(animate);
-  }
-  animate();
-}
-
-
-/**
- * Initializes the tilt effect for specified card-like elements.
- * On mousemove, elements tilt slightly. On mouseleave, they reset.
- */
-function initTiltEffect() {
-  const tiltElements = document.querySelectorAll(
-    '.card, .feature-card, .welcome-page .welcome-content-card, .login-page .form-container'
-  );
-
-  tiltElements.forEach(element => {
-    element.addEventListener('mousemove', (event) => {
-      const rect = element.getBoundingClientRect();
-      const x = event.clientX - rect.left; // x position within the element.
-      const y = event.clientY - rect.top;  // y position within the element.
-
-      const elementWidth = rect.width;
-      const elementHeight = rect.height;
-
-      const centerX = elementWidth / 2;
-      const centerY = elementHeight / 2;
-
-      let maxRotate = 2; // Default subtle rotation
-      let scaleAmount = 1.005; // Default subtle scale
-
-      if (element.classList.contains('admin-showcase-tilt')) {
-        maxRotate = 7; // More pronounced rotation for showcase cards
-        scaleAmount = 1.03; // More pronounced scale for showcase cards
-      }
-
-      const rotateX = ((y - centerY) / (elementHeight / 2)) * -maxRotate;
-      const rotateY = ((x - centerX) / (elementWidth / 2)) * maxRotate;
-
-      element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${scaleAmount}, ${scaleAmount}, ${scaleAmount})`;
-    });
-
-    element.addEventListener('mouseleave', () => {
-      // Reset transform to default
-      // Note: If different resting scales were desired for different cards, this would also need to be conditional.
-      // For now, all reset to scale(1). CSS :hover will apply its own scale if mouse re-enters.
-      element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-    });
-  });
-}

@@ -1,140 +1,202 @@
 // api/auth.js
-// Handles user authentication against Auth0 using the Resource Owner Password Grant (ROPG) flow.
-// It retrieves user profile information and roles (via custom claims in the ID token).
+// Handles user authentication against Auth0 using the Authorization Code Flow.
+// It exchanges the authorization code received from the frontend for ID, Access, and Refresh tokens.
 
 // Load environment variables from .env file in development environments
+// This ensures process.env variables are available locally.
 if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config(); // dotenv loads variables from .env into process.env
+    require('dotenv').config();
 }
-import fetch from 'node-fetch'; // Used for making HTTP requests to the Auth0 /oauth/token endpoint.
-import jwt from 'jsonwebtoken'; // Used for decoding JWTs (specifically the ID Token from Auth0).
+
+// Import node-fetch for making HTTP requests.
+// This is typically needed in Node.js environments for fetch API functionality.
+import fetch from 'node-fetch';
+
+// Import jsonwebtoken for decoding JWTs (specifically the ID Token from Auth0).
+import jwt from 'jsonwebtoken';
 
 /**
  * Helper function to send standardized error responses.
- * @param {object} res - The Express response object.
- * @param {number} statusCode - The HTTP status code to send.
- * @param {string} message - A human-readable error message.
- * @param {object|string} [errorDetails] - Optional additional details about the error.
+ * This function logs the error internally and sends a JSON response to the client.
+ * @param {object} res - The Express-like response object provided by Vercel.
+ * @param {number} statusCode - The HTTP status code to send (e.g., 400, 401, 500).
+ * @param {string} message - A human-readable error message for the client.
+ * @param {object|string} [errorDetails] - Optional additional details about the error,
+ * which can be an Error object or a string.
  */
 function sendError(res, statusCode, message, errorDetails) {
-    console.error("Auth API Error:", message, errorDetails);
+    // Log the error details to the console for debugging on the server.
+    // Use optional chaining for errorDetails.message as it might be a string or object.
+    console.error("[Auth API Error]", message, errorDetails?.message || errorDetails);
+
+    // Send the error response to the client in JSON format.
     res.status(statusCode).json({ error: message, details: errorDetails?.message || errorDetails });
 }
 
 // The namespace for custom claims (like roles) added to the ID token by an Auth0 Action.
 // This value MUST exactly match the namespace string used in your Auth0 Action script
 // and is sourced from the AUTH0_ROLES_NAMESPACE environment variable.
+// Example: If your Auth0 Action sets a claim 'https://my-app.com/roles', then
+// AUTH0_ROLES_NAMESPACE should be 'https://my-app.com/'.
 const ROLES_NAMESPACE = process.env.AUTH0_ROLES_NAMESPACE;
 
 /**
  * Main request handler for the /api/auth endpoint.
- * Handles POST requests for user login.
- * @param {object} req - The Express request object.
- * @param {object} res - The Express response object.
+ * This function is designed to be a Vercel Serverless Function.
+ * It handles POST requests containing the authorization code from the frontend,
+ * exchanges it with Auth0 for tokens, and returns user data to the client.
+ * @param {object} req - The request object (from Node.js HTTP server, extended by Vercel).
+ * For POST requests, `req.body` will contain the JSON payload.
+ * @param {object} res - The response object (from Node.js HTTP server, extended by Vercel).
  */
 export default async function handler(req, res) {
-    // Only accept POST requests for authentication
+    // Log incoming request details for debugging.
+    console.log(`[Auth API Handler] Received request: ${req.method} ${req.url}`);
     if (req.method === 'POST') {
-        // Extract username (email) and password from the request body
-        const { username, password } = req.body;
+        console.log(`[Auth API Handler] Request body:`, req.body);
+    }
 
-        // Validate that username and password are provided
-        if (!username || !password) {
-            return sendError(res, 400, 'Username and password are required.');
+    // This endpoint is specifically designed to handle the POST request
+    // from your frontend's /callback.html page.
+    if (req.method === 'POST') {
+        // Extract the authorization `code` from the request body.
+        // The frontend sends this `code` after receiving it from Auth0's redirect.
+        const { code } = req.body;
+
+        // In a highly secure production application, the `state` parameter
+        // (generated on the frontend before redirecting to Auth0) should also be
+        // sent to this backend endpoint. Here, this backend would then validate
+        // that `state` against a value previously stored in a secure server-side session
+        // (e.g., an HTTP-only cookie). This prevents Cross-Site Request Forgery (CSRF) attacks.
+        // For simplicity in this demo, frontend handles state validation (using localStorage).
+
+        // Basic validation: Check if an authorization code was actually provided.
+        if (!code) {
+            return sendError(res, 400, 'Authorization code is missing from the request body.');
         }
 
         try {
-            // --- Auth0 ROPG Flow ---
-            // Construct the URL for Auth0's token endpoint
+            // --- Auth0 Authorization Code Exchange ---
+            // Construct the URL for Auth0's token endpoint.
             const auth0TokenUrl = `https://${process.env.AUTH0_DOMAIN}/oauth/token`;
 
-            // Make a POST request to Auth0's /oauth/token endpoint
+            // Determine the `redirect_uri` dynamically based on the deployment environment.
+            // This `redirect_uri` MUST exactly match one of the "Allowed Callback URLs"
+            // configured in your Auth0 Application settings. It also MUST match the
+            // `redirect_uri` sent in the initial `/authorize` request from the frontend.
+            const AUTH0_REDIRECT_URI = process.env.VERCEL_URL ?
+                                       `https://${process.env.VERCEL_URL}/callback.html` :
+                                       `http://localhost:3000/callback.html`; // Default for local development
+
+            // Log the details of the token exchange request being sent to Auth0.
+            console.log(`[Auth API] Sending token exchange request to Auth0. URL: ${auth0TokenUrl}`);
+            console.log(`[Auth API] Payload (excluding secret):`, {
+                grant_type: 'authorization_code',
+                client_id: process.env.AUTH0_CLIENT_ID,
+                code: code,
+                redirect_uri: AUTH0_REDIRECT_URI,
+                audience: process.env.AUTH0_AUDIENCE,
+                scope: 'openid profile email offline_access'
+            });
+
+            // Make a POST request to Auth0's `/oauth/token` endpoint.
+            // This is a server-to-server communication, keeping the `client_secret` secure.
             const tokenResponse = await fetch(auth0TokenUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    grant_type: 'password', // Specifies the ROPG flow
-                    username: username,     // User's email (Auth0 typically uses email as username)
-                    password: password,     // User's password
-                    audience: process.env.AUTH0_AUDIENCE, // The identifier of the API the token is intended for (e.g., Auth0 Management API or your custom API)
-                    scope: 'openid profile email offline_access', // Requested scopes: openid (for ID token), profile (user attributes), email, offline_access (for refresh token)
-                    client_id: process.env.AUTH0_CLIENT_ID,       // Client ID of your Auth0 Regular Web Application (RWA) or Confidential Application
-                    client_secret: process.env.AUTH0_CLIENT_SECRET, // Client Secret of your Auth0 RWA/Confidential Application
-                    realm: 'Username-Password-Authentication' // Specifies the Auth0 connection to use (typically the default database connection)
+                    grant_type: 'authorization_code',          // Specifies the Authorization Code Flow.
+                    client_id: process.env.AUTH0_CLIENT_ID,    // Your Auth0 Application's Client ID.
+                    client_secret: process.env.AUTH0_CLIENT_SECRET, // Your Auth0 Application's Client Secret.
+                    code: code,                                // The authorization code obtained from Auth0.
+                    redirect_uri: AUTH0_REDIRECT_URI,          // The exact URI Auth0 redirected to.
+                    audience: process.env.AUTH0_AUDIENCE,      // The identifier of the API the token is for (optional for OIDC).
+                    // Scopes must match what was requested in the initial /authorize call.
+                    // 'openid' is required for ID Token, 'profile' and 'email' for user info,
+                    // 'offline_access' for a Refresh Token (if enabled in Auth0).
+                    scope: 'openid profile email offline_access'
                 }),
             });
 
-            // Handle unsuccessful token responses from Auth0
+            // Clone the response to safely read its body for logging, then process the original response.
+            const responseBodyForLogging = await tokenResponse.clone().json().catch(() => tokenResponse.clone().text());
+            console.log(`[Auth API] Auth0 token exchange response. Status: ${tokenResponse.status}, Body:`, responseBodyForLogging);
+
+
+            // Check if the token exchange request to Auth0 was successful.
             if (!tokenResponse.ok) {
-                const errorData = await tokenResponse.json();
-                return sendError(res, tokenResponse.status, 'Auth0 authentication failed.', errorData);
+                const errorData = await tokenResponse.json(); // Parse Auth0's error response.
+                console.error("[Auth API Error] Auth0 Token Exchange Failed:", errorData);
+                return sendError(res, tokenResponse.status, 'Auth0 token exchange failed.', errorData);
             }
 
-            // Parse the successful token response
+            // Parse the successful response from Auth0, which contains the tokens.
             const tokenData = await tokenResponse.json();
 
-            // Ensure an ID token was returned (it should be if 'openid' scope was requested)
+            // Ensure an ID token was returned. The 'openid' scope should guarantee this.
             if (!tokenData.id_token) {
-                return sendError(res, 500, 'Authentication successful, but ID token was not returned.', 'Ensure "openid" scope is requested and tenant settings allow ID tokens for ROPG.');
+                console.error("[Auth API Error] ID Token missing after successful exchange.");
+                return sendError(res, 500, 'Token exchange successful, but ID token was not returned.', 'Ensure "openid" scope is requested in your Auth0 application setup.');
             }
 
             // --- ID Token Decoding ---
             let decodedIdToken;
             try {
-                // Decode the ID token to access its claims (user profile information, roles, etc.).
-                // Note: This only decodes the token. Full signature verification is not strictly necessary here
-                // because the token was obtained directly from Auth0's trusted /oauth/token endpoint by this backend server
-                // in a secure exchange. If the token were received from an untrusted source (e.g., client-side),
-                // full verification (signature, issuer, audience, expiry) would be critical.
                 decodedIdToken = jwt.decode(tokenData.id_token);
                 if (!decodedIdToken) {
                     throw new Error('ID token could not be decoded or is malformed.');
                 }
+                console.log(`[Auth API] Successfully decoded ID Token. User ID: ${decodedIdToken.sub}`);
             } catch (decodeError) {
-                // Handle errors during token decoding
-                console.error('Error decoding ID token:', decodeError);
-                return sendError(res, 500, 'Failed to process user identity.', decodeError.message);
+                console.error("[Auth API Error] Error decoding ID token:", decodeError);
+                return sendError(res, 500, 'Failed to process user identity from ID token.', decodeError.message);
             }
 
             // --- Roles Extraction ---
-            // Extract roles from the custom claim in the decoded ID token.
-            // The claim name is constructed by appending 'roles' to the ROLES_NAMESPACE.
-            // E.g., if ROLES_NAMESPACE is 'https://myapp.example.com/', the claim is 'https://myapp.example.com/roles'.
             let userRoles = decodedIdToken[`${ROLES_NAMESPACE}roles`] || [];
-            // Ensure userRoles is an array, defaulting to an empty array if the claim is missing or not an array.
             if (!Array.isArray(userRoles)) {
-                console.warn(`Roles claim ('${ROLES_NAMESPACE}roles') from ID token is not an array:`, userRoles);
+                console.warn(`[Auth API Warning] Roles claim ('${ROLES_NAMESPACE}roles') from ID token is not an array:`, userRoles);
                 userRoles = [];
             }
+            console.log(`[Auth API] User roles extracted:`, userRoles);
 
             // --- User Profile Construction ---
-            // Construct a user profile object from standard and custom claims in the ID token.
             const userProfile = {
-                id: decodedIdToken.sub, // 'sub' (subject) claim is the unique Auth0 user ID.
-                firstName: decodedIdToken.given_name || decodedIdToken.nickname || '', // User's first name.
-                lastName: decodedIdToken.family_name || '', // User's last name.
-                email: decodedIdToken.email, // User's email address.
-                name: decodedIdToken.name || `${decodedIdToken.given_name || ''} ${decodedIdToken.family_name || ''}`.trim() || decodedIdToken.email, // Full name, constructed if not directly available.
-                picture: decodedIdToken.picture, // URL of the user's profile picture, if available.
+                id: decodedIdToken.sub,
+                firstName: decodedIdToken.given_name || decodedIdToken.nickname || '',
+                lastName: decodedIdToken.family_name || '',
+                email: decodedIdToken.email,
+                name: decodedIdToken.name || `${decodedIdToken.given_name || ''} ${decodedIdToken.family_name || ''}`.trim() || decodedIdToken.email,
+                picture: decodedIdToken.picture,
             };
+            console.log(`[Auth API] User profile constructed:`, userProfile);
 
             // --- Successful Response ---
-            // Return essential user information and tokens to the frontend.
+            // Send back the essential user information and tokens to the frontend.
+            console.log(`[Auth API] Authentication successful for user ${userProfile.email}.`);
             res.status(200).json({
-                accessToken: tokenData.access_token,    // Access Token for calling secured APIs (audience specified in AUTH0_AUDIENCE).
-                idToken: tokenData.id_token,            // ID Token containing user profile information.
-                refreshToken: tokenData.refresh_token,  // Refresh Token (if 'offline_access' scope was granted) to obtain new access tokens.
-                profile: userProfile,                   // Constructed user profile object.
-                roles: userRoles                        // Array of user roles.
+                accessToken: tokenData.access_token,
+                idToken: tokenData.id_token,
+                refreshToken: tokenData.refresh_token,
+                profile: userProfile,
+                roles: userRoles
             });
 
         } catch (error) {
-            // Catch-all for other errors that might occur during the authentication process (e.g., network issues).
-            sendError(res, error.status || 500, 'Error during authentication process.', error.message || error);
+            console.error("[Auth API Error] Internal server error during authentication process:", error);
+            sendError(res, error.status || 500, 'Internal server error during authentication process.', error.message || error);
         }
     } else {
-        // If the request method is not POST, respond with 405 Method Not Allowed.
-        res.setHeader('Allow', ['POST']); // Indicate that only POST is allowed.
+        console.warn(`[Auth API Handler] Method Not Allowed: ${req.method}`);
+        res.setHeader('Allow', ['POST']);
         sendError(res, 405, `Method ${req.method} Not Allowed`);
     }
 }
+
+// Vercel specific configuration: enables Next.js API routes to parse the request body.
+// This is necessary for `req.body` to be populated with the JSON sent from the frontend.
+export const config = {
+    api: {
+        bodyParser: true, // Enable body parsing for this API route.
+    },
+};
