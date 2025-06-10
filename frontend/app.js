@@ -27,13 +27,13 @@ const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // O
 // This allows switching between localhost and your Vercel production URL.
 let AUTH0_REDIRECT_URI;
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    // For local development
-    AUTH0_REDIRECT_URI = 'http://localhost:3000/callback.html';
+  // For local development
+  AUTH0_REDIRECT_URI = 'http://localhost:3000/callback.html';
 } else {
-    // For Vercel production deployment. Replace 'application-demo-gamma.vercel.app'
-    // with your actual canonical production domain if it changes.
-    // This assumes your Vercel production URL is stable and registered in Auth0.
-    AUTH0_REDIRECT_URI = 'https://application-demo-gamma.vercel.app/callback.html';
+  // For Vercel production deployment. Replace 'application-demo-gamma.vercel.app'
+  // with your actual canonical production domain if it changes.
+  // This assumes your Vercel production URL is stable and registered in Auth0.
+  AUTH0_REDIRECT_URI = 'https://application-demo-gamma.vercel.app/callback.html';
 }
 
 
@@ -420,74 +420,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- New: Callback Handler for Auth0 Redirect ---
   if (window.location.pathname.endsWith('callback.html')) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const state = urlParams.get('state');
-      const error = urlParams.get('error');
-      const errorDescription = urlParams.get('error_description');
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
 
-      const storedState = localStorage.getItem('auth0_state'); // Retrieve stored state
+    const storedState = localStorage.getItem('auth0_state'); // Retrieve stored state
 
-      // Basic error handling for Auth0 redirect
-      if (error) {
-          showToast(`Auth0 Error: ${errorDescription || error}`, 'error');
-          console.error('Auth0 Callback Error:', error, errorDescription);
-          window.location.href = 'login.html'; // Redirect to login on error
-          return;
-      }
+    // Basic error handling for Auth0 redirect
+    if (error) {
+      showToast(`Auth0 Error: ${errorDescription || error}`, 'error');
+      console.error('Auth0 Callback Error:', error, errorDescription);
+      window.location.href = 'login.html'; // Redirect to login on error
+      return;
+    }
 
-      // State validation (CRITICAL for security)
-      if (!state || state !== storedState) {
-          showToast('Invalid state parameter. Possible CSRF attack detected.', 'error');
-          console.error('State mismatch: Expected', storedState, 'Received', state);
-          localStorage.removeItem('auth0_state'); // Clear potentially compromised state
-          window.location.href = 'login.html';
-          return;
-      }
+    // State validation (CRITICAL for security)
+    if (!state || state !== storedState) {
+      showToast('Invalid state parameter. Possible CSRF attack detected.', 'error');
+      console.error('State mismatch: Expected', storedState, 'Received', state);
+      localStorage.removeItem('auth0_state'); // Clear potentially compromised state
+      window.location.href = 'login.html';
+      return;
+    }
 
-      localStorage.removeItem('auth0_state'); // State has been used, clear it
+    localStorage.removeItem('auth0_state'); // State has been used, clear it
 
-      if (code) {
-          showToast('Authentication successful, exchanging code...', 'info');
-          // Now, send this code to your backend endpoint to exchange it for tokens
-          exchangeCodeWithBackend(code);
-      } else {
-          showToast('No authorization code found in callback URL.', 'error');
-          window.location.href = 'login.html';
-      }
+    if (code) {
+      showToast('Authentication successful, exchanging code...', 'info');
+      // Now, send this code to your backend endpoint to exchange it for tokens
+      exchangeCodeWithBackend(code);
+    } else {
+      showToast('No authorization code found in callback URL.', 'error');
+      window.location.href = 'login.html';
+    }
   }
 
   /**
    * Helper function to send the authorization code to the backend for token exchange.
    * @param {string} code - The authorization code received from Auth0.
    */
+  // In frontend/app.js, locate this function:
   async function exchangeCodeWithBackend(code) {
-      try {
-          // This new backend endpoint will handle the token exchange with Auth0
-          // The fetch call now goes to /api/auth, which I've updated to act as the callback handler.
-          const response = await fetch('/api/auth', { // Corrected endpoint for the refactored api/auth.js
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code }) // Send the authorization code
-          });
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, redirect_uri: AUTH0_REDIRECT_URI }) // <-- MODIFIED: Add redirect_uri here
+      });
 
-          if (response.ok) {
-              const user = await response.json();
-              localStorage.setItem('authenticatedUser', JSON.stringify(user));
-              console.log('User data received from backend after code exchange and stored:', user);
-              showToast('Successfully logged in!', 'success');
-              window.location.href = 'protected.html';
-          } else {
-              const error = await response.json().catch(() => ({ error: 'Unknown error from backend.' }));
-              showToast(`Login failed: ${error.error || 'Server error during code exchange.'}`, 'error');
-              console.error('Backend code exchange failed:', error);
-              window.location.href = 'login.html'; // Redirect to login on error
-          }
-      } catch (error) {
-          console.error('Network error during code exchange:', error);
-          showToast('Network error during login process.', 'error');
-          window.location.href = 'login.html'; // Redirect to login on network error
+      if (response.ok) {
+        const user = await response.json();
+        localStorage.setItem('authenticatedUser', JSON.stringify(user));
+        console.log('User data received from backend after code exchange and stored:', user);
+        showToast('Successfully logged in!', 'success');
+        window.location.href = 'protected.html';
+      } else {
+        const error = await response.json().catch(() => ({ error: 'Unknown error from backend.' }));
+        showToast(`Login failed: ${error.error || 'Server error during code exchange.'}`, 'error');
+        console.error('Backend code exchange failed:', error);
+        window.location.href = 'login.html';
       }
+    } catch (error) {
+      console.error('Network error during code exchange:', error);
+      showToast('Network error during login process.', 'error');
+      window.location.href = 'login.html';
+    }
   }
 
 
