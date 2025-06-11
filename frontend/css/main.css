@@ -1524,6 +1524,13 @@ body.dark-mode .welcome-banner::before {
   will-change: transform, opacity;
 }
 
+/* Ensure admin-group.html user list items are also styled correctly */
+body.dark-mode #admin-users-list li {
+  background-color: var(--color-surface-dark);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-dark);
+}
+
 body.dark-mode .admin-crud-page .user-list-section .styled-list li {
   background-color: var(--color-surface-dark);
   border-color: var(--color-border-dark);
@@ -1656,14 +1663,24 @@ body.dark-mode .app-header .header-nav-link:focus {
 
 /* Dark Mode Modals */
 body.dark-mode .modal-content {
-  background-color: var(--color-surface-dark); /* Use solid dark surface color */
-  backdrop-filter: none; /* Remove backdrop filter */
-  -webkit-backdrop-filter: none; /* Remove backdrop filter */
-  opacity: 1; /* Ensure the element itself is fully opaque */
-  border-color: rgba(var(--color-white-rgb), 0.15);
-  box-shadow: var(--glass-shadow-dark);
+  background-color: var(--color-surface-dark) !important; /* Darkest page background, forced */
+  opacity: 1 !important; /* Element fully opaque, forced */
+  backdrop-filter: none !important; /* Remove blur, forced */
+  -webkit-backdrop-filter: none !important; /* Remove blur, forced */
+  border: 1px solid var(--color-border-dark) !important; /* Clear border, forced */
+  color: var(--color-text-dark) !important; /* Force base text color */
+  box-shadow: var(--glass-shadow-dark) !important;
+  /* The ::before pseudo-element for light reflection is generally hidden or very subtle on opaque surfaces.
+     If it was previously visible due to transparency, it might now be fully obscured by the opaque background.
+     This is acceptable as the primary goal is opacity for readability.
+     If a light reflection is still desired, it would need to be re-engineered to work on an opaque surface,
+     e.g., by being a very light, semi-transparent border or overlay, not a background-blended effect.
+     For this task, we assume the current body.dark-mode .modal-content::before is acceptable or not visible. */
 }
-body.dark-mode .modal-content::before { /* Reflection on dark modal */
+/* Ensure ::before pseudo-element doesn't interfere with forced opacity */
+body.dark-mode .modal-content::before {
+  opacity: 0 !important; /* Hide reflection if it was still trying to show */
+  pointer-events: none !important;
   background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
 }
 body.dark-mode .modal-content:hover::before {
