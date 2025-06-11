@@ -163,10 +163,21 @@ a:focus:not(:focus-visible) {
   box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 4px 15px rgba(var(--color-primary-rgb), 0.3); /* Inner highlight and primary shadow */
 }
 .btn-primary:hover {
-  background-color: rgba(var(--color-primary-dark-rgb), 0.85); /* Darker primary on hover */
-  border-color: transparent;
-  color: var(--color-text-on-primary);
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 8px 25px rgba(var(--color-primary-dark-rgb), 0.35); /* Enhanced shadow */
+  color: var(--color-text-on-primary); /* Ensure text color remains */
+  background-image: linear-gradient(
+    90deg,
+    rgba(var(--color-primary-rgb), 0.85),
+    rgba(var(--color-primary-light-rgb), 0.8), /* Lighter shade for gradient */
+    rgba(var(--color-primary-dark-rgb), 0.9), /* Darker shade for gradient */
+    rgba(var(--color-primary-rgb), 0.85)
+  );
+  background-size: 200% 200%;
+  animation: hoverGradientShift 3s ease-in-out infinite;
+  border-color: transparent; /* Keep or ensure consistency */
+  /* Keep existing translateY or adjust if needed */
+  transform: translateY(-5px); /* Current value */
+  /* The box-shadow from btn-glow will combine with this, or we can refine */
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 8px 25px rgba(var(--color-primary-dark-rgb), 0.35); /* Keep existing hover shadow for depth */
 }
 
 .btn-secondary {
@@ -219,7 +230,15 @@ a:focus:not(:focus-visible) {
 }
 
 .btn-glow {
-  animation: subtleGlow 2s infinite ease-in-out;
+  /* animation: subtleGlow 2s infinite ease-in-out; */ /* Old animation */
+  animation: breathingGlow 2.5s infinite ease-in-out; /* New animation, slightly longer duration */
+  /* Default variables for breathingGlow animation */
+  --btn-glow-inset-color: rgba(var(--color-primary-light-rgb), 0.2);
+  --btn-glow-outer-color-1: rgba(var(--color-primary-light-rgb), 0.3);
+  --btn-glow-outer-color-2: rgba(var(--color-primary-rgb), 0.2);
+  --btn-glow-inset-color-hover: rgba(var(--color-primary-light-rgb), 0.4);
+  --btn-glow-outer-color-1-hover: rgba(var(--color-primary-light-rgb), 0.5);
+  --btn-glow-outer-color-2-hover: rgba(var(--color-primary-rgb), 0.4);
 }
 
 .login-button.login-button-pulse-active { /* Renamed from login-button-clicked */
@@ -302,53 +321,8 @@ a:focus:not(:focus-visible) {
 }
 
 /* Button morphing style (dots instead of spinner) */
-button.login-button-morphing {
-  position: relative;
-  color: transparent; /* Hide text */
-}
-
-button.login-button-morphing::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 3em;
-  height: 1em;
-  transform: translate(-50%, -50%);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  pointer-events: none;
-}
-
-button.login-button-morphing::before span {
-  content: "";
-  display: block;
-  width: 0.5em;
-  height: 0.5em;
-  background-color: white;
-  border-radius: 50%;
-  animation: bounce 0.6s infinite ease-in-out;
-}
-
-button.login-button-morphing::before span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-button.login-button-morphing::before span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes bounce {
-  0%, 80%, 100% {
-    transform: scale(0.7);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1.4);
-    opacity: 1;
-  }
-}
+/* REMOVED button.login-button-morphing::before and button.login-button-morphing::before span rules */
+/* REMOVED @keyframes bounce */
 
 
 /* --- Cards --- */
@@ -593,6 +567,27 @@ button.login-button-morphing::before span:nth-child(3) {
 .error-message.shake {
   animation: shake 0.5s ease-in-out;
 }
+
+  body.dark-mode .message-area.success {
+    color: var(--color-success);
+    background-color: rgba(var(--color-success-rgb), 0.2);
+    border-color: rgba(var(--color-success-rgb), 0.4);
+  }
+  body.dark-mode .message-area.error {
+    color: var(--color-danger);
+    background-color: rgba(var(--color-danger-rgb), 0.2);
+    border-color: rgba(var(--color-danger-rgb), 0.4);
+  }
+  body.dark-mode .message-area.info { /* General info messages */
+    color: var(--color-primary-dark-theme);
+    background-color: rgba(var(--color-primary-dark-theme-rgb), 0.15);
+    border-color: rgba(var(--color-primary-dark-theme-rgb), 0.3);
+  }
+  body.dark-mode .message-area:not(.success):not(.error):not(.info) {
+      color: var(--color-text-dark);
+      background-color: rgba(var(--color-surface-dark-rgb), 0.5); /* Generic surface-like bg */
+      border: 1px solid var(--color-border-dark);
+  }
 
 /* Toast Notifications */
 #toast-container {
@@ -902,23 +897,29 @@ button.login-button-morphing::before span:nth-child(3) {
   background-image: none; /* Remove background gradient from body, scene handles it */
   background-color: var(--color-background); /* Keep a solid base color */
 }
+body.dark-mode .welcome-page {
+  background-color: var(--color-background-dark);
+}
 
 .welcome-scene {
   position: fixed; /* Fix it relative to viewport */
   top: 0; left: 0; right: 0; bottom: 0; /* fill full screen */
   pointer-events: none; /* so it doesn’t interfere with clicks */
   z-index: 0; /* behind content */
+  /* overflow: hidden; /* This was added, revert if it causes issues with original JS animation */
 }
+
+/* Removed .welcome-scene::before styles */
 
 .scene-element {
   position: absolute;
-  opacity: 0.4;
-  filter: blur(20px);
+  opacity: 0.4; /* Original opacity */
+  filter: blur(20px); /* Original blur */
   will-change: transform;
   z-index: 0;
 }
 
-/* Different sizes & unique volumetric shapes */
+/* Different sizes & unique volumetric shapes - Original values */
 
 .scene-element.element-1 {
   width: 250px;
@@ -963,19 +964,15 @@ button.login-button-morphing::before span:nth-child(3) {
 
 .welcome-page .welcome-content-card {
   /* Glassmorphism effect for the welcome card */
-  background-color: rgba(
-    255,
-    255,
-    255,
-    var(--glass-background-alpha)
-  ); /* Semi-transparent white */
+  background-color: rgba(255, 255, 255, 0.35); /* Was var(--glass-background-alpha) which is 0.3. Increased slightly. */
   border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Semi-transparent border */
   backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
   -webkit-backdrop-filter: blur(
     var(--glass-blur)
   ); /* For Safari compatibility */
   border-radius: var(--border-radius);
-  box-shadow: var(--glass-shadow); /* Use variable for glass shadow */
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), /* New inset shadow */
+              var(--glass-shadow); /* Existing glass shadow */
   transition: var(--transition-base); /* Smooth transitions for hover/focus */
   will-change: transform, box-shadow; /* Optimize for tilt effect */
 
@@ -990,6 +987,22 @@ button.login-button-morphing::before span:nth-child(3) {
   flex-direction: column;
   justify-content: center;
 }
+
+/* REMOVED .welcome-page .welcome-content-card::after for shimmering border */
+
+.welcome-page .welcome-content-card:hover {
+  transform: translateY(-15px) scale(1.03); /* More pronounced lift and slight scale */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25), /* Deeper, softer shadow */
+              var(--glass-shadow); /* Keep original glass shadow or enhance it */
+}
+
+/* Specific hover for welcome-content-card's ::before to enhance reflection */
+.welcome-page .welcome-content-card:hover::before {
+  left: 120%; /* Sweep across */
+  opacity: 0.8; /* Was 0.6, make it pop more */
+  transition: left 0.8s ease-in-out, opacity 0.8s ease-in-out; /* Slightly longer transition */
+}
+
 
 /* New style for glassy content cards on various pages */
 .glassy-content-card {
@@ -1081,18 +1094,25 @@ button.login-button-morphing::before span:nth-child(3) {
   color: var(--color-primary-dark); /* Deeper primary for title */
 }
 .welcome-title span {
-  display: inline-block;
-  animation: letterWave 0.6s ease-in-out forwards; /* Slightly slower wave */
-  animation-delay: calc(0.1s * var(--letter-index));
-  opacity: 1;
-  transform: translateY(30px); /* Start further down */
-  text-shadow: 2px 2px 5px rgba(var(--color-primary-rgb), 0.4); /* Add shadow */
+  display: inline-block; /* Remains the same */
+  opacity: 0; /* Initial state for animation */
+  transform: translateY(30px) scale(0.8) rotateX(-20deg); /* Consistent initial transform */
+  /* Define default CSS variables for elegantLetterReveal text shadows */
+  --welcome-title-shadow-color-start: rgba(var(--color-primary-rgb), 0.1);
+  --welcome-title-shadow-color-mid: rgba(var(--color-primary-rgb), 0.3);
+  --welcome-title-shadow-color-end: rgba(var(--color-primary-rgb), 0.4);
+  text-shadow: 0 0 2px var(--welcome-title-shadow-color-start); /* Initial text shadow */
+  animation: elegantLetterReveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* New animation, adjusted duration and easing */
+  animation-delay: calc(0.08s * var(--letter-index)); /* Slightly faster stagger, assuming --letter-index is still set by JS */
 }
 .welcome-message {
   font-size: 1.25rem; /* Larger text */
   color: var(--color-text-muted);
   margin-bottom: var(--spacing-xl);
   line-height: 1.8;
+}
+body.dark-mode .welcome-page .welcome-content-card .welcome-message {
+  color: var(--color-text-dark); /* Changed from potentially var(--color-text-muted-dark) */
 }
 
 /* Login Page Typography & Form Headers */
@@ -1107,6 +1127,9 @@ button.login-button-morphing::before span:nth-child(3) {
   font-size: 1.2rem; /* Slightly larger */
   color: var(--color-text-muted);
   margin-top: var(--spacing-xs);
+}
+body.dark-mode .login-page .form-container .form-subtitle {
+  color: var(--color-text-dark); /* Changed from potentially var(--color-text-muted-dark) */
 }
 
 /* Background Logos for Login Page (instead of shapes) */
@@ -1239,23 +1262,21 @@ button.login-button-morphing::before span:nth-child(3) {
   gap: var(--spacing-md);
   text-align: left;
 }
-.welcome-banner::before {
-  /* Animated overlay for subtle shimmer */
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
+
+body.dark-mode .welcome-banner {
+  background: linear-gradient(135deg, rgba(var(--color-primary-dark-rgb), 0.7) 0%, rgba(var(--color-primary-rgb), 0.5) 100%);
+  box-shadow: var(--glass-shadow-dark);
+}
+body.dark-mode .welcome-banner::before {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.15) 50%,
+    rgba(var(--color-white-rgb), 0.05) 50%, /* Lighter shimmer for dark bg */
     transparent
-  ); /* More visible shimmer */
-  transition: left 0.8s ease;
-  pointer-events: none; /* Ensure clicks pass through */
+  );
 }
+/* The ::before hover effect (left: 100%) is inherited and should be fine */
+
 .welcome-banner:hover::before {
   left: 100%;
 }
@@ -1421,10 +1442,7 @@ button.login-button-morphing::before span:nth-child(3) {
 .list-section {
   margin-bottom: var(--spacing-xl);
 }
-.table-responsive {
-  overflow-x: auto;
-  margin-top: var(--spacing-lg);
-}
+/* REMOVED .table-responsive and .styled-table rules */
 
 .list-container {
   margin-top: var(--spacing-lg);
@@ -1456,6 +1474,19 @@ button.login-button-morphing::before span:nth-child(3) {
   animation: itemSlideUpFadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   animation-delay: var(--item-index);
   will-change: transform, opacity;
+}
+
+/* Ensure admin-group.html user list items are also styled correctly */
+body.dark-mode #admin-users-list li {
+  background-color: var(--color-surface-dark);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-dark);
+}
+
+body.dark-mode .admin-crud-page .user-list-section .styled-list li {
+  background-color: var(--color-surface-dark);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-dark); /* This should apply to direct text and be inherited by children */
 }
 
 /* --- Dark Mode Overrides --- */
@@ -1500,9 +1531,11 @@ body.dark-mode .section-divider {
 }
 
 /* Dark Mode Scene Elements (Welcome Page) */
+/* Ensure .welcome-scene::before dark mode override is removed if it existed */
+
 body.dark-mode .scene-element {
-  opacity: 0.5; /* Slightly more visible on dark background */
-  filter: blur(15px); /* Slightly less blur to make them pop a bit more */
+  opacity: 0.35; /* Adjusted dark mode opacity */
+  filter: blur(25px); /* Adjusted dark mode blur */
 }
 /* Example of adjusting a specific element's gradient for dark mode if needed */
 /* body.dark-mode .scene-element.element-1 {
@@ -1582,13 +1615,24 @@ body.dark-mode .app-header .header-nav-link:focus {
 
 /* Dark Mode Modals */
 body.dark-mode .modal-content {
-  background-color: rgba(var(--color-surface-dark-rgb), 0.92); /* High opacity */
-  backdrop-filter: blur(5px); /* Minimal blur */
-  -webkit-backdrop-filter: blur(5px);
-  border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
-  box-shadow: var(--glass-shadow-dark); /* Keep glass shadow for dark mode, it's lighter */
+  background-color: var(--color-surface-dark) !important; /* Darkest page background, forced */
+  opacity: 1 !important; /* Element fully opaque, forced */
+  backdrop-filter: none !important; /* Remove blur, forced */
+  -webkit-backdrop-filter: none !important; /* Remove blur, forced */
+  border: 1px solid var(--color-border-dark) !important; /* Clear border, forced */
+  color: var(--color-text-dark) !important; /* Force base text color */
+  box-shadow: var(--glass-shadow-dark) !important;
+  /* The ::before pseudo-element for light reflection is generally hidden or very subtle on opaque surfaces.
+     If it was previously visible due to transparency, it might now be fully obscured by the opaque background.
+     This is acceptable as the primary goal is opacity for readability.
+     If a light reflection is still desired, it would need to be re-engineered to work on an opaque surface,
+     e.g., by being a very light, semi-transparent border or overlay, not a background-blended effect.
+     For this task, we assume the current body.dark-mode .modal-content::before is acceptable or not visible. */
 }
-body.dark-mode .modal-content::before { /* Reflection on dark modal */
+/* Ensure ::before pseudo-element doesn't interfere with forced opacity */
+body.dark-mode .modal-content::before {
+  opacity: 0 !important; /* Hide reflection if it was still trying to show */
+  pointer-events: none !important;
   background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
 }
 body.dark-mode .modal-content:hover::before {
@@ -1647,8 +1691,16 @@ body.dark-mode .btn-primary {
   box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.2), 0 4px 15px rgba(var(--color-primary-light-rgb), 0.25);
 }
 body.dark-mode .btn-primary:hover {
-  background-color: rgba(var(--color-primary-light-rgb), 1); /* Fully opaque on hover */
-  color: var(--color-background-dark);
+  background-image: linear-gradient(
+    90deg,
+    rgba(var(--color-primary-light-rgb), 0.9), /* Base dark mode hover is already light */
+    rgba(var(--color-white-rgb), 0.2),      /* Subtle white shimmer */
+    rgba(var(--color-primary-light-rgb), 0.8),
+    rgba(var(--color-primary-light-rgb), 0.9)
+  );
+  background-size: 200% 200%; /* Ensure this is present */
+  animation: hoverGradientShift 3s ease-in-out infinite; /* Ensure this is present */
+  color: var(--color-background-dark); /* Ensure text color is appropriate for light button */
   box-shadow: inset 0 1px 1px rgba(var(--color-white-rgb),0.15), 0 8px 25px rgba(var(--color-primary-light-rgb), 0.3);
 }
 
@@ -1699,9 +1751,34 @@ body.dark-mode .theme-switch-label {
 }
 
 .theme-switch-label {
-  color: var(--color-light); /* Assuming header text is light */
+  color: var(--color-light); /* Assuming header text is light on dark app-header */
   font-size: 0.9rem;
   user-select: none;
+}
+
+/* Styles for standalone theme switch on index.html, login.html */
+.top-right-theme-switch {
+  position: fixed; /* Or absolute if container is suitable */
+  top: var(--spacing-md, 16px);
+  right: var(--spacing-md, 16px);
+  z-index: 1001; /* Above other content like .welcome-scene */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px);
+  background-color: rgba(var(--color-surface-rgb), 0.5); /* Subtle glass bg for the switch itself */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: var(--border-radius, 1rem);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.top-right-theme-switch .theme-switch-label {
+  color: var(--color-text); /* Default text color */
+}
+
+body.dark-mode .top-right-theme-switch .theme-switch-label {
+  color: var(--color-text-dark); /* Dark mode text color */
 }
 
 .theme-switch {
@@ -1767,6 +1844,35 @@ body.dark-mode .glass-pane { /* .glass-pane might need its own specific override
   box-shadow: var(--glass-shadow-dark);
   color: var(--color-text-dark); /* Default text color for content within cards */
 }
+
+body.dark-mode .welcome-page .welcome-content-card {
+  background-color: rgba(var(--glass-background-rgb-dark), 0.75); /* Increased alpha from 0.25 to 0.75 */
+  /* border and box-shadow are inherited from body.dark-mode .card */
+}
+
+body.dark-mode .login-page .form-container {
+  background-color: rgba(var(--glass-background-rgb-dark), 0.75); /* Increased alpha */
+  border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark)); /* Ensure border color is appropriate for dark mode */
+  box-shadow: var(--glass-shadow-dark); /* Ensure dark mode shadow is used */
+}
+
+/* Dark mode variables for elegantLetterReveal */
+body.dark-mode .welcome-title span {
+  --welcome-title-shadow-color-start: rgba(var(--color-primary-dark-theme-rgb), 0.15);
+  --welcome-title-shadow-color-mid: rgba(var(--color-primary-dark-theme-rgb), 0.35);
+  --welcome-title-shadow-color-end: rgba(var(--color-primary-dark-theme-rgb), 0.45);
+}
+
+/* Dark mode variables for breathingGlow */
+body.dark-mode .btn-glow {
+  --btn-glow-inset-color: rgba(var(--color-primary-dark-theme-rgb), 0.2);
+  --btn-glow-outer-color-1: rgba(var(--color-primary-dark-theme-rgb), 0.3);
+  --btn-glow-outer-color-2: rgba(var(--color-white-rgb), 0.15); /* Use white for some pop */
+  --btn-glow-inset-color-hover: rgba(var(--color-primary-dark-theme-rgb), 0.4);
+  --btn-glow-outer-color-1-hover: rgba(var(--color-primary-dark-theme-rgb), 0.5);
+  --btn-glow-outer-color-2-hover: rgba(var(--color-white-rgb), 0.25);
+}
+
 
 body.dark-mode .card .card-title {
   color: var(--color-primary-dark-theme); /* Light primary for titles */
@@ -2034,35 +2140,33 @@ input[type="email"] {
 
   /* Scene elements adjustments for mobile */
   .scene-element.element-1 {
-    width: 150px;
-    height: 150px;
-    top: 5%;
-    left: 0%;
+    width: 40vw; /* Adjusted for mobile */
+    height: 40vw;
+    /* Positions can remain as % or be adjusted if needed */
   }
   .scene-element.element-2 {
-    width: 120px;
-    height: 120px;
-    bottom: 5%;
-    right: 0%;
+    width: 35vw;
+    height: 45vw;
   }
   .scene-element.element-3 {
-    width: 70px;
-    height: 70px;
-    top: 15%;
-    right: 5%;
+    width: 45vw;
+    height: 38vw;
   }
   .scene-element.element-4 {
-    width: 200px;
-    height: 20px;
-    top: 30%;
-    left: -15%;
+    width: 38vw;
+    height: 42vw;
   }
   .scene-element.element-5 {
-    width: 100px;
-    height: 100px;
-    bottom: 10%;
-    left: 10%;
+    width: 42vw;
+    height: 40vw;
   }
+  /* Ensure blur is not too heavy on mobile, can reduce if performance issues */
+  .scene-element {
+    filter: blur(40px); /* Slightly reduced blur for mobile if needed */
+  }
+  .scene-element.element-2 { filter: blur(50px); }
+  .scene-element.element-4 { filter: blur(60px); }
+
 }
 
 @media (max-width: 480px) {

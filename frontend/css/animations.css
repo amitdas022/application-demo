@@ -35,22 +35,6 @@
   }
 }
 
-/* Welcome Title Animation - More bouncy */
-@keyframes letterWave {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); } /* Increased bounce height */
-}
-
-/* Button Glow Animation - Softer, more volumetric */
-@keyframes subtleGlow {
-  0%, 100% {
-    box-shadow: inset 0 0 3px rgba(var(--color-primary-rgb),0.15), 0px 0px 4px rgba(var(--color-primary-rgb), 0.1);
-  }
-  50% {
-    box-shadow: inset 0 0 6px rgba(var(--color-primary-rgb),0.25), 0px 0px 8px rgba(var(--color-primary-rgb), 0.15);
-  }
-}
-
 /* Input Focus Underline Animation */
 @keyframes inputFocusLine {
   from { transform: scaleX(0); }
@@ -79,33 +63,6 @@
 /* Loading Spinner (example) */
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-/* --- New: Page Transition Animations --- */
-@keyframes slideInLeftAndRight {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  30% { /* Full opacity and across screen quickly */
-    transform: translateX(0%);
-    opacity: 1;
-  }
-  70% { /* Hold full opacity across screen */
-    transform: translateX(0%);
-    opacity: 1;
-  }
-  100% { /* Slide out to the right */
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-
-/* Input Field Glow on Focus (enhancement) */
-@keyframes inputGlow {
-  from { box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0.25); }
-  to { box-shadow: 0 0 0 0.3rem rgba(var(--color-primary-rgb), 0.4); } /* Stronger glow */
 }
 
 /* Button Click Ripple Effect - Slightly faster and more distinct */
@@ -160,14 +117,6 @@
   100% { opacity: 0; transform: scale(0.9) translateY(40px); }
 }
 
-/* Background Logo Pulse/Drift - More active movement */
-@keyframes logoPulseDrift {
-  0%, 100% { transform: translate(0, 0) scale(0.9); opacity: 0.5; }
-  25% { transform: translate(10px, 10px) scale(1.1); opacity: 0.7; } /* More movement and scale */
-  50% { transform: translate(-10px, -10px) scale(0.9); opacity: 0.5; }
-  75% { transform: translate(10px, -10px) scale(1.1); opacity: 0.7; }
-}
-
 @keyframes loginButtonClickPulse {
   0% {
     transform: scale(1);
@@ -181,4 +130,43 @@
     transform: scale(0.95); /* End in a pressed state, similar to :active */
     box-shadow: 0 4px 10px rgba(var(--color-primary-rgb), 0.2);
   }
+}
+
+@keyframes elegantLetterReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8) rotateX(-20deg);
+    text-shadow: 0 0 2px var(--welcome-title-shadow-color-start, rgba(var(--color-primary-rgb), 0.1));
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.05) rotateX(10deg);
+    text-shadow: 1px 1px 3px var(--welcome-title-shadow-color-mid, rgba(var(--color-primary-rgb), 0.3));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0deg);
+    text-shadow: 2px 2px 5px var(--welcome-title-shadow-color-end, rgba(var(--color-primary-rgb), 0.4));
+  }
+}
+
+/* New Glow Animation for buttons */
+@keyframes breathingGlow {
+  0%, 100% {
+    box-shadow: inset 0 0 5px var(--btn-glow-inset-color, rgba(var(--color-primary-light-rgb), 0.2)),
+                0 0 10px var(--btn-glow-outer-color-1, rgba(var(--color-primary-light-rgb), 0.3)),
+                0 0 12px var(--btn-glow-outer-color-2, rgba(var(--color-primary-rgb), 0.2));
+  }
+  50% {
+    box-shadow: inset 0 0 8px var(--btn-glow-inset-color-hover, rgba(var(--color-primary-light-rgb), 0.4)),
+                0 0 20px var(--btn-glow-outer-color-1-hover, rgba(var(--color-primary-light-rgb), 0.5)),
+                0 0 25px var(--btn-glow-outer-color-2-hover, rgba(var(--color-primary-rgb), 0.4));
+  }
+}
+
+/* New Hover Gradient Animation for buttons */
+@keyframes hoverGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }

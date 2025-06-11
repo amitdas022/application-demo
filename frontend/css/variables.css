@@ -13,9 +13,10 @@
   --color-secondary-dark-rgb: 90, 98, 104; /* For rgba() usage of darker shade */
 
   --color-success: #28a745; /* Green for success */
+  --color-success-rgb: 40, 167, 69; /* Added based on #28a745 */
   --color-danger: #dc3545;  /* Red for errors/danger */
   --color-danger-rgb: 220, 53, 69; /* For rgba() usage */
-  --color-warning: #ffc107; /* Yellow for warnings */
+  /* --color-warning: #ffc107; */ /* Yellow for warnings - REMOVED */
 
   --color-light: #f8f9fa;      /* Very light grey / off-white */
   --color-light-rgb: 248, 249, 250; /* For rgba() usage */
@@ -34,11 +35,11 @@
   --color-surface: var(--color-white); /* For opaque cards (will be overridden for glassy) */
   --color-surface-rgb: 255, 255, 255; /* RGB for --color-surface */
   --color-border: #e0e0e0;
-  --color-input-border: #ced4da; /* Will be adjusted for glassy inputs in main.css */
+  /* --color-input-border: #ced4da; */ /* Will be adjusted for glassy inputs in main.css - REMOVED */
 
   /* Typography */
   --font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* Added Inter font */
-  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; */ /* REMOVED */
   --font-base-size: 1rem; /* Typically 16px */
   --font-weight-light: 300;
   --font-weight-normal: 400;
@@ -68,7 +69,7 @@
 
   /* Transitions */
   --transition-base: all 0.3s ease-in-out; /* Slightly longer transition for smoother effects */
-  --transition-transform: transform 0.2s ease;
+  /* --transition-transform: transform 0.2s ease; */ /* REMOVED */
 
   /* --- Dark Theme Palette --- */
   --color-background-dark: #121212; /* Very dark grey/black */

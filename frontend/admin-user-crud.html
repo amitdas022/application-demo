@@ -25,7 +25,7 @@
                 <div class="theme-switch-wrapper">
                     <label class="theme-switch" for="theme-checkbox" aria-label="Theme switch">
                         <input type="checkbox" id="theme-checkbox" />
-                        <span class="slider round"></span>
+                        <span class="slider"></span>
                     </label>
                     <span class="theme-switch-label" style="color: var(--color-light); font-size: 0.9rem; margin-left: 0.5rem;">Dark Mode</span>
                 </div>
@@ -95,10 +95,10 @@
     </main>
 
     <div id="edit-user-modal" class="modal" style="display:none;" aria-labelledby="edit-modal-title" aria-modal="true" role="dialog">
-        <div class="modal-overlay" onclick="closeEditModal()"></div>
+        <div class="modal-overlay"></div>
         <div class="modal-content card"> <header class="modal-header">
                 <h3 id="edit-modal-title" class="card-title">Edit User Details</h3>
-                <button class="modal-close-btn" onclick="closeEditModal()" aria-label="Close modal">&times;</button>
+                <button class="modal-close-btn" aria-label="Close modal">&times;</button>
             </header>
             <div class="modal-body">
                 <form id="edit-user-form" class="styled-form">
