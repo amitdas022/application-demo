@@ -4,6 +4,8 @@
 # Local environment variables for the backend
 # Contains sensitive information like API keys
 .env
+.env_deprecated
+.env.auth0
 
 # Vercel specific directory
 # Contains local Vercel project linking and build outputs
@@ -22,5 +24,3 @@
 *.code-workspace
 .vercel
 package-lock.json
-okta-sf-SAML.xml
-.env_deprecated

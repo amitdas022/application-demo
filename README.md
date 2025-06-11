@@ -7,7 +7,7 @@ This project is a demonstration application showcasing user authentication (Auth
 
 1.  **User Login**: Implements secure user login via the backend using Okta CIC's **Authorization Code Flow**.
 
-2.  **Okta User Management**: The backend interacts with the Okta Management API using an API Token to perform administrative tasks on users (e.g., CRUD operations, group/role assignments).
+2.  **Okta User Management**: The backend interacts with the Okta Management API using an API Token to perform administrative tasks on users (e.g., CRUD operations, group/role assignments). This endpoint also includes **server-side authorization** to ensure only legitimate administrators can trigger these operations.
 
 **Note**: The primary focus is on the backend API endpoints (`/api/auth.js` for login, `/api/okta-user-management.js` for admin tasks) and their interaction with Okta CIC. A simple frontend is included to demonstrate these backend functionalities.
 
@@ -20,7 +20,7 @@ The application consists of:
 
     -   `/api/auth`: Handles the exchange of an authorization code for user tokens, securely communicating with Okta CIC. It returns user profile information including roles (derived from Okta groups).
 
-    -   `/api/okta-user-management`: Provides endpoints for managing Okta users and their group assignments. It uses an Okta API Token for secure access to the Okta Management API.
+    -   `/api/okta-user-management`: Provides endpoints for managing Okta users and their group assignments. It uses an Okta API Token for secure access to the Okta Management API. This endpoint also includes **server-side validation** of the end-user's access token to enforce role-based access.
 
 -   **Frontend (Static Files):**
 
@@ -35,9 +35,9 @@ This section summarizes the application's features from a user/developer perspec
 
 -   **Logout**: When a user logs out, their local session is cleared, and they are redirected to Okta CIC's logout endpoint to terminate their session. Okta CIC then redirects them back to your application's login page.
 
--   **User Management (Admin)**: Authenticated admin users can perform CRUD operations (Create, Read, Update, Delete) on users via the "Admin" page. This is handled by backend API calls from `/api/okta-user-management.js` to the Okta Management API using an Okta API Token.
+-   **User Management (Admin)**: Authenticated admin users can perform CRUD operations (Create, Read, Update, Delete) on users via the "Admin" page. This is handled by backend API calls from `/api/okta-user-management.js` to the Okta Management API using an Okta API Token. **Crucially, these backend calls are protected by server-side authorization, validating the calling user's access token and ensuring they possess the 'Admin' role.**
 
--   **Role Management (Admin)**: Admin users can assign or unassign the 'admin' role (which corresponds to membership in an "Admin" group in Okta) to other users from the "Admin" page. This also uses the Okta Management API via the backend (`/api/okta-user-management.js`).
+-   **Role Management (Admin)**: Admin users can assign or unassign the 'admin' role (which corresponds to membership in an "Admin" group in Okta) to other users from the "Admin" page. This also uses the Okta Management API via the backend (`/api/okta-user-management.js`), with **server-side authorization** applied.
 
 -   **Protected Content**: Pages like `protected.html` (for any authenticated user) and `admin.html` (for authenticated users with an 'admin' role/group) are only accessible based on authentication status and roles.
 
@@ -78,16 +78,27 @@ This project utilizes Okta CIC for authentication and authorization:
 
 ### 2\. Okta Management API Access (API Token)
 
--   **Purpose**: To allow the backend (`/api/okta-user-management.js`) to perform administrative actions on Okta users and groups programmatically.
+-   **Purpose**: To allow the backend (`/api/okta-user-management.js`) to perform administrative actions on Okta users and groups programmatically, **only when requested by an authorized end-user.**
 
 -   **Credentials Used (from `.env`):** `OKTA_API_TOKEN`, `AUTH0_DOMAIN` (Okta domain).
 
 -   **Flow**:
 
-    1.  The `/api/okta-user-management.js` endpoint needs to perform an action (e.g., list users, assign a user to a group).
+    1.  An **authenticated end-user** (e.g., an administrator logged into your frontend) makes a request to a user management function in your frontend (e.g., "Load Users", "Create User").
 
-    2.  It uses the `OKTA_API_TOKEN` (an SSWS token) directly in the `Authorization` header of its requests to the Okta Management API (e.g., `GET /api/v1/users`, `PUT /api/v1/groups/{groupId}/users/{userId}`).
-        No separate token exchange is needed for this SSWS token as it's long-lived.
+    2.  Your frontend (`app.js`) sends this request to your backend endpoint (`/api/okta-user-management`), including the **end-user's `access_token`** in the `Authorization: Bearer` header.
+
+    3.  Your backend (`/api/okta-user-management.js`) receives the request. Before processing it, it performs **server-side authorization**:
+        * It extracts the `access_token` from the request header.
+        * It calls Okta's `/oauth2/default/v1/userinfo` endpoint, presenting the end-user's `access_token`.
+        * Okta's `/userinfo` endpoint validates the `access_token` and returns the end-user's claims, including their `groups` (roles).
+        * Your backend checks if the `groups` claim contains the 'Admin' role.
+        * If the token is invalid, expired, or the user is not an admin, the backend immediately sends an appropriate error response (e.g., 401 Unauthorized, 403 Forbidden) to the frontend.
+
+    4.  **If the end-user is authorized (i.e., confirmed as an 'Admin'):**
+        * Your backend then uses its own, securely stored `OKTA_API_TOKEN` (an SSWS token) directly in the `Authorization: SSWS` header to make the actual administrative API call to the Okta Management API (e.g., `GET /api/v1/users`, `PUT /api/v1/groups/{groupId}/users/{userId}`).
+        * Okta performs the requested management operation.
+        * The backend returns the result to the frontend.
 
 Prerequisites
 -------------
@@ -134,7 +145,7 @@ Setup and Installation
     # Used by /api/okta-user-management.js
     OKTA_API_TOKEN=YOUR_OKTA_SSWS_API_TOKEN
 
-    # The following Auth0-specific variables are no longer directly used or have changed meaning:
+    # The following Auth0-specific variables are no longer directly used or have changed context:
     # AUTH0_M2M_CLIENT_ID (Not used for Okta API token auth)
     # AUTH0_M2M_CLIENT_SECRET (Not used for Okta API token auth)
     # AUTH0_MANAGEMENT_AUDIENCE (Okta base URL is derived from AUTH0_DOMAIN for Management API)

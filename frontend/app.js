@@ -1,6 +1,6 @@
 // frontend/app.js
 // This file manages client-side interactivity, user authentication state (via localStorage),
-// communication with backend APIs (/api/auth/callback for login, /api/auth0-user-management for user admin tasks),
+// communication with backend APIs (/api/auth/callback for login, /api/okta-user-management for user admin tasks),
 // and dynamic HTML updates based on application state and user actions.
 
 // LOCAL_TESTING_MODE:
@@ -18,10 +18,6 @@ let mouseParallaxY = 0;
 let appConfig = {};
 
 // --- Okta Configuration (CLIENT-SIDE) ---
-// These will be fetched from /api/config
-// const AUTH0_DOMAIN = 'dev-ky8umfzopcrqoft1.us.auth0.com'; // e.g., dev-abc1234.us.auth0.com
-// const AUTH0_CLIENT_ID = '3H2O07Y9h101Gpx2hINM0avLDO20fA77'; // Client ID of your Auth0 SPA/Regular Web Application
-// const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // Optional: If you have a custom API, use its identifier (e.g., https://your-api.com)
 
 // The redirect_uri must exactly match one configured in your Okta Application's "Sign-in redirect URIs".
 // It points to the HTML page in your frontend that will handle the Okta redirect.
@@ -557,23 +553,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function manageAdminRole(action, buttonElement) {
       const userIdToManage = userIdInput.value;
-      if (userIdToManage) {
-        try {
+      if (!userIdToManage) {
+        showToast('Please enter a User ID (Auth0 `sub`).', 'error'); // Use toast for validation
+        return;
+      }
+
+      // --- ADDED: Get authenticated user's access token for server-side authorization ---
+      const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+      if (!authenticatedUser || !authenticatedUser.accessToken) {
+          showToast('Authentication required to perform this action.', 'error');
+          return;
+      }
+      const accessToken = authenticatedUser.accessToken;
+      // --- END ADDED ---
+
+      try {
           if (buttonElement) buttonElement.classList.add('loading');
           const response = await fetch('/api/okta-user-management', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['admin'] })
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${accessToken}` // Send user's access token
+              },
+              body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['admin'] })
           });
 
           if (response.ok) {
-            const successMessage = action === 'assignRoles' ? 'User added to admin role successfully.' : 'User removed from admin role successfully.';
-            showToast(successMessage, 'success'); // Use toast for success
-            userIdInput.value = ''; // Clear input
-            loadAdminUsers(); // Refresh the list
+              const successMessage = action === 'assignRoles' ? 'User added to admin role successfully.' : 'User removed from admin role successfully.';
+              showToast(successMessage, 'success'); // Use toast for success
+              userIdInput.value = ''; // Clear input
+              loadAdminUsers(); // Refresh the list
           } else {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
-            showToast(`Failed to update roles: ${errorData.error || 'Server error'}`, 'error'); // Use toast for error
+              const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
+              showToast(`Failed to update roles: ${errorData.error || 'Server error'}`, 'error'); // Use toast for error
           }
         } catch (error) {
           console.error("Error updating roles:", error);
@@ -581,10 +593,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
           if (buttonElement) buttonElement.classList.remove('loading');
         }
-      } else {
-        showToast('Please enter a User ID (Auth0 `sub`).', 'error'); // Use toast for validation
       }
-    }
 
     if (addToAdminRoleButton) {
       addToAdminRoleButton.addEventListener('click', () => manageAdminRole('assignRoles', addToAdminRoleButton));
@@ -598,8 +607,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminUsersList.innerHTML = '';
       if (loadAdminUsersButton) loadAdminUsersButton.classList.add('loading');
 
+      // --- ADDED: Get authenticated user's access token for server-side authorization ---
+      const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+      if (!authenticatedUser || !authenticatedUser.accessToken) {
+          showToast('Authentication required to load admin users.', 'error');
+          displayMessage(loadAdminUsersMessage, 'Authentication required.', 'error');
+          if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading');
+          return;
+      }
+      const accessToken = authenticatedUser.accessToken;
+      // --- END ADDED ---
+
       try {
-        const response = await fetch('/api/okta-user-management?action=listUsersInRole&roleName=admin');
+        // Fix: Use 'Admin' (capital A) to match Okta group name case
+        const response = await fetch('/api/okta-user-management?action=listUsersInRole&roleName=Admin', { // Fixed: 'Admin'
+            headers: {
+                'Authorization': `Bearer ${accessToken}` // Send user's access token
+            }
+        });
         if (response.ok) {
           const users = await response.json();
           if (users.length === 0) {
@@ -720,6 +745,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         event.preventDefault();
         displayMessage(createMessage, 'Creating user...', 'info');
 
+        // --- ADDED: Get authenticated user's access token for server-side authorization ---
+        const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+        if (!authenticatedUser || !authenticatedUser.accessToken) {
+            showToast('Authentication required to create user.', 'error');
+            displayMessage(createMessage, 'Authentication required.', 'error', 'message-area', 0, true);
+            return;
+        }
+        const accessToken = authenticatedUser.accessToken;
+        // --- END ADDED ---
+
         const userData = {
           firstName: document.getElementById('firstName').value,
           lastName: document.getElementById('lastName').value,
@@ -731,7 +766,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           const response = await fetch('/api/okta-user-management', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}` // Send user's access token
+            },
             body: JSON.stringify({ action: 'createUser', userData })
           });
 
@@ -759,8 +797,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (loadUsersButton) loadUsersButton.classList.add('loading');
       if (userListSkeleton) userListSkeleton.style.display = 'flex'; // Show skeleton
 
+      // --- ADDED: Get authenticated user's access token for server-side authorization ---
+      const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+      if (!authenticatedUser || !authenticatedUser.accessToken) {
+          showToast('Authentication required to load users.', 'error');
+          displayMessage(listMessage, 'Authentication required.', 'error');
+          if (loadUsersButton) loadUsersButton.classList.remove('loading');
+          if (userListSkeleton) userListSkeleton.style.display = 'none'; // Hide skeleton
+          return;
+      }
+      const accessToken = authenticatedUser.accessToken;
+      // --- END ADDED ---
+
       try {
-        const response = await fetch('/api/okta-user-management?action=listUsers');
+        const response = await fetch('/api/okta-user-management?action=listUsers', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}` // Send user's access token
+            }
+        });
         if (response.ok) {
           const users = await response.json();
           if (users.length === 0) {
@@ -852,11 +906,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         displayMessage(editMessage, 'Saving changes...', 'info');
 
+        // --- ADDED: Get authenticated user's access token for server-side authorization ---
+        const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+        if (!authenticatedUser || !authenticatedUser.accessToken) {
+            showToast('Authentication required to save changes.', 'error');
+            displayMessage(editMessage, 'Authentication required.', 'error', 'message-area', 0, true);
+            return;
+        }
+        const accessToken = authenticatedUser.accessToken;
+        // --- END ADDED ---
+
         if (saveEditButton) saveEditButton.classList.add('loading');
         try {
           const response = await fetch('/api/okta-user-management', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}` // Send user's access token
+            },
             body: JSON.stringify({ action: 'updateUser', userId: userIdToUpdate, updates })
           });
 
@@ -882,6 +949,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!btn) return;
       const userIdToDelete = btn.dataset.userid;
 
+      // --- ADDED: Get authenticated user's access token for server-side authorization ---
+      const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+      if (!authenticatedUser || !authenticatedUser.accessToken) {
+          showToast('Authentication required to delete user.', 'error');
+          displayMessage(listMessage, 'Authentication required.', 'error');
+          return;
+      }
+      const accessToken = authenticatedUser.accessToken;
+      // --- END ADDED ---
+
       // Replace confirm() with custom modal
       showConfirmModal(
         'Confirm Deletion',
@@ -892,7 +969,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           try {
             const response = await fetch('/api/okta-user-management', {
               method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${accessToken}` // Send user's access token
+              },
               body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
             });
 
