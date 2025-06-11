@@ -183,47 +183,6 @@
   }
 }
 
-/* New animations for background liquid elements */
-@keyframes auroraFlow1 {
-  0% { transform: translate(0vw, 0vh) scale(1) rotate(0deg); opacity: 0.3; }
-  25% { transform: translate(10vw, -15vh) scale(1.1) rotate(20deg); opacity: 0.5; }
-  50% { transform: translate(-5vw, 10vh) scale(0.9) rotate(-10deg); opacity: 0.4; }
-  75% { transform: translate(5vw, 5vh) scale(1.2) rotate(10deg); opacity: 0.6; }
-  100% { transform: translate(0vw, 0vh) scale(1) rotate(0deg); opacity: 0.3; }
-}
-
-@keyframes auroraFlow2 {
-  0% { transform: translate(0vw, 0vh) scale(1) rotate(0deg); opacity: 0.4; }
-  25% { transform: translate(-12vw, 10vh) scale(1.2) rotate(-15deg); opacity: 0.6; }
-  50% { transform: translate(8vw, -8vh) scale(0.8) rotate(25deg); opacity: 0.3; }
-  75% { transform: translate(-10vw, -12vh) scale(1.1) rotate(-5deg); opacity: 0.5; }
-  100% { transform: translate(0vw, 0vh) scale(1) rotate(0deg); opacity: 0.4; }
-}
-
-@keyframes subtleDriftAndPulse {
-  0% { transform: translate(0px, 0px) scale(1); opacity: 0.2; }
-  33% { transform: translate(20px, -30px) scale(1.05); opacity: 0.3; }
-  66% { transform: translate(-15px, 25px) scale(0.95); opacity: 0.15; }
-  100% { transform: translate(0px, 0px) scale(1); opacity: 0.2; }
-}
-
-@keyframes slowRotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* Shimmering border animation */
-@keyframes shimmerBorder {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Subtle shine animation */
-@keyframes subtleShine {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
-
 @keyframes elegantLetterReveal {
   0% {
     opacity: 0;

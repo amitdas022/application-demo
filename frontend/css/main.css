@@ -927,105 +927,73 @@ button.login-button-morphing::before span:nth-child(3) {
   top: 0; left: 0; right: 0; bottom: 0; /* fill full screen */
   pointer-events: none; /* so it doesn’t interfere with clicks */
   z-index: 0; /* behind content */
-  overflow: hidden; /* Prevent glow from causing scrollbars */
+  /* overflow: hidden; /* This was added, revert if it causes issues with original JS animation */
 }
 
-.welcome-scene::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150vmax; /* Very large */
-  height: 150vmax;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.1) 0%, rgba(var(--color-primary-rgb), 0) 60%);
-  border-radius: 50%;
-  animation: slowRotate 120s linear infinite;
-  opacity: 0.5; /* Adjust as needed */
-  z-index: -1; /* Behind scene-elements */
-}
+/* Removed .welcome-scene::before styles */
 
 .scene-element {
   position: absolute;
-  /* opacity set by animation */
-  /* filter set by individual elements */
-  will-change: transform, opacity; /* Added opacity */
-  z-index: 0; /* will be under .welcome-scene::before if its z-index is higher, but should be above page background */
+  opacity: 0.4; /* Original opacity */
+  filter: blur(20px); /* Original blur */
+  will-change: transform;
+  z-index: 0;
 }
 
-/* Different sizes & unique volumetric shapes */
+/* Different sizes & unique volumetric shapes - Original values */
 
 .scene-element.element-1 {
-  width: 30vw; height: 30vw;
-  top: 10%; left: 5%;
-  border-radius: 60% 40% 30% 70% / 50% 60% 40% 50%;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%; /* Perfect circle / sphere */
   background: radial-gradient(circle at 30% 30%, #a3d5ff, #3a7bd5);
-  box-shadow: 0 0 40px rgba(58, 123, 213, 0.3); /* Softer shadow */
-  filter: blur(60px);
-  opacity: 0.3; /* Initial opacity, animation will take over */
-  animation: auroraFlow1 30s infinite alternate ease-in-out;
+  box-shadow: 0 0 30px rgba(58, 123, 213, 0.5);
 }
 
 .scene-element.element-2 {
-  width: 25vw; height: 35vw;
-  top: 50%; left: 70%;
-  border-radius: 30% 70% 50% 50% / 60% 30% 70% 40%;
+  width: 280px;
+  height: 220px;
+  border-radius: 40% 60% 60% 40% / 50% 50% 70% 70%; /* Slightly squished organic blob */
   background: radial-gradient(circle at 40% 40%, #02ddff, #6069f3);
-  box-shadow: 0 0 50px rgba(2, 18, 243, 0.35);
-  filter: blur(70px);
-  opacity: 0.25;
-  animation: auroraFlow2 35s infinite alternate ease-in-out 1s; /* Added delay */
+  box-shadow: 0 0 30px rgba(2, 18, 243, 0.5);
 }
 
 .scene-element.element-3 {
-  width: 35vw; height: 28vw;
-  top: 15%; right: 10%; /* Using right for variety */
-  border-radius: 70% 30% 40% 60% / 50% 55% 45% 50%;
+  width: 230px;
+  height: 270px;
+  border-radius: 55% 45% 65% 35% / 60% 40% 60% 40%; /* Taller, elongated blob */
   background: radial-gradient(circle at 30% 30%, #b5ead7, #66cdaa);
-  box-shadow: 0 0 45px rgba(102, 205, 170, 0.3);
-  filter: blur(50px);
-  opacity: 0.35;
-  animation: subtleDriftAndPulse 25s infinite ease-in-out;
+  box-shadow: 0 0 30px rgba(102, 205, 170, 0.5);
 }
 
 .scene-element.element-4 {
-  width: 28vw; height: 32vw;
-  bottom: 5%; left: 20%; /* Using bottom for variety */
-  border-radius: 40% 60% 60% 40% / 70% 50% 50% 30%;
+  width: 260px;
+  height: 240px;
+  border-radius: 50% 30% 50% 30% / 40% 60% 40% 60%; /* Wobbly rounded blob */
   background: radial-gradient(circle at 25% 25%, #f53b3b, #ffad33);
-  box-shadow: 0 0 60px rgba(255, 173, 51, 0.4);
-  filter: blur(80px);
-  opacity: 0.2;
-  animation: auroraFlow1 28s infinite alternate ease-in-out 0.5s; /* Reusing auroraFlow1 with different params */
+  box-shadow: 0 0 30px rgba(255, 173, 51, 0.5);
 }
 
 .scene-element.element-5 {
-  width: 32vw; height: 30vw;
-  bottom: 10%; right: 15%; /* Using bottom and right */
-  border-radius: 50% 50% 30% 70% / 40% 60% 60% 40%;
+  width: 270px;
+  height: 260px;
+  border-radius: 60% 40% 70% 30% / 60% 70% 40% 50%; /* Another asymmetric organic shape */
   background: radial-gradient(circle at 35% 35%, #d4a5ff, #7f5af0);
-  box-shadow: 0 0 55px rgba(127, 90, 240, 0.35);
-  filter: blur(75px);
-  opacity: 0.3;
-  animation: auroraFlow2 32s infinite alternate ease-in-out 1.5s; /* Reusing auroraFlow2 */
+  box-shadow: 0 0 30px rgba(127, 90, 240, 0.5);
 }
 
 
 .welcome-page .welcome-content-card {
   /* Glassmorphism effect for the welcome card */
-  background-color: rgba(
-    255,
-    255,
-    255,
-    var(--glass-background-alpha)
-  ); /* Semi-transparent white */
+  background-color: rgba(255, 255, 255, 0.35); /* Was var(--glass-background-alpha) which is 0.3. Increased slightly. */
   border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha)); /* Semi-transparent border */
   backdrop-filter: blur(var(--glass-blur)); /* The magic blur effect */
   -webkit-backdrop-filter: blur(
     var(--glass-blur)
   ); /* For Safari compatibility */
   border-radius: var(--border-radius);
-  box-shadow: var(--glass-shadow); /* Use variable for glass shadow */
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), /* New inset shadow */
+              var(--glass-shadow); /* Existing glass shadow */
   transition: var(--transition-base); /* Smooth transitions for hover/focus */
   will-change: transform, box-shadow; /* Optimize for tilt effect */
 
@@ -1041,27 +1009,7 @@ button.login-button-morphing::before span:nth-child(3) {
   justify-content: center;
 }
 
-.welcome-page .welcome-content-card::after {
-  content: "";
-  position: absolute;
-  top: -50%; /* Positioned to be clipped by overflow:hidden */
-  left: -50%;
-  width: 200%; /* Large enough to cover the card when rotated */
-  height: 200%;
-  background: conic-gradient(
-    transparent,
-    transparent,
-    transparent,
-    rgba(var(--color-primary-light-rgb), 0.5), /* Shimmer color */
-    transparent,
-    transparent,
-    transparent,
-    rgba(var(--color-white-rgb), 0.7), /* Another shimmer color */
-    transparent
-  );
-  animation: shimmerBorder 10s linear infinite;
-  z-index: -1; /* Behind the card's content, but above its background if needed */
-}
+/* REMOVED .welcome-page .welcome-content-card::after for shimmering border */
 
 .welcome-page .welcome-content-card:hover {
   transform: translateY(-15px) scale(1.03); /* More pronounced lift and slight scale */
@@ -1590,16 +1538,11 @@ body.dark-mode .section-divider {
 }
 
 /* Dark Mode Scene Elements (Welcome Page) */
-body.dark-mode .welcome-scene::before {
-  background: radial-gradient(circle, rgba(var(--color-primary-light-rgb), 0.1) 0%, rgba(var(--color-primary-light-rgb), 0) 65%); /* Adjusted color and spread */
-  opacity: 0.4; /* Slightly less opacity for dark mode if needed */
-}
+/* Ensure .welcome-scene::before dark mode override is removed if it existed */
 
 body.dark-mode .scene-element {
-  /*opacity: 0.5; /* Slightly more visible on dark background */
-  /*filter: blur(15px); /* Slightly less blur to make them pop a bit more */
-  opacity: var(--scene-element-opacity-dark, 0.3); /* Default to 0.3 */
-  filter: blur(var(--scene-element-blur-dark, 40px)); /* Default to 40px, increased from 15px */
+  opacity: 0.35; /* Adjusted dark mode opacity */
+  filter: blur(25px); /* Adjusted dark mode blur */
 }
 /* Example of adjusting a specific element's gradient for dark mode if needed */
 /* body.dark-mode .scene-element.element-1 {
@@ -1871,6 +1814,11 @@ body.dark-mode .glass-pane { /* .glass-pane might need its own specific override
   border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark));
   box-shadow: var(--glass-shadow-dark);
   color: var(--color-text-dark); /* Default text color for content within cards */
+}
+
+body.dark-mode .welcome-page .welcome-content-card {
+  background-color: rgba(var(--glass-background-rgb-dark), 0.25); /* Increased from default dark 0.15 */
+  /* The inset shadow rgba(255, 255, 255, 0.3) should still look good here */
 }
 
 /* Dark mode variables for elegantLetterReveal */
