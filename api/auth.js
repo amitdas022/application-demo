@@ -38,7 +38,7 @@ function sendError(res, statusCode, message, errorDetails) {
 // and is sourced from the AUTH0_ROLES_NAMESPACE environment variable.
 // Example: If your Auth0 Action sets a claim 'https://my-app.com/roles', then
 // AUTH0_ROLES_NAMESPACE should be 'https://my-app.com/'.
-const ROLES_NAMESPACE = process.env.AUTH0_ROLES_NAMESPACE;
+// const ROLES_NAMESPACE = process.env.AUTH0_ROLES_NAMESPACE; // Commented out for Okta integration
 
 /**
  * Main request handler for the /api/auth endpoint.
@@ -73,12 +73,12 @@ export default async function handler(req, res) {
 
 
         try {
-            // --- Auth0 Authorization Code Exchange ---
-            // Construct the URL for Auth0's token endpoint.
-            const auth0TokenUrl = `https://${process.env.AUTH0_DOMAIN}/oauth/token`;
+            // --- Okta Authorization Code Exchange ---
+            // Construct the URL for Okta's token endpoint.
+            const oktaTokenUrl = `https://${process.env.AUTH0_DOMAIN}/oauth2/default/v1/token`;
 
-            // Log the details of the token exchange request being sent to Auth0.
-            console.log(`[Auth API] Sending token exchange request to Auth0. URL: ${auth0TokenUrl}`);
+            // Log the details of the token exchange request being sent to Okta.
+            console.log(`[Auth API] Sending token exchange request to Okta. URL: ${oktaTokenUrl}`);
             console.log(`[Auth API] Payload (excluding secret):`, {
                 grant_type: 'authorization_code',
                 client_id: process.env.AUTH0_CLIENT_ID,
@@ -88,9 +88,9 @@ export default async function handler(req, res) {
                 scope: 'openid profile email offline_access'
             });
 
-            // Make a POST request to Auth0's `/oauth/token` endpoint.
+            // Make a POST request to Okta's `/oauth/token` endpoint.
             // This is a server-to-server communication, keeping the `client_secret` secure.
-            const tokenResponse = await fetch(auth0TokenUrl, {
+            const tokenResponse = await fetch(oktaTokenUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -109,23 +109,23 @@ export default async function handler(req, res) {
 
             // Clone the response to safely read its body for logging, then process the original response.
             const responseBodyForLogging = await tokenResponse.clone().json().catch(() => tokenResponse.clone().text());
-            console.log(`[Auth API] Auth0 token exchange response. Status: ${tokenResponse.status}, Body:`, responseBodyForLogging);
+            console.log(`[Auth API] Okta token exchange response. Status: ${tokenResponse.status}, Body:`, responseBodyForLogging);
 
 
-            // Check if the token exchange request to Auth0 was successful.
+            // Check if the token exchange request to Okta was successful.
             if (!tokenResponse.ok) {
-                const errorData = await tokenResponse.json(); // Parse Auth0's error response.
-                console.error("[Auth API Error] Auth0 Token Exchange Failed:", errorData);
-                return sendError(res, tokenResponse.status, 'Auth0 token exchange failed.', errorData);
+                const errorData = await tokenResponse.json(); // Parse Okta's error response.
+                console.error("[Auth API Error] Okta Token Exchange Failed:", errorData);
+                return sendError(res, tokenResponse.status, 'Okta token exchange failed.', errorData);
             }
 
-            // Parse the successful response from Auth0, which contains the tokens.
+            // Parse the successful response from Okta, which contains the tokens.
             const tokenData = await tokenResponse.json();
 
             // Ensure an ID token was returned. The 'openid' scope should guarantee this.
             if (!tokenData.id_token) {
                 console.error("[Auth API Error] ID Token missing after successful exchange.");
-                return sendError(res, 500, 'Token exchange successful, but ID token was not returned.', 'Ensure "openid" scope is requested in your Auth0 application setup.');
+                return sendError(res, 500, 'Token exchange successful, but ID token was not returned.', 'Ensure "openid" scope is requested in your Okta application setup.');
             }
 
             // --- ID Token Decoding ---
@@ -142,12 +142,17 @@ export default async function handler(req, res) {
             }
 
             // --- Roles Extraction ---
-            let userRoles = decodedIdToken[`${ROLES_NAMESPACE}roles`] || [];
+            // Assuming 'groups' claim contains roles for Okta
+            let userRoles = decodedIdToken.groups || [];
             if (!Array.isArray(userRoles)) {
-                console.warn(`[Auth API Warning] Roles claim ('${ROLES_NAMESPACE}roles') from ID token is not an array:`, userRoles);
+                // If groups claim is present but not an array, log a warning and default to empty array.
+                // This handles cases where the claim might be unexpectedly formatted.
+                if (decodedIdToken.groups !== undefined) {
+                    console.warn(`[Auth API Warning] 'groups' claim from ID token is not an array:`, decodedIdToken.groups);
+                }
                 userRoles = [];
             }
-            console.log(`[Auth API] User roles extracted:`, userRoles);
+            console.log(`[Auth API] User roles extracted from 'groups' claim:`, userRoles);
 
             // --- User Profile Construction ---
             const userProfile = {

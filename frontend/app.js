@@ -14,46 +14,75 @@
 let mouseParallaxX = 0;
 let mouseParallaxY = 0;
 
-// --- Auth0 Configuration (CLIENT-SIDE) ---
-// In a real application, these might be loaded from a build-time environment variable
-// or a dynamically generated config file to avoid hardcoding and provide flexibility.
-// For this demo, they are placeholders. Replace with your actual Auth0 values.
-const AUTH0_DOMAIN = 'dev-ky8umfzopcrqoft1.us.auth0.com'; // e.g., dev-abc1234.us.auth0.com
-const AUTH0_CLIENT_ID = '3H2O07Y9h101Gpx2hINM0avLDO20fA77'; // Client ID of your Auth0 SPA/Regular Web Application
-const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // Optional: If you have a custom API, use its identifier (e.g., https://your-api.com)
-// The redirect_uri must exactly match one configured in your Auth0 Application's "Allowed Callback URLs".
-// It points to the HTML page in your frontend that will handle the Auth0 redirect.
-// Determine the Auth0 Redirect URI dynamically based on the hostname.
-// This allows switching between localhost and your Vercel production URL.
-let AUTH0_REDIRECT_URI;
+// Global variable to store fetched application configuration
+let appConfig = {};
+
+// --- Okta Configuration (CLIENT-SIDE) ---
+// These will be fetched from /api/config
+// const AUTH0_DOMAIN = 'dev-ky8umfzopcrqoft1.us.auth0.com'; // e.g., dev-abc1234.us.auth0.com
+// const AUTH0_CLIENT_ID = '3H2O07Y9h101Gpx2hINM0avLDO20fA77'; // Client ID of your Auth0 SPA/Regular Web Application
+// const AUTH0_AUDIENCE = 'https://dev-ky8umfzopcrqoft1.us.auth0.com/api/v2/'; // Optional: If you have a custom API, use its identifier (e.g., https://your-api.com)
+
+// The redirect_uri must exactly match one configured in your Okta Application's "Sign-in redirect URIs".
+// It points to the HTML page in your frontend that will handle the Okta redirect.
+// Determine the Okta Redirect URI dynamically based on the hostname.
+let OKTA_REDIRECT_URI;
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
   // For local development
-  AUTH0_REDIRECT_URI = 'http://localhost:3000/callback.html';
+  OKTA_REDIRECT_URI = 'http://localhost:3000/callback.html';
 } else {
-  // For Vercel production deployment. Replace 'application-demo-gamma.vercel.app'
-  // with your actual canonical production domain if it changes.
-  // This assumes your Vercel production URL is stable and registered in Auth0.
-  AUTH0_REDIRECT_URI = 'https://application-demo-gamma.vercel.app/callback.html';
+  // For Vercel production deployment.
+  // Ensure this matches your Vercel production URL.
+  OKTA_REDIRECT_URI = `https://${window.location.hostname}/callback.html`;
+}
+
+/**
+ * Fetches application configuration from the backend.
+ * This should be called before any auth-related initializations.
+ */
+async function fetchAppConfig() {
+  try {
+    const response = await fetch('/api/config');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch config: ${response.statusText}`);
+    }
+    appConfig = await response.json();
+    console.log('[App.js] Configuration fetched:', appConfig);
+
+    // Validate essential config
+    if (!appConfig.oktaDomain || !appConfig.oktaClientId) {
+        console.error('Okta domain or client ID is missing from fetched config.');
+        showToast('Error: Client configuration is missing. Authentication may not work.', 'error', 5000);
+        // Potentially block further auth actions if config is incomplete
+    }
+  } catch (error) {
+    console.error('Error fetching application configuration:', error);
+    showToast('Failed to load application settings. Please try again later.', 'error', 5000);
+    // Handle error appropriately, maybe show a user-friendly message or disable auth features
+  }
 }
 
 
 /**
  * Logs the user out by clearing their session information from localStorage and redirecting to the login page.
- * This now also initiates a logout request with Auth0 to terminate their session there.
+ * This now also initiates a logout request with Okta to terminate their session there.
  * @async
  */
 async function logout() {
-  // Clear the authenticatedUser item from localStorage, effectively ending the client-side session.
-  localStorage.removeItem('authenticatedUser');
-  localStorage.removeItem('auth0_state'); // Also clear any stored state
+    const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+    localStorage.removeItem('authenticatedUser');
+    localStorage.removeItem('okta_state'); // Also clear any stored state for Okta
 
-  // IMPORTANT: For a proper logout, you must redirect to Auth0's /v2/logout endpoint.
-  // This terminates the user's session with Auth0.
-  // The 'returnTo' URL specifies where Auth0 should redirect the user AFTER they have been logged out.
-  // This 'returnTo' URL MUST be registered in your Auth0 Application's "Allowed Logout URLs".
-  const returnToUrl = window.location.origin + '/index.html'; // Redirect to your login page
-
-  window.location.href = `https://${AUTH0_DOMAIN}/v2/logout?client_id=${AUTH0_CLIENT_ID}&returnTo=${encodeURIComponent(returnToUrl)}`;
+    if (appConfig.oktaDomain && authenticatedUser?.idToken) {
+        const postLogoutRedirectUri = window.location.origin + '/index.html'; // Or login.html
+        // For Okta, the client_id is not sent to /logout. Instead, id_token_hint and post_logout_redirect_uri are used.
+        const oktaLogoutUrl = `https://${appConfig.oktaDomain}/oauth2/default/v1/logout?id_token_hint=${authenticatedUser.idToken}&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+        window.location.href = oktaLogoutUrl;
+    } else {
+        // Fallback if config or idToken isn't available
+        console.warn('Okta config or ID token not available for full logout. Clearing local session and redirecting.');
+        window.location.href = window.location.origin + '/index.html';
+    }
 }
 
 
@@ -347,7 +376,13 @@ function showConfirmModal(title, message, onConfirmCallback, onCancelCallback = 
 
 
 // Main event listener that runs when the DOM is fully loaded.
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Fetch configuration first
+  await fetchAppConfig();
+
+  // Initialize other parts of the application that might depend on appConfig
+  initializePageSpecificFeatures(); // Encapsulate page-specific logic
+
   // Global mouse move listener for parallax effects - This updates the global variables
   window.addEventListener('mousemove', (event) => {
     const screenCenterX = window.innerWidth / 2;
@@ -368,57 +403,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Auth0 Authorization Code Flow Login Setup ---
-  // This block replaces the previous login form submission logic.
+  // --- Okta Authorization Code Flow Login Setup ---
   if (window.location.pathname.endsWith('login.html')) {
-    const auth0LoginButton = document.getElementById('auth0-login-button');
+    const oktaLoginButton = document.getElementById('okta-login-button'); // Updated ID
 
-    if (auth0LoginButton) {
+    if (oktaLoginButton) {
       // Event listener for global background logo animation on button hover
       const formWrapper = document.querySelector('.login-wrapper'); // Parent of bg-logos
       if (formWrapper) {
-        auth0LoginButton.addEventListener('mouseenter', () => {
-          formWrapper.classList.add('hovered-by-button'); // Add a class to the form-wrapper or button
+        oktaLoginButton.addEventListener('mouseenter', () => {
+          formWrapper.classList.add('hovered-by-button');
         });
-        auth0LoginButton.addEventListener('mouseleave', () => {
+        oktaLoginButton.addEventListener('mouseleave', () => {
           formWrapper.classList.remove('hovered-by-button');
         });
       }
 
-      auth0LoginButton.addEventListener('click', async () => {
-        // Generate a cryptographically random 'state' value
-        // This is crucial for CSRF protection. In a real app, you'd store this securely
-        // on the server-side (e.g., in a session) and validate it upon callback.
-        // For this frontend-initiated redirect, we'll generate it here and expect
-        // the backend to deal with its validation or handle it on the client-side for this demo.
+      oktaLoginButton.addEventListener('click', async () => {
+        if (!appConfig.oktaDomain || !appConfig.oktaClientId) {
+          showToast('Okta configuration is missing. Cannot initiate login.', 'error');
+          console.error('Okta configuration (domain or client ID) not available for login.');
+          return;
+        }
+
         const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        // Temporarily store state in localStorage for demonstration;
-        // production would typically use a secure server-side session (e.g., HTTP-only cookie).
-        localStorage.setItem('auth0_state', state);
+        localStorage.setItem('okta_state', state); // Use okta_state
 
-        const auth0AuthorizeUrl = `https://${AUTH0_DOMAIN}/authorize?` +
+        // Construct Okta authorize URL
+        const oktaAuthorizeUrl = `https://${appConfig.oktaDomain}/oauth2/default/v1/authorize?` +
           `response_type=code&` +
-          `client_id=${AUTH0_CLIENT_ID}&` +
-          `redirect_uri=${encodeURIComponent(AUTH0_REDIRECT_URI)}&` +
-          `scope=openid%20profile%20email%20offline_access&` + // Request necessary scopes
-          (AUTH0_AUDIENCE ? `audience=${encodeURIComponent(AUTH0_AUDIENCE)}&` : '') +
-          `state=${state}`; // Include the state parameter
+          `client_id=${appConfig.oktaClientId}&` +
+          `redirect_uri=${encodeURIComponent(OKTA_REDIRECT_URI)}&` + // Use OKTA_REDIRECT_URI
+          `scope=openid%20profile%20email%20offline_access%20groups&` + // Added 'groups' for roles
+          (appConfig.oktaAudience ? `audience=${encodeURIComponent(appConfig.oktaAudience)}&` : '') + // Audience might be handled differently by Okta or not needed for default server
+          `state=${state}`;
 
-        // Add a loading indicator to the button
-        auth0LoginButton.classList.add('loading');
-        // Visually clear previous messages if any
+        oktaLoginButton.classList.add('loading');
         const errorMessageElement = document.getElementById('error-message');
         if (errorMessageElement) {
           errorMessageElement.textContent = '';
-          errorMessageElement.className = 'error-message';
+          errorMessageElement.className = 'error-message'; // Reset class if it was 'error'
         }
 
-        window.location.href = auth0AuthorizeUrl; // Redirect to Auth0 Universal Login
+        window.location.href = oktaAuthorizeUrl; // Redirect to Okta Universal Login
       });
     }
   }
 
-  // --- New: Callback Handler for Auth0 Redirect ---
+  // --- Callback Handler for Okta Redirect ---
   if (window.location.pathname.endsWith('callback.html')) {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -426,30 +458,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const error = urlParams.get('error');
     const errorDescription = urlParams.get('error_description');
 
-    const storedState = localStorage.getItem('auth0_state'); // Retrieve stored state
+    const storedState = localStorage.getItem('okta_state'); // Retrieve stored okta_state
 
-    // Basic error handling for Auth0 redirect
     if (error) {
-      showToast(`Auth0 Error: ${errorDescription || error}`, 'error');
-      console.error('Auth0 Callback Error:', error, errorDescription);
-      window.location.href = 'login.html'; // Redirect to login on error
-      return;
-    }
-
-    // State validation (CRITICAL for security)
-    if (!state || state !== storedState) {
-      showToast('Invalid state parameter. Possible CSRF attack detected.', 'error');
-      console.error('State mismatch: Expected', storedState, 'Received', state);
-      localStorage.removeItem('auth0_state'); // Clear potentially compromised state
+      showToast(`Okta Error: ${errorDescription || error}`, 'error');
+      console.error('Okta Callback Error:', error, errorDescription);
       window.location.href = 'login.html';
       return;
     }
 
-    localStorage.removeItem('auth0_state'); // State has been used, clear it
+    if (!state || state !== storedState) {
+      showToast('Invalid state parameter. Possible CSRF attack detected.', 'error');
+      console.error('State mismatch: Expected', storedState, 'Received', state);
+      localStorage.removeItem('okta_state'); // Clear potentially compromised state
+      window.location.href = 'login.html';
+      return;
+    }
+
+    localStorage.removeItem('okta_state'); // State has been used, clear it
 
     if (code) {
-      showToast('Authentication successful, exchanging code...', 'info');
-      // Now, send this code to your backend endpoint to exchange it for tokens
+      showToast('Authentication successful, exchanging code with backend...', 'info');
       exchangeCodeWithBackend(code);
     } else {
       showToast('No authorization code found in callback URL.', 'error');
@@ -459,15 +488,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * Helper function to send the authorization code to the backend for token exchange.
-   * @param {string} code - The authorization code received from Auth0.
+   * @param {string} code - The authorization code received from Okta.
    */
-  // In frontend/app.js, locate this function:
   async function exchangeCodeWithBackend(code) {
+    if (!OKTA_REDIRECT_URI) {
+        console.error("OKTA_REDIRECT_URI is not defined. Cannot exchange code.");
+        showToast('Configuration error: Redirect URI is missing.', 'error');
+        window.location.href = 'login.html';
+        return;
+    }
     try {
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, redirect_uri: AUTH0_REDIRECT_URI }) // <-- MODIFIED: Add redirect_uri here
+        body: JSON.stringify({ code, redirect_uri: OKTA_REDIRECT_URI }) // Use OKTA_REDIRECT_URI
       });
 
       if (response.ok) {
@@ -526,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userIdToManage) {
         try {
           if (buttonElement) buttonElement.classList.add('loading');
-          const response = await fetch('/api/auth0-user-management', {
+          const response = await fetch('/api/okta-user-management', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['admin'] })
@@ -565,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loadAdminUsersButton) loadAdminUsersButton.classList.add('loading');
 
       try {
-        const response = await fetch('/api/auth0-user-management?action=listUsersInRole&roleName=admin');
+        const response = await fetch('/api/okta-user-management?action=listUsersInRole&roleName=admin');
         if (response.ok) {
           const users = await response.json();
           if (users.length === 0) {
@@ -695,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (createUserSubmitButton) createUserSubmitButton.classList.add('loading');
         try {
-          const response = await fetch('/api/auth0-user-management', {
+          const response = await fetch('/api/okta-user-management', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'createUser', userData })
@@ -726,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userListSkeleton) userListSkeleton.style.display = 'flex'; // Show skeleton
 
       try {
-        const response = await fetch('/api/auth0-user-management?action=listUsers');
+        const response = await fetch('/api/okta-user-management?action=listUsers');
         if (response.ok) {
           const users = await response.json();
           if (users.length === 0) {
@@ -820,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (saveEditButton) saveEditButton.classList.add('loading');
         try {
-          const response = await fetch('/api/auth0-user-management', {
+          const response = await fetch('/api/okta-user-management', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'updateUser', userId: userIdToUpdate, updates })
@@ -856,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
           displayMessage(listMessage, 'Deleting user...', 'info');
           btn.classList.add('loading');
           try {
-            const response = await fetch('/api/auth0-user-management', {
+            const response = await fetch('/api/okta-user-management', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
@@ -880,8 +914,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Call checkAuthAndRedirect on every page load.
-  checkAuthAndRedirect();
+  // Call checkAuthAndRedirect after config is potentially loaded and auth state might be processed.
+  // It's now called within initializePageSpecificFeatures or similar logic that runs after fetchAppConfig.
+
 
   // ************* Animations   *************** //
 
@@ -895,6 +930,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Adjusted function to use global parallax values
   function moveLandingPageElementIndependently() {
     const els = [...document.querySelectorAll('.scene-element')];
+    if (els.length === 0) return; // Don't run if no elements are present
+
     const scene = { w: window.innerWidth, h: window.innerHeight };
     window.onresize = () => {
       scene.w = window.innerWidth;
@@ -923,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
         o.baseX += o.vx;
         o.baseY += o.vy;
         if (o.baseX < 0 || o.baseX + o.w > scene.w) o.vx *= -1;
-        if (o.baseY < 0 || o.y + o.h > scene.h) o.vy *= -1;
+        if (o.baseY < 0 || o.baseY + o.h > scene.h) o.vy *= -1; // Corrected: o.y to o.baseY
 
         o.angle = (o.angle + o.rotationSpeed) % 360;
         const morphProgress = Math.sin((time / o.morphSpeed) + o.morphPhase);
@@ -946,7 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     animate();
   }
-  moveLandingPageElementIndependently(); // No longer need to pass parallax values
+
 
   /**
    * Initializes the tilt effect for specified card-like elements.
@@ -1038,4 +1075,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   initThemeToggle(); // Initialize theme toggle on DOMContentLoaded
+
+  // Encapsulate page-specific initializations
+  function initializePageSpecificFeatures() {
+    // Call checkAuthAndRedirect on every page load after config is fetched.
+    checkAuthAndRedirect();
+
+    // Initialize animations only if relevant elements are on the page
+    if (document.querySelector('.scene-element')) {
+        moveLandingPageElementIndependently();
+    }
+    // Other initializations that depend on DOM elements specific to certain pages
+  }
 });

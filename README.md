@@ -1,15 +1,15 @@
-Auth0 Application Demo
-======================
+Okta Customer Identity Cloud (CIC) Application Demo
+===================================================
 
-This project is a demonstration application showcasing user authentication (now with Authorization Code Flow) and Auth0 Management API interaction using Node.js, designed to be run and deployed with Vercel.
+This project is a demonstration application showcasing user authentication (Authorization Code Flow) and Okta Management API interaction using Node.js, designed to be run and deployed with Vercel.
 
 **Core Functionality:**
 
-1.  **User Login**: Implements secure user login via the backend using Auth0's **Authorization Code Flow**.
+1.  **User Login**: Implements secure user login via the backend using Okta CIC's **Authorization Code Flow**.
 
-2.  **Auth0 User Management**: The backend interacts with the Auth0 Management API using a Machine-to-Machine (M2M) application to perform administrative tasks on users (e.g., CRUD operations, role assignments).
+2.  **Okta User Management**: The backend interacts with the Okta Management API using an API Token to perform administrative tasks on users (e.g., CRUD operations, group/role assignments).
 
-**Note**: The primary focus is on the backend API endpoints (`/api/auth.js` for login, `/api/auth0-user-management.js` for admin tasks) and their interaction with Auth0. A simple frontend is included to demonstrate these backend functionalities.
+**Note**: The primary focus is on the backend API endpoints (`/api/auth.js` for login, `/api/okta-user-management.js` for admin tasks) and their interaction with Okta CIC. A simple frontend is included to demonstrate these backend functionalities.
 
 Project Overview
 ----------------
@@ -18,87 +18,76 @@ The application consists of:
 
 -   **Backend APIs (Vercel Serverless Functions):**
 
-    -   `/api/auth`: Handles the exchange of an authorization code for user tokens, securely communicating with Auth0. It returns user profile information including roles.
+    -   `/api/auth`: Handles the exchange of an authorization code for user tokens, securely communicating with Okta CIC. It returns user profile information including roles (derived from Okta groups).
 
-    -   `/api/auth0-user-management`: Provides endpoints for managing Auth0 users. It uses M2M credentials to securely obtain tokens for the Auth0 Management API.
+    -   `/api/okta-user-management`: Provides endpoints for managing Okta users and their group assignments. It uses an Okta API Token for secure access to the Okta Management API.
 
 -   **Frontend (Static Files):**
 
-    -   Basic HTML and JavaScript files (`index.html`, `login.html`, `callback.html`, `protected.html`, `admin.html`, `frontend/app.js`) to interact with the backend APIs and demonstrate login, protected content, and admin functionalities.
+    -   Basic HTML and JavaScript files (`index.html`, `login.html`, `callback.html`, `protected.html`, `admin.html`, `frontend/app.js`) to interact with the backend APIs and demonstrate login, protected content, and admin functionalities against Okta CIC.
 
 What's Working and How
 ----------------------
 
 This section summarizes the application's features from a user/developer perspective:
 
--   **User Authentication (Authorization Code Flow)**: Users log in by being redirected to Auth0's Universal Login page. After successful authentication, Auth0 redirects the user back to `/callback.html`, which then sends an authorization code to your backend (`/api/auth.js`). The backend securely exchanges this code for `id_token`, `access_token`, and `refresh_token`. User roles are fetched via a custom claim (e.g., `https://myapp.example.com/roles`) in the ID token, populated by an Auth0 Action. The namespace for this claim must be configured via the `AUTH0_ROLES_NAMESPACE` environment variable.
+-   **User Authentication (Authorization Code Flow)**: Users log in by being redirected to Okta CIC's Universal Login page. After successful authentication, Okta CIC redirects the user back to `/callback.html`, which then sends an authorization code to your backend (`/api/auth.js`). The backend securely exchanges this code for `id_token`, `access_token`, and `refresh_token`. User roles are derived from Okta group memberships, which are included as a `groups` claim in the ID token.
 
--   **Logout**: When a user logs out, their local session is cleared, and they are redirected to Auth0's `/v2/logout` endpoint to terminate their session with Auth0. Auth0 then redirects them back to your application's login page.
+-   **Logout**: When a user logs out, their local session is cleared, and they are redirected to Okta CIC's logout endpoint to terminate their session. Okta CIC then redirects them back to your application's login page.
 
--   **User Management (Admin)**: Authenticated admin users can perform CRUD operations (Create, Read, Update, Delete) on users via the "Admin" page. This is handled by backend API calls from `/api/auth0-user-management.js` to the Auth0 Management API using a Machine-to-Machine (M2M) token.
+-   **User Management (Admin)**: Authenticated admin users can perform CRUD operations (Create, Read, Update, Delete) on users via the "Admin" page. This is handled by backend API calls from `/api/okta-user-management.js` to the Okta Management API using an Okta API Token.
 
--   **Role Management (Admin)**: Admin users can assign or unassign the 'admin' role to other users from the "Admin" page. This also uses the Auth0 Management API via the backend (`/api/auth0-user-management.js`).
+-   **Role Management (Admin)**: Admin users can assign or unassign the 'admin' role (which corresponds to membership in an "Admin" group in Okta) to other users from the "Admin" page. This also uses the Okta Management API via the backend (`/api/okta-user-management.js`).
 
--   **Protected Content**: Pages like `protected.html` (for any authenticated user) and `admin.html` (for authenticated users with an 'admin' role) are only accessible based on authentication status and roles.
+-   **Protected Content**: Pages like `protected.html` (for any authenticated user) and `admin.html` (for authenticated users with an 'admin' role/group) are only accessible based on authentication status and roles.
 
--   **Local UI Testing Mode**: A `LOCAL_TESTING_MODE` flag in `frontend/app.js` allows bypassing Auth0 login for easier UI development and testing of protected routes and role-based UI elements. When enabled, user data (including roles) can be simulated via `localStorage`.
+-   **Local UI Testing Mode**: A `LOCAL_TESTING_MODE` flag in `frontend/app.js` allows bypassing Okta CIC login for easier UI development and testing of protected routes and role-based UI elements. When enabled, user data (including roles) can be simulated via `localStorage`.
 
 Authentication Flows Explained
 ------------------------------
 
-This project utilizes two distinct Auth0 authentication/authorization flows:
+This project utilizes Okta CIC for authentication and authorization:
 
-### 1\. User Login (Authorization Code Flow)
+### 1\. User Login (Authorization Code Flow with Okta CIC)
 
--   **Purpose**: To allow users to securely log in to your application. This is the recommended OAuth 2.0 flow for web applications.
+-   **Purpose**: To allow users to securely log in to your application using Okta CIC. This is the recommended OAuth 2.0 flow for web applications.
 
--   **Credentials Used (from `.env`):**  `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_SECRET`.
+-   **Credentials Used (from `.env`):**  `AUTH0_DOMAIN` (now your Okta domain), `AUTH0_CLIENT_ID` (Okta OIDC app client ID), `AUTH0_AUDIENCE` (Okta custom authorization server audience, if used), `AUTH0_CLIENT_SECRET` (Okta OIDC app client secret).
 
 -   **Flow**:
 
-    1.  The user clicks "Login with Auth0" on your frontend (`login.html`).
+    1.  The user clicks "Login with Okta" on your frontend (`login.html`).
 
-    2.  Your frontend (`app.js`) constructs an authorization request URL with parameters like `client_id`, `redirect_uri`, `response_type=code`, `scope` (e.g., `openid profile email offline_access`), `audience` (if calling an API), and a `state` parameter (for CSRF protection).
+    2.  Your frontend (`app.js`) constructs an authorization request URL for Okta's `/authorize` endpoint with parameters like `client_id`, `redirect_uri`, `response_type=code`, `scope` (e.g., `openid profile email offline_access groups`), `audience` (if applicable), and a `state` parameter.
 
-    3.  The user's browser is redirected to Auth0's Universal Login page.
+    3.  The user's browser is redirected to Okta CIC's Universal Login page.
 
-    4.  The user enters their credentials directly with Auth0.
+    4.  The user enters their credentials directly with Okta CIC.
 
-    5.  Auth0 authenticates the user and, upon success, redirects the user's browser back to your configured `redirect_uri` (`callback.html`), appending an authorization `code` and the `state` parameter to the URL.
+    5.  Okta CIC authenticates the user and, upon success, redirects the user's browser back to your configured `redirect_uri` (`callback.html`), appending an authorization `code` and the `state` parameter.
 
-    6.  Your `callback.html` page loads `app.js`, which extracts the `code` and `state`. It validates the `state` (client-side in this demo, but ideally also server-side).
+    6.  Your `callback.html` page loads `app.js`, which extracts the `code` and `state`. It validates the `state`.
 
     7.  Your frontend (`app.js`) then sends this authorization `code` to your backend endpoint (`/api/auth`).
 
-    8.  Your backend (`/api/auth.js`) makes a **server-to-server POST request** to Auth0's `/oauth/token` endpoint, exchanging the `code` for an `access_token`, `id_token`, and `refresh_token`. This exchange uses your `AUTH0_CLIENT_ID` and `AUTH0_CLIENT_SECRET` (which are securely stored on the backend).
+    8.  Your backend (`/api/auth.js`) makes a **server-to-server POST request** to Okta's `/oauth2/default/v1/token` endpoint (or your custom authorization server's token endpoint), exchanging the `code` for an `access_token`, `id_token`, and `refresh_token`. This exchange uses your Okta `AUTH0_CLIENT_ID` and `AUTH0_CLIENT_SECRET`.
 
-    9.  Auth0 validates the `code` and the client credentials. If successful, it issues the tokens.
+    9.  Okta CIC validates the `code` and the client credentials. If successful, it issues the tokens.
 
-    10. Your backend processes the tokens (decodes the `id_token` to extract profile and roles) and returns relevant information to the frontend.
+    10. Your backend processes the tokens (decodes the `id_token` to extract profile and group claims for roles) and returns relevant information to the frontend.
 
-### 2\. Auth0 Management API Access (Machine-to-Machine - M2M)
+### 2\. Okta Management API Access (API Token)
 
--   **Purpose**: To allow the backend (`/api/auth0-user-management.js`) to perform administrative actions on Auth0 users programmatically.
+-   **Purpose**: To allow the backend (`/api/okta-user-management.js`) to perform administrative actions on Okta users and groups programmatically.
 
--   **Credentials Used (from `.env`):**  `AUTH0_M2M_CLIENT_ID`, `AUTH0_M2M_CLIENT_SECRET`, `AUTH0_MANAGEMENT_AUDIENCE`.
+-   **Credentials Used (from `.env`):** `OKTA_API_TOKEN`, `AUTH0_DOMAIN` (Okta domain).
 
 -   **Flow**:
 
-    1.  The `/api/auth0-user-management.js` endpoint needs to perform an action (e.g., list users, assign a role).
+    1.  The `/api/okta-user-management.js` endpoint needs to perform an action (e.g., list users, assign a user to a group).
 
-    2.  It makes a POST request to Auth0's `/oauth/token` endpoint with:
-
-        -   `grant_type: 'client_credentials'`
-
-        -   `client_id`: `AUTH0_M2M_CLIENT_ID` (from your Auth0 "Machine to Machine Application").
-
-        -   `client_secret`: `AUTH0_M2M_CLIENT_SECRET` (from your Auth0 "Machine to Machine Application").
-
-        -   `audience`: `AUTH0_MANAGEMENT_AUDIENCE` (which is `https://YOUR_AUTH0_DOMAIN/api/v2/`).
-
-    3.  Auth0 validates the M2M client credentials and returns an `access_token`.
-
-    4.  The backend service uses this `access_token` as a Bearer token in the `Authorization` header when making requests to the Auth0 Management API (e.g., `GET /api/v2/users`, `POST /api/v2/users/{id}/roles`).
+    2.  It uses the `OKTA_API_TOKEN` (an SSWS token) directly in the `Authorization` header of its requests to the Okta Management API (e.g., `GET /api/v1/users`, `PUT /api/v1/groups/{groupId}/users/{userId}`).
+        No separate token exchange is needed for this SSWS token as it's long-lived.
 
 Prerequisites
 -------------
@@ -107,7 +96,7 @@ Prerequisites
 
 -   npm (or yarn)
 
--   An Auth0 Account
+-   An Okta CIC Account (or a free Okta Developer Account which includes CIC features)
 
 -   Vercel CLI (for local development and deployment): `npm install -g vercel`
 
@@ -134,32 +123,26 @@ Setup and Installation
 3.  **Configure Environment Variables:** Create a `.env` file in the root of the project. This file is used by `vercel dev` for local development.
 
     ```
-    # Auth0 Application (Regular Web Application/SPA) Credentials for Authorization Code Flow
-    # Used by frontend (build-time injection) and /api/auth.js
-    AUTH0_DOMAIN=YOUR_AUTH0_TENANT_DOMAIN # e.g., your-tenant.us.auth0.com
-    AUTH0_CLIENT_ID=YOUR_RWA_CLIENT_ID # Client ID of your Auth0 Regular Web Application (for frontend and backend)
-    AUTH0_CLIENT_SECRET=YOUR_RWA_CLIENT_SECRET # Client Secret of your Auth0 Regular Web Application (used only by backend /api/auth.js)
-    AUTH0_AUDIENCE=https://YOUR_AUTH0_TENANT_DOMAIN/api/v2/ # Or your custom API audience if you have one
+    # Okta OIDC Application Credentials for Authorization Code Flow
+    # Used by frontend (via /api/config) and /api/auth.js
+    AUTH0_DOMAIN=YOUR_OKTA_DOMAIN # e.g., dev-123456.okta.com (Do not include https://)
+    AUTH0_CLIENT_ID=YOUR_OKTA_OIDC_APP_CLIENT_ID
+    AUTH0_CLIENT_SECRET=YOUR_OKTA_OIDC_APP_CLIENT_SECRET # Used only by backend /api/auth.js
+    AUTH0_AUDIENCE=api://default # Or your custom Okta Authorization Server audience (Optional, depends on your Okta setup)
 
-    # Auth0 Machine-to-Machine (M2M) Application Credentials for Management API
-    # Used by /api/auth0-user-management.js
-    AUTH0_M2M_CLIENT_ID=YOUR_M2M_CLIENT_ID
-    AUTH0_M2M_CLIENT_SECRET=YOUR_M2M_CLIENT_SECRET
-    AUTH0_MANAGEMENT_AUDIENCE=https://YOUR_AUTH0_TENANT_DOMAIN/api/v2/ # This is always the Management API audience
+    # Okta API Token for Management API
+    # Used by /api/okta-user-management.js
+    OKTA_API_TOKEN=YOUR_OKTA_SSWS_API_TOKEN
 
-    # Auth0 Action Namespace for Custom Claims (e.g., roles)
-    # This MUST match the namespace defined in your Auth0 Action script.
-    # Example: https://myapp.example.com/ (ensure it has a trailing slash if your action uses it)
-    AUTH0_ROLES_NAMESPACE=YOUR_CHOSEN_NAMESPACE_FOR_ROLES_CLAIM
-
-    # Optional: Test user credentials for quick testing of the ROPG flow (no longer directly used by frontend login)
-    # Ensure this user exists in your Auth0 database connection
-    # TEST_USERNAME=your_test_user@example.com
-    # TEST_PASSWORD=YourSecurePassword123!
+    # The following Auth0-specific variables are no longer directly used or have changed meaning:
+    # AUTH0_M2M_CLIENT_ID (Not used for Okta API token auth)
+    # AUTH0_M2M_CLIENT_SECRET (Not used for Okta API token auth)
+    # AUTH0_MANAGEMENT_AUDIENCE (Okta base URL is derived from AUTH0_DOMAIN for Management API)
+    # AUTH0_ROLES_NAMESPACE (Roles are now managed by Okta groups and the 'groups' claim)
 
     ```
 
-    Replace placeholder values with your actual Auth0 credentials. See the "Setting Up Your Auth0 Dashboard" section for details on obtaining these.
+    Replace placeholder values with your actual Okta credentials. See the "Setting Up Your Okta CIC Environment" section for details.
 
 Running the Application Locally
 -------------------------------
@@ -182,12 +165,12 @@ This project is configured to run locally using the Vercel CLI, which simulates 
 
     ```
 
-    Vercel CLI will start the server and typically make the application accessible at `http://localhost:3000`. The CLI output will confirm the exact port. Your API endpoints (e.g., `/api/auth`, `/api/auth0-user-management`) and frontend files will be served from this address.
+    Vercel CLI will start the server and typically make the application accessible at `http://localhost:3000`. The CLI output will confirm the exact port. Your API endpoints (e.g., `/api/auth`, `/api/okta-user-management`) and frontend files will be served from this address.
 
-Local UI Testing (Bypassing Full Auth0 Login)
----------------------------------------------
+Local UI Testing (Bypassing Full Okta CIC Login)
+------------------------------------------------
 
-For easier UI development and testing of protected pages without repeatedly going through the full Auth0 login, `frontend/app.js` includes a `LOCAL_TESTING_MODE`.
+For easier UI development and testing of protected pages without repeatedly going through the full Okta CIC login, `frontend/app.js` includes a `LOCAL_TESTING_MODE`.
 
 1.  **Start the project locally** using `npx vercel dev` as described above.
 
@@ -226,12 +209,12 @@ When `LOCAL_TESTING_MODE` is `true`, `frontend/app.js` creates a default non-adm
 
         ```
         localStorage.setItem('authenticatedUser', JSON.stringify({
-            id: 'local-admin-user-sub', // Dummy Auth0 user ID (sub)
+            id: 'local-admin-user-okta-id', // Dummy Okta user ID
             profile: {
                 firstName: 'Local', lastName: 'Admin', name: 'Local Admin',
                 email: 'admin@local.example.com', picture: 'path/to/default-avatar.png'
             },
-            roles: ['user', 'admin'] // Crucially, include 'admin' role
+            roles: ['user', 'Admin'] // Crucially, include 'Admin' group/role (Okta group name)
         }));
 
         ```
@@ -242,106 +225,77 @@ When `LOCAL_TESTING_MODE` is `true`, `frontend/app.js` creates a default non-adm
 
 -   **UI Focus:** This mode is primarily for testing UI elements, client-side logic, and navigation flow.
 
--   **Backend Interaction:** API calls to `/api/auth0-user-management` will still occur. The backend uses its M2M token for authentication to the Auth0 Management API. **Crucially, the authorization of the** ***frontend user's action***** on the backend (`/api/auth0-user-management.js`) currently does not explicitly validate the *****user's***** access token for permissions. It relies on the client-side `checkAuthAndRedirect` for UI gatekeeping.** For production, you should add server-side validation of the user's access token and its associated roles/permissions to these management endpoints.
+-   **Backend Interaction:** API calls to `/api/okta-user-management` will still occur. The backend uses its Okta API Token for authentication to the Okta Management API. **Server-side validation of the user's access token and its associated roles/permissions for management endpoints is recommended for production but not explicitly implemented in this demo.**
 
 -   **Security:**  `LOCAL_TESTING_MODE` is for development convenience **only** and is not secure. It should never be enabled in production or committed with `true` as its default state.
 
--   **Disable for Full Testing/Deployment:** Always ensure `window.LOCAL_TESTING_MODE = false;` (or that it's undefined) and clear `localStorage` when testing the complete Auth0 authentication flow or before deploying.
+-   **Disable for Full Testing/Deployment:** Always ensure `window.LOCAL_TESTING_MODE = false;` (or that it's undefined) and clear `localStorage` when testing the complete Okta CIC authentication flow or before deploying.
 
-Setting Up Your Auth0 Dashboard
--------------------------------
+Setting Up Your Okta CIC Environment
+------------------------------------
 
-To set up this project with a new or different Auth0 account, or for initial setup, follow these steps to configure your Auth0 dashboard correctly. This includes creating the necessary applications, APIs, roles, and actions.
+To set up this project with Okta Customer Identity Cloud, follow these steps:
 
-### I. Auth0 Tenant Configuration:
+### I. Okta CIC Configuration:
 
-1.  **Access your Auth0 Dashboard.**
+1.  **Access your Okta Admin Dashboard.** (If you don't have one, you can sign up for a free Okta Developer account).
 
-2.  **Create a "Regular Web Application" (for User Login via Authorization Code Flow):**
+2.  **Create an OIDC Web Application (for User Login):**
+    *   Navigate to **Applications > Applications**.
+    *   Click **Create App Integration**.
+    *   Select **OIDC - OpenID Connect** as the sign-in method.
+    *   Select **Web Application** as the Application type. Click **Next**.
+    *   **App integration name:** e.g., "My Vercel App".
+    *   **Grant type:** Ensure **Authorization Code** is checked. **Refresh Token** should also be checked for session persistence.
+    *   **Sign-in redirect URIs:** Add `http://localhost:3000/callback.html` (for local development) and your production callback URL (e.g., `https://your-app-domain.vercel.app/callback.html`).
+    *   **Sign-out redirect URIs:** Add `http://localhost:3000/index.html` (for local development) and your production login page URL (e.g., `https://your-app-domain.vercel.app/index.html`).
+    *   **Assignments:** Assign to specific users or groups as needed, or allow "Everyone".
+    *   Save the application.
+    *   On the application's General tab, note down the **Client ID** and **Client secret**. Your **Okta domain** (e.g., `dev-123456.okta.com`) is visible in the URL or top-right corner of the dashboard. These correspond to `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and `AUTH0_DOMAIN` in your `.env` file.
+    *   **Audience (`AUTH0_AUDIENCE`):** This typically defaults to `api://default` for the Org Authorization Server. If using a custom authorization server, use its audience. For the default server, `api://default` is often sufficient for basic OIDC flows.
 
-    -   Go to Applications => Applications => Create Application.
+3.  **Create an API Token (for Management API Access):**
+    *   Navigate to **Security > API**.
+    *   Go to the **Tokens** tab.
+    *   Click **Create Token**.
+    *   Name it (e.g., "Vercel App Management Token").
+    *   Copy the token value immediately. This is your `OKTA_API_TOKEN`. **Store it securely; you won't see it again.**
+    *   This token will have the permissions of the admin user who created it. For production, consider creating a service account/user with least-privilege permissions for API access.
 
-    -   Choose "Regular Web Applications". Name: e.g., "My App Auth Code Login".
+### II. Role-Based Access Control (RBAC) with Okta Groups
 
-    -   **Settings Tab:**
+This application uses Okta groups to manage user roles, specifically the "admin" role.
 
-        -   Note down `Domain`, `Client ID`, `Client Secret`.
+1.  **Create the 'Admin' Group in Okta:**
+    *   Log in to your Okta Admin Dashboard.
+    *   Navigate to **Directory > Groups**.
+    *   Click **Add Group**.
+    *   **Name:** `Admin` (This name is case-sensitive and used by the application).
+    *   **Group description (Optional):** e.g., "Administrators for My Vercel App".
+    *   Click **Save Group**.
 
-        -   **Grant Types**: Ensure **"Authorization Code"** and **"Refresh Token"** are enabled. (Disable "Password" grant type, as it's no longer used).
+2.  **Assign Users to the 'Admin' Group:**
+    *   Find the "Admin" group in the list and click on its name.
+    *   Click **Assign people**.
+    *   Select the users who should have administrative privileges and assign them to the group.
 
-        -   **Allowed Callback URLs**: Add `http://localhost:3000/callback.html` (for local development) and your production callback URL (e.g., `https://your-app.com/callback.html`). This is where Auth0 will redirect after successful login.
+3.  **Configure Okta to Include Group Claims in ID Tokens:**
+    *   In the Okta Admin Dashboard, navigate to **Security > API**.
+    *   Under the **Authorization Servers** tab, select your authorization server (typically named `default`).
+    *   Go to the **Claims** tab.
+    *   Click **Add Claim**.
+    *   **Name:** `groups` (This is the name the application expects).
+    *   **Include in token type:** Select `ID Token`.
+    *   **Value type:** Select `Groups`.
+    *   **Filter:** Choose `Matches regex` and enter `.*` in the text field (this includes all groups the user is a member of).
+    *   **Include in:** Select `Any scope` (or ensure it's included for scopes like `openid`, `profile`).
+    *   Click **Create**.
 
-        -   **Allowed Logout URLs**: Add `http://localhost:3000/index.html` (for local development) and your production login page URL (e.g., `https://your-app.com/index.html`). This is where Auth0 will redirect after successful logout.
+    The application's backend (`/api/auth.js`) extracts these group names from the `groups` claim in the ID token to determine if a user is an admin. The `/api/okta-user-management.js` also uses this "Admin" group name when managing role assignments via the UI.
 
-        -   Allowed Web Origins: Add `http://localhost:3000` (for local development) and your production app's origin (e.g., `https://your-app.com`).
+### III. Project Configuration:
 
-    -   **Connections Tab:** Enable your desired database connection (e.g., "Username-Password-Authentication").
-
-    -   **Go to Dashboard Settings Menu (IMPORTANT)** Dashboard => Settings => API Authorization Settings => Default Directory => Username-Password-Authentication(or the name of the DB you are using) => Save
-
-3.  **Create a "Machine-to-Machine Application" (for Management API Access):**
-
-    -   Go to Applications => Applications => Create Application.
-
-    -   Choose "Machine to Machine Applications". Name: e.g., "My App Management API Access".
-
-    -   Authorize for: "Auth0 Management API".
-
-    -   Grant Scopes (Permissions): Select necessary scopes like `read:users`, `create:users`, `update:users`, `delete:users`, `read:roles`, `update:roles` (for assigning roles).
-
-    -   Choose the option Client Secret(Basic) option under Authentication Method.
-
-    -   **Settings Tab:** Note down `Client ID`, `Client Secret`.
-
-4.  **(Optional but Recommended) Create an Auth0 API (for `AUTH0_AUDIENCE`):**
-
-    -   If you want user access tokens to target a specific API of yours, create a custom API.
-
-    -   Go to Applications => APIs => Create API. Name: e.g., "My Application API". Identifier (Audience): e.g., `https://api.myapp.com`. This identifier would then be used as `AUTH0_AUDIENCE` in your `.env`. If you omit this, `AUTH0_AUDIENCE` can be left empty in your frontend's `app.js` and in `api/auth.js` for now, or it will default to the Auth0 Management API if specified in the backend's environment variables.
-
-5.  **Configure Roles:**
-
-    -   Go to User Management => Roles.
-
-    -   Create roles like "admin" and "user".
-
-6.  **Create an Auth0 Action (to Add Roles to Tokens):**
-
-    -   This is crucial for the backend (`/api/auth`) to receive user roles upon login.
-
-    -   Go to Actions => Library => Build Custom.
-
-    -   Name: e.g., "Add Roles to Token". Trigger: "Login / Post Login".
-
-    -   Code:
-
-        ```
-        // Action: Add roles to ID Token and Access Token
-        exports.onExecutePostLogin = async (event, api) => {
-          const namespace = event.secrets.AUTH0_ROLES_NAMESPACE; // Use the namespace from Action secret
-          if (event.authorization) {
-            api.idToken.setCustomClaim(`${namespace}roles`, event.authorization.roles);
-            api.accessToken.setCustomClaim(`${namespace}roles`, event.authorization.roles);
-          }
-        };
-
-        ```
-
-    -   **Important**: For the Action script above, you must configure an Action secret (e.g., name it `AUTH0_ROLES_NAMESPACE`) with the value of your chosen namespace (e.g., `https://myapp.example.com/`). This namespace value must also be set as the `AUTH0_ROLES_NAMESPACE` environment variable in your `.env` file and Vercel deployment.
-
-    -   Deploy the Action. Then, go to Actions => Triggers => Post Login. Drag your custom Action into the flow.
-
-7.  **Check Default Directory for Login Application:**
-
-    -   Go to Authentication => Database => Username-Password-Authentication => Applications
-
-    -   Check if your "Regular Web Application" is enabled for this DB connection.
-
-### II. Project Configuration:
-
-1.  **Update `.env` file:** Populate your local `.env` file with all the credentials and identifiers obtained from your new Auth0 setup (Domain, Client IDs, Client Secrets, Audiences).
-
-2.  **Update Test Credentials (Optional):** If using `TEST_USERNAME` and `TEST_PASSWORD` in `.env`, ensure this user exists in your Auth0 database connection and has the roles you expect for testing.
+1.  **Update `.env` file:** Populate your local `.env` file with all the credentials and identifiers obtained from your Okta setup (`AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `OKTA_API_TOKEN`, and optionally `AUTH0_AUDIENCE`).
 
 After these changes, restart your local development server (`npx vercel dev`).
 
@@ -352,11 +306,9 @@ Deployment to Vercel
 
     -   Go to your Vercel project settings => Environment Variables.
 
-    -   Add all the environment variables defined in your local `.env` file (e.g., `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_M2M_CLIENT_SECRET`, etc.) as environment variables in Vercel. Ensure they are set for the appropriate environments (Production, Preview, Development).
+    -   Add all the environment variables defined in your local `.env` file (e.g., `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `OKTA_API_TOKEN`, `AUTH0_AUDIENCE`) as environment variables in Vercel. Ensure they are set for the appropriate environments (Production, Preview, Development).
 
-    -   **Crucially**, the `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, and `AUTH0_AUDIENCE` values injected into the frontend `app.js` need to be present as environment variables in your Vercel project settings.
-
-    -   **Do NOT include `TEST_USERNAME` or `TEST_PASSWORD` as production environment variables.**
+    -   **Do NOT include `TEST_USERNAME` or `TEST_PASSWORD` (if you were using them for Auth0) as production environment variables.**
 
 2.  **Deploy:**
 
@@ -371,23 +323,19 @@ Deployment to Vercel
 
 3.  **Post-Deployment Testing:**
 
-    -   Thoroughly test all functionalities on the deployed Vercel URL, ensuring the complete Auth0 login flow works and admin features are secured. Verify logout functionality.
+    -   Thoroughly test all functionalities on the deployed Vercel URL, ensuring the complete Okta CIC login flow works and admin features are secured. Verify logout functionality.
 
 Key Environment Variables (for `.env` and Vercel)
 -------------------------------------------------
 
--   `AUTH0_DOMAIN`: Your Auth0 tenant domain (e.g., `your-tenant.us.auth0.com`).
+-   `AUTH0_DOMAIN`: Your Okta domain (e.g., `dev-123456.okta.com`). This is used by `/api/auth.js` and `/api/okta-user-management.js`, and for frontend configuration via `/api/config`.
+-   `AUTH0_CLIENT_ID`: Client ID for your Okta OIDC Web Application. Used by `/api/auth.js` and for frontend configuration.
+-   `AUTH0_CLIENT_SECRET`: Client Secret for your Okta OIDC Web Application. **Used only by `api/auth.js` backend.**
+-   `AUTH0_AUDIENCE`: (Optional) The audience for your Okta Authorization Server (e.g., `api://default` or a custom one). Used by `/api/auth.js` and for frontend configuration.
+-   `OKTA_API_TOKEN`: Your Okta SSWS API Token for accessing the Okta Management API. Used by `/api/okta-user-management.js`.
 
--   `AUTH0_CLIENT_ID`: Client ID for the Auth0 Regular Web Application/SPA used by frontend for redirect and by `/api/auth.js` for code exchange.
-
--   `AUTH0_CLIENT_SECRET`: Client Secret for the Auth0 Regular Web Application/SPA. **Used only by `api/auth.js` backend, never exposed on frontend.**
-
--   `AUTH0_AUDIENCE`: The audience for the access tokens obtained via Authorization Code Flow. This could be your custom API identifier or the Auth0 Management API (`https://YOUR_AUTH0_DOMAIN/api/v2/`).
-
--   `AUTH0_M2M_CLIENT_ID`: Client ID for the Auth0 M2M Application used by `/api/auth0-user-management.js`.
-
--   `AUTH0_M2M_CLIENT_SECRET`: Client Secret for the Auth0 M2M Application.
-
--   `AUTH0_MANAGEMENT_AUDIENCE`: The audience for the Auth0 Management API (always `https://YOUR_AUTH0_DOMAIN/api/v2/`).
-
--   `AUTH0_ROLES_NAMESPACE`: The namespace URL used in your Auth0 Action to add custom claims (like roles) to tokens. This value in `.env` (and Vercel environment variables) MUST exactly match the namespace string used in the Action script and configured as an Action secret.
+**The following variables, previously used for Auth0, are no longer directly applicable or have changed context:**
+-   `AUTH0_M2M_CLIENT_ID`: Not used with Okta API Token authentication.
+-   `AUTH0_M2M_CLIENT_SECRET`: Not used with Okta API Token authentication.
+-   `AUTH0_MANAGEMENT_AUDIENCE`: The Okta Management API base URL is now derived from `AUTH0_DOMAIN`.
+-   `AUTH0_ROLES_NAMESPACE`: Roles are now managed via Okta groups and the `groups` claim in the ID token, not a namespaced custom claim from an Auth0 Action.
