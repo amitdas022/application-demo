@@ -1,9 +1,6 @@
 Application Functionality Documentation
 =======================================
 
-Application Functionality Documentation
-=======================================
-
 This document provides a technical deep dive into the architecture and operational flow of the demonstration application. The application is a web-based platform with user authentication, a dashboard, and administrative panels for user and role management, leveraging Okta Customer Identity Cloud (CIC) as its Identity Provider (IdP) and deployed as serverless functions and static assets on Vercel.
 
 1\. Architectural Overview
@@ -56,7 +53,7 @@ The frontend is a collection of static assets that provide the user interface an
 
         -   `state`: A cryptographically random string generated and stored in `localStorage` for CSRF protection.
 
-        -   `audience=%%OKTA_AUDIENCE%%` (fetched from `/api/config`, optional): Specifies the API audience.
+        -   `audience=%%OKTA_AUDIENCE%%` (fetched from `/api/config`): Specifies the API audience. This should typically be `api://default` for the Org Authorization Server.
 
     -   The browser is then redirected to this Okta CIC URL.
 
@@ -66,7 +63,7 @@ The frontend is a collection of static assets that provide the user interface an
 
     -   `app.js` extracts the `code` and `state` from the URL.
 
-    -   **State Validation:**  The received `state` is validated against the stored one.
+    -   **State Validation:** The received `state` is validated against the stored one.
 
     -   **Code Exchange Initiation:** If validation passes, `app.js` makes a `POST` request to `/api/auth`, sending the `code`.
 
@@ -76,13 +73,13 @@ The frontend is a collection of static assets that provide the user interface an
 
 -   **Client-Side Authorization and Routing (`checkAuthAndRedirect()`):**
 
-    -   This function executes on every page load [cite: uploaded:amitdas022/application-demo/application-demo-a743af70862b2d22ed0541b4268ce36698651963/frontend/app.js].
+    -   This function executes on every page load.
 
-    -   It retrieves the `authenticatedUser` object from `localStorage` [cite: uploaded:amitdas022/application-demo/application-demo-a743af70862b2d22ed0541b4268ce36698651963/frontend/app.js].
+    -   It retrieves the `authenticatedUser` object from `localStorage`.
 
-    -   **User Information Display:** It populates user-specific UI elements (e.g., `user-profile-name`, `user-profile-email`, `user-profile-roles`, `user-profile-picture`) on pages like `protected.html` [cite: uploaded:amitdas022/application-demo/application-demo-a743af70862b2d22ed0541b4268ce36698651963/frontend/app.js].
+    -   **User Information Display:** It populates user-specific UI elements (e.g., `user-profile-name`, `user-profile-email`, `user-profile-roles`, `user-profile-picture`) on pages like `protected.html`.
 
-    -   **Role-Based UI Control:** It checks the `roles` array (derived from Okta groups) within `authenticatedUser` (specifically for the 'Admin' role). Based on this, it dynamically shows or hides UI components, such as the "Administrator Tools" section. RBAC is implemented by checking these user roles to grant or deny access to specific parts of the application.
+    -   **Role-Based UI Control:** It checks the `roles` array (derived from Okta groups included in the ID token) within `authenticatedUser` (specifically for the 'Admin' role). Based on this, it dynamically shows or hides UI components, such as the "Administrator Tools" section. RBAC is implemented by checking these user roles to grant or deny access to specific parts of the application.
 
     -   **Page Protection (Client-Side):** It implements client-side route protection. If an unauthenticated user attempts to access protected pages, they are redirected to `login.html`. If an authenticated *non-admin* user attempts to access an admin page, they are redirected.
 
@@ -115,11 +112,13 @@ The backend consists of Vercel Serverless Functions, implemented in Node.js, res
 
 This serverless function acts as the secure intermediary for the Authorization Code Flow with Okta CIC:
 
--   **Request Handling:** It listens for `POST` requests from the frontend containing the `code` parameter.
+-   **Request Handling:** It listens for `POST` requests from the frontend containing the `code` parameter and `redirect_uri`.
 
 -   **Token Exchange (Server-to-Server):**
 
     -   It performs a `fetch` `POST` request directly to Okta CIC's token endpoint (e.g., `https://YOUR_OKTA_DOMAIN/oauth2/default/v1/token`).
+
+    -   **Crucially, the request's `Content-Type` header is set to `application/x-www-form-urlencoded`, and the request body is sent as URL-encoded form parameters.**
 
     -   This request includes:
 
@@ -133,9 +132,9 @@ This serverless function acts as the secure intermediary for the Authorization C
 
         -   `redirect_uri`: Must match the initial request.
 
-        -   `scope`: (e.g., `openid profile email offline_access groups`).
+        -   `scope`: (`openid profile email offline_access groups`).
 
-        -   `audience`: (e.g., `process.env.AUTH0_AUDIENCE`).
+        -   `audience`: (e.g., `process.env.AUTH0_AUDIENCE`, typically `api://default`).
 
 -   **Token Processing:**
 
@@ -143,7 +142,7 @@ This serverless function acts as the secure intermediary for the Authorization C
 
     -   It decodes the `id_token` to get standard OIDC claims and the `groups` claim for role information.
 
-    -   **Role Extraction:** User roles (e.g., 'Admin') are extracted from the `groups` claim in the ID token, which are populated based on the user's group memberships in Okta CIC.
+    -   **Role Extraction:** User roles (e.g., 'Admin') are extracted from the `groups` claim in the ID token. Okta is configured to include this claim based on the user's group memberships and the "Always include in token" setting for the `groups` claim in the Authorization Server.
 
 -   **Response to Frontend:** Processed user `profile`, `roles`, and tokens are returned.
 
@@ -175,7 +174,15 @@ This serverless function provides the administrative interface to interact with 
 -   **Okta API Token:**
     -   An API token is generated in Okta with appropriate permissions to manage users and groups.
 -   **Okta Authorization Server & Claims:**
-    -   The default (or a custom) Okta authorization server is configured to issue a `groups` claim in the ID token. This claim includes the names of the Okta groups the user is a member of, enabling RBAC in the application.
+    -   The default (or a custom) Okta authorization server is configured.
+    -   **Scopes:** All requested scopes (`openid`, `profile`, `email`, `offline_access`, `groups`) must be explicitly defined and enabled under the **Scopes** tab of your Authorization Server.
+    -   **`groups` Claim Configuration:** A `groups` claim is configured under the **Claims** tab with:
+        * **Name:** `groups`
+        * **Include in token type:** `ID Token`
+        * **Value type:** `Groups`
+        * **Filter:** `Matches regex` with `.*`
+        * **Include in:** `Any scope`
+        * **Always include in token:** **`ON`** (this ensures the claim is always present if the user has group memberships).
 -   **Okta Groups for Roles:**
     -   User roles (e.g., "admin") are represented by Okta groups (e.g., an "Admin" group). Users are assigned to these groups in Okta to grant them corresponding application roles.
 

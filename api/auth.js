@@ -77,34 +77,28 @@ export default async function handler(req, res) {
             // Construct the URL for Okta's token endpoint.
             const oktaTokenUrl = `https://${process.env.AUTH0_DOMAIN}/oauth2/default/v1/token`;
 
-            // Log the details of the token exchange request being sent to Okta.
-            console.log(`[Auth API] Sending token exchange request to Okta. URL: ${oktaTokenUrl}`);
-            console.log(`[Auth API] Payload (excluding secret):`, {
+            // Prepare the form-urlencoded body
+            const requestBody = new URLSearchParams({
                 grant_type: 'authorization_code',
                 client_id: process.env.AUTH0_CLIENT_ID,
+                client_secret: process.env.AUTH0_CLIENT_SECRET,
                 code: code,
-                redirect_uri: redirect_uri, // <-- MODIFIED HERE: Using the redirect_uri received from the frontend
+                redirect_uri: redirect_uri,
                 audience: process.env.AUTH0_AUDIENCE,
-                scope: 'openid profile email offline_access'
-            });
+                scope: 'openid profile email offline_access groups'
+            }).toString();
+
+            // Log the details of the token exchange request being sent to Okta.
+            console.log(`[Auth API] Sending token exchange request to Okta. URL: ${oktaTokenUrl}`);
+            console.log(`[Auth API] Payload (excluding secret): ${requestBody}`); // Log the actual body
+
 
             // Make a POST request to Okta's `/oauth/token` endpoint.
             // This is a server-to-server communication, keeping the `client_secret` secure.
             const tokenResponse = await fetch(oktaTokenUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    grant_type: 'authorization_code',          // Specifies the Authorization Code Flow.
-                    client_id: process.env.AUTH0_CLIENT_ID,    // Your Auth0 Application's Client ID.
-                    client_secret: process.env.AUTH0_CLIENT_SECRET, // Your Auth0 Application's Client Secret.
-                    code: code,                                // The authorization code obtained from Auth0.
-                    redirect_uri: redirect_uri,                // <-- MODIFIED HERE: Using the redirect_uri received from the frontend
-                    audience: process.env.AUTH0_AUDIENCE,      // The identifier of the API the token is for (optional for OIDC).
-                    // Scopes must match what was requested in the initial /authorize call.
-                    // 'openid' is required for ID Token, 'profile' and 'email' for user info,
-                    // 'offline_access' for a Refresh Token (if enabled in Auth0).
-                    scope: 'openid profile email offline_access'
-                }),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // MODIFIED HERE
+                body: requestBody, // MODIFIED HERE
             });
 
             // Clone the response to safely read its body for logging, then process the original response.

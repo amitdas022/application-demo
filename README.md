@@ -31,7 +31,7 @@ What's Working and How
 
 This section summarizes the application's features from a user/developer perspective:
 
--   **User Authentication (Authorization Code Flow)**: Users log in by being redirected to Okta CIC's Universal Login page. After successful authentication, Okta CIC redirects the user back to `/callback.html`, which then sends an authorization code to your backend (`/api/auth.js`). The backend securely exchanges this code for `id_token`, `access_token`, and `refresh_token`. User roles are derived from Okta group memberships, which are included as a `groups` claim in the ID token.
+-   **User Authentication (Authorization Code Flow)**: Users log in by being redirected to Okta CIC's Universal Login page. After successful authentication, Okta CIC redirects the user back to `/callback.html`, which then sends an authorization code to your backend (`/api/auth.js`). The backend securely exchanges this code for `id_token`, `access_token`, and `refresh_token`. User roles are derived from Okta group memberships, which are included as a `groups` claim in the ID token. The `groups` claim is configured in Okta to be **always** included in the ID token if a user has group memberships.
 
 -   **Logout**: When a user logs out, their local session is cleared, and they are redirected to Okta CIC's logout endpoint to terminate their session. Okta CIC then redirects them back to your application's login page.
 
@@ -52,7 +52,7 @@ This project utilizes Okta CIC for authentication and authorization:
 
 -   **Purpose**: To allow users to securely log in to your application using Okta CIC. This is the recommended OAuth 2.0 flow for web applications.
 
--   **Credentials Used (from `.env`):**  `AUTH0_DOMAIN` (now your Okta domain), `AUTH0_CLIENT_ID` (Okta OIDC app client ID), `AUTH0_AUDIENCE` (Okta custom authorization server audience, if used), `AUTH0_CLIENT_SECRET` (Okta OIDC app client secret).
+-   **Credentials Used (from `.env`):** `AUTH0_DOMAIN` (now your Okta domain), `AUTH0_CLIENT_ID` (Okta OIDC app client ID), `AUTH0_AUDIENCE` (Okta Authorization Server audience, typically `api://default`), `AUTH0_CLIENT_SECRET` (Okta OIDC app client secret).
 
 -   **Flow**:
 
@@ -70,7 +70,7 @@ This project utilizes Okta CIC for authentication and authorization:
 
     7.  Your frontend (`app.js`) then sends this authorization `code` to your backend endpoint (`/api/auth`).
 
-    8.  Your backend (`/api/auth.js`) makes a **server-to-server POST request** to Okta's `/oauth2/default/v1/token` endpoint (or your custom authorization server's token endpoint), exchanging the `code` for an `access_token`, `id_token`, and `refresh_token`. This exchange uses your Okta `AUTH0_CLIENT_ID` and `AUTH0_CLIENT_SECRET`.
+    8.  Your backend (`/api/auth.js`) makes a **server-to-server POST request** to Okta's `/oauth2/default/v1/token` endpoint (or your custom authorization server's token endpoint), exchanging the `code` for an `access_token`, `id_token`, and `refresh_token`. This exchange uses your Okta `AUTH0_CLIENT_ID` and `AUTH0_CLIENT_SECRET`. **Crucially, the request's `Content-Type` header is `application/x-www-form-urlencoded`, and the body is URL-encoded form parameters.**
 
     9.  Okta CIC validates the `code` and the client credentials. If successful, it issues the tokens.
 
@@ -106,7 +106,7 @@ Setup and Installation
 1.  **Clone the repository:**
 
     ```
-    git clone https://github.com/amitdas022/application-demo.git
+    git clone [https://github.com/amitdas022/application-demo.git](https://github.com/amitdas022/application-demo.git)
     cd application-demo
 
     ```
@@ -128,7 +128,7 @@ Setup and Installation
     AUTH0_DOMAIN=YOUR_OKTA_DOMAIN # e.g., dev-123456.okta.com (Do not include https://)
     AUTH0_CLIENT_ID=YOUR_OKTA_OIDC_APP_CLIENT_ID
     AUTH0_CLIENT_SECRET=YOUR_OKTA_OIDC_APP_CLIENT_SECRET # Used only by backend /api/auth.js
-    AUTH0_AUDIENCE=api://default # Or your custom Okta Authorization Server audience (Optional, depends on your Okta setup)
+    AUTH0_AUDIENCE=api://default # Typically 'api://default' for the Org Authorization Server, or your custom Authorization Server's audience. DO NOT set this to your client ID.
 
     # Okta API Token for Management API
     # Used by /api/okta-user-management.js
@@ -227,7 +227,7 @@ When `LOCAL_TESTING_MODE` is `true`, `frontend/app.js` creates a default non-adm
 
 -   **Backend Interaction:** API calls to `/api/okta-user-management` will still occur. The backend uses its Okta API Token for authentication to the Okta Management API. **Server-side validation of the user's access token and its associated roles/permissions for management endpoints is recommended for production but not explicitly implemented in this demo.**
 
--   **Security:**  `LOCAL_TESTING_MODE` is for development convenience **only** and is not secure. It should never be enabled in production or committed with `true` as its default state.
+-   **Security:** `LOCAL_TESTING_MODE` is for development convenience **only** and is not secure. It should never be enabled in production or committed with `true` as its default state.
 
 -   **Disable for Full Testing/Deployment:** Always ensure `window.LOCAL_TESTING_MODE = false;` (or that it's undefined) and clear `localStorage` when testing the complete Okta CIC authentication flow or before deploying.
 
@@ -241,61 +241,81 @@ To set up this project with Okta Customer Identity Cloud, follow these steps:
 1.  **Access your Okta Admin Dashboard.** (If you don't have one, you can sign up for a free Okta Developer account).
 
 2.  **Create an OIDC Web Application (for User Login):**
-    *   Navigate to **Applications > Applications**.
-    *   Click **Create App Integration**.
-    *   Select **OIDC - OpenID Connect** as the sign-in method.
-    *   Select **Web Application** as the Application type. Click **Next**.
-    *   **App integration name:** e.g., "My Vercel App".
-    *   **Grant type:** Ensure **Authorization Code** is checked. **Refresh Token** should also be checked for session persistence.
-    *   **Sign-in redirect URIs:** Add `http://localhost:3000/callback.html` (for local development) and your production callback URL (e.g., `https://your-app-domain.vercel.app/callback.html`).
-    *   **Sign-out redirect URIs:** Add `http://localhost:3000/index.html` (for local development) and your production login page URL (e.g., `https://your-app-domain.vercel.app/index.html`).
-    *   **Assignments:** Assign to specific users or groups as needed, or allow "Everyone".
-    *   Save the application.
-    *   On the application's General tab, note down the **Client ID** and **Client secret**. Your **Okta domain** (e.g., `dev-123456.okta.com`) is visible in the URL or top-right corner of the dashboard. These correspond to `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and `AUTH0_DOMAIN` in your `.env` file.
-    *   **Audience (`AUTH0_AUDIENCE`):** This typically defaults to `api://default` for the Org Authorization Server. If using a custom authorization server, use its audience. For the default server, `api://default` is often sufficient for basic OIDC flows.
+    * Navigate to **Applications > Applications**.
+    * Click **Create App Integration**.
+    * Select **OIDC - OpenID Connect** as the sign-in method.
+    * Select **Web Application** as the Application type. Click **Next**.
+    * **App integration name:** e.g., "My Vercel App".
+    * **Grant type:** Ensure **Authorization Code** is checked. **Refresh Token** should also be checked for session persistence.
+    * **Sign-in redirect URIs:** Add `http://localhost:3000/callback.html` (for local development) and your production callback URL (e.g., `https://your-app-domain.vercel.app/callback.html`).
+    * **Sign-out redirect URIs:** Add `http://localhost:3000/index.html` (for local development) and your production login page URL (e.g., `https://your-app-domain.vercel.app/index.html`).
+    * **Assignments:** Assign to specific users or groups as needed, or allow "Everyone".
+    * Save the application.
+    * On the application's General tab, note down the **Client ID** and **Client secret**. Your **Okta domain** (e.g., `dev-123456.okta.com`) is visible in the URL or top-right corner of the dashboard. These correspond to `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and `AUTH0_DOMAIN` in your `.env` file.
+    * **Audience (`AUTH0_AUDIENCE`):** This typically defaults to `api://default` for the Org Authorization Server. If using a custom authorization server, use its audience. **Ensure this is `api://default` and NOT your Client ID.**
 
 3.  **Create an API Token (for Management API Access):**
-    *   Navigate to **Security > API**.
-    *   Go to the **Tokens** tab.
-    *   Click **Create Token**.
-    *   Name it (e.g., "Vercel App Management Token").
-    *   Copy the token value immediately. This is your `OKTA_API_TOKEN`. **Store it securely; you won't see it again.**
-    *   This token will have the permissions of the admin user who created it. For production, consider creating a service account/user with least-privilege permissions for API access.
+    * Navigate to **Security > API**.
+    * Go to the **Tokens** tab.
+    * Click **Create Token**.
+    * Name it (e.g., "Vercel App Management Token").
+    * Copy the token value immediately. This is your `OKTA_API_TOKEN`. **Store it securely; you won't see it again.**
+    * This token will have the permissions of the admin user who created it. For production, consider creating a service account/user with least-privilege permissions for API access.
 
 ### II. Role-Based Access Control (RBAC) with Okta Groups
 
 This application uses Okta groups to manage user roles, specifically the "admin" role.
 
 1.  **Create the 'Admin' Group in Okta:**
-    *   Log in to your Okta Admin Dashboard.
-    *   Navigate to **Directory > Groups**.
-    *   Click **Add Group**.
-    *   **Name:** `Admin` (This name is case-sensitive and used by the application).
-    *   **Group description (Optional):** e.g., "Administrators for My Vercel App".
-    *   Click **Save Group**.
+    * Log in to your Okta Admin Dashboard.
+    * Navigate to **Directory > Groups**.
+    * Click **Add Group**.
+    * **Name:** `Admin` (This name is case-sensitive and used by the application).
+    * **Group description (Optional):** e.g., "Administrators for My Vercel App".
+    * Click **Save Group**.
 
 2.  **Assign Users to the 'Admin' Group:**
-    *   Find the "Admin" group in the list and click on its name.
-    *   Click **Assign people**.
-    *   Select the users who should have administrative privileges and assign them to the group.
+    * Find the "Admin" group in the list and click on its name.
+    * Click **Assign people**.
+    * Select the users who should have administrative privileges and assign them to the group. **Ensure the user you are testing with is a member of this group.**
 
-3.  **Configure Okta to Include Group Claims in ID Tokens:**
-    *   In the Okta Admin Dashboard, navigate to **Security > API**.
-    *   Under the **Authorization Servers** tab, select your authorization server (typically named `default`).
-    *   Go to the **Claims** tab.
-    *   Click **Add Claim**.
-    *   **Name:** `groups` (This is the name the application expects).
-    *   **Include in token type:** Select `ID Token`.
-    *   **Value type:** Select `Groups`.
-    *   **Filter:** Choose `Matches regex` and enter `.*` in the text field (this includes all groups the user is a member of).
-    *   **Include in:** Select `Any scope` (or ensure it's included for scopes like `openid`, `profile`).
-    *   Click **Create**.
+3.  **Configure Okta Authorization Server Scopes:**
+    Your application requests several scopes (`openid`, `profile`, `email`, `offline_access`, `groups`). Ensure these are defined on your Authorization Server.
+    * In the Okta Admin Dashboard, navigate to **Security > API**.
+    * Under the **Authorization Servers** tab, select your authorization server (typically `default`).
+    * Go to the **Scopes** tab.
+    * Verify or **Add Scope** for:
+        * `openid` (usually default)
+        * `profile` (usually default)
+        * `email` (usually default)
+        * `offline_access`
+        * `groups`
+    * For `offline_access` and `groups`, you might need to explicitly add them. For example, for `groups` scope:
+        * **Name:** `groups`
+        * **Display name:** `Groups`
+        * **Description:** `User group memberships`
+        * Leave **Default scope** unchecked.
+        * Click **Create**.
+
+4.  **Configure Okta to Include Group Claims in ID Tokens:**
+    This step ensures that the `groups` claim, containing the user's group memberships, is included in the ID token.
+    * In the Okta Admin Dashboard, navigate to **Security > API**.
+    * Under the **Authorization Servers** tab, select your authorization server (typically named `default`).
+    * Go to the **Claims** tab.
+    * Click **Add Claim** (or edit your existing `groups` claim if you already started one).
+    * **Name:** `groups` (This is the name the application expects).
+    * **Include in token type:** Select `ID Token`.
+    * **Value type:** Select `Groups`.
+    * **Filter:** Choose `Matches regex` and enter `.*` in the text field (this includes all groups the user is a member of).
+    * **Include in:** Select `Any scope`.
+    * **Always include in token:** Toggle this to **`ON`** (or ensure the "Included" column shows `Always` as per your screenshot). This is crucial to ensure the claim's presence.
+    * Click **Create** (or **Save** if editing).
 
     The application's backend (`/api/auth.js`) extracts these group names from the `groups` claim in the ID token to determine if a user is an admin. The `/api/okta-user-management.js` also uses this "Admin" group name when managing role assignments via the UI.
 
 ### III. Project Configuration:
 
-1.  **Update `.env` file:** Populate your local `.env` file with all the credentials and identifiers obtained from your Okta setup (`AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `OKTA_API_TOKEN`, and optionally `AUTH0_AUDIENCE`).
+1.  **Update `.env` file:** Populate your local `.env` file with all the credentials and identifiers obtained from your Okta setup (`AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `OKTA_API_TOKEN`, and `AUTH0_AUDIENCE`).
 
 After these changes, restart your local development server (`npx vercel dev`).
 
@@ -331,7 +351,7 @@ Key Environment Variables (for `.env` and Vercel)
 -   `AUTH0_DOMAIN`: Your Okta domain (e.g., `dev-123456.okta.com`). This is used by `/api/auth.js` and `/api/okta-user-management.js`, and for frontend configuration via `/api/config`.
 -   `AUTH0_CLIENT_ID`: Client ID for your Okta OIDC Web Application. Used by `/api/auth.js` and for frontend configuration.
 -   `AUTH0_CLIENT_SECRET`: Client Secret for your Okta OIDC Web Application. **Used only by `api/auth.js` backend.**
--   `AUTH0_AUDIENCE`: (Optional) The audience for your Okta Authorization Server (e.g., `api://default` or a custom one). Used by `/api/auth.js` and for frontend configuration.
+-   `AUTH0_AUDIENCE`: The audience for your Okta Authorization Server (e.g., `api://default` or a custom one). **Crucially, ensure this is `api://default` and NOT your Client ID.** Used by `/api/auth.js` and for frontend configuration.
 -   `OKTA_API_TOKEN`: Your Okta SSWS API Token for accessing the Okta Management API. Used by `/api/okta-user-management.js`.
 
 **The following variables, previously used for Auth0, are no longer directly applicable or have changed context:**
