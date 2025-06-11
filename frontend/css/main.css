@@ -942,6 +942,9 @@ button.login-button-morphing::before span:nth-child(3) {
   background-image: none; /* Remove background gradient from body, scene handles it */
   background-color: var(--color-background); /* Keep a solid base color */
 }
+body.dark-mode .welcome-page {
+  background-color: var(--color-background-dark);
+}
 
 .welcome-scene {
   position: fixed; /* Fix it relative to viewport */
@@ -1153,6 +1156,9 @@ button.login-button-morphing::before span:nth-child(3) {
   margin-bottom: var(--spacing-xl);
   line-height: 1.8;
 }
+body.dark-mode .welcome-page .welcome-content-card .welcome-message {
+  color: var(--color-text-dark); /* Changed from potentially var(--color-text-muted-dark) */
+}
 
 /* Login Page Typography & Form Headers */
 .form-container .form-header {
@@ -1166,6 +1172,9 @@ button.login-button-morphing::before span:nth-child(3) {
   font-size: 1.2rem; /* Slightly larger */
   color: var(--color-text-muted);
   margin-top: var(--spacing-xs);
+}
+body.dark-mode .login-page .form-container .form-subtitle {
+  color: var(--color-text-dark); /* Changed from potentially var(--color-text-muted-dark) */
 }
 
 /* Background Logos for Login Page (instead of shapes) */
@@ -1515,6 +1524,12 @@ body.dark-mode .welcome-banner::before {
   will-change: transform, opacity;
 }
 
+body.dark-mode .admin-crud-page .user-list-section .styled-list li {
+  background-color: var(--color-surface-dark);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-dark); /* This should apply to direct text and be inherited by children */
+}
+
 /* --- Dark Mode Overrides --- */
 body.dark-mode {
   background-color: var(--color-background-dark);
@@ -1641,10 +1656,10 @@ body.dark-mode .app-header .header-nav-link:focus {
 
 /* Dark Mode Modals */
 body.dark-mode .modal-content {
-  background-color: rgba(var(--color-surface-dark-rgb), 0.97); /* Increased from 0.92 */
-  backdrop-filter: blur(5px); /* Keeping blur for now */
-  -webkit-backdrop-filter: blur(5px); /* Keeping blur for now */
-  border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
+  background-color: rgba(var(--color-surface-dark-rgb), 0.99); /* Increased from 0.97 to 0.99 */
+  backdrop-filter: blur(5px); /* Retain for now, as 0.99 is not fully opaque */
+  -webkit-backdrop-filter: blur(5px); /* Retain for now */
+  border-color: rgba(var(--color-white-rgb), 0.15); /* Existing */
   box-shadow: var(--glass-shadow-dark); /* Keep glass shadow for dark mode, it's lighter */
 }
 body.dark-mode .modal-content::before { /* Reflection on dark modal */
@@ -1861,8 +1876,14 @@ body.dark-mode .glass-pane { /* .glass-pane might need its own specific override
 }
 
 body.dark-mode .welcome-page .welcome-content-card {
-  background-color: rgba(var(--glass-background-rgb-dark), 0.25); /* Increased from default dark 0.15 */
-  /* The inset shadow rgba(255, 255, 255, 0.3) should still look good here */
+  background-color: rgba(var(--glass-background-rgb-dark), 0.75); /* Increased alpha from 0.25 to 0.75 */
+  /* border and box-shadow are inherited from body.dark-mode .card */
+}
+
+body.dark-mode .login-page .form-container {
+  background-color: rgba(var(--glass-background-rgb-dark), 0.75); /* Increased alpha */
+  border-color: rgba(var(--color-white-rgb), var(--glass-border-alpha-dark)); /* Ensure border color is appropriate for dark mode */
+  box-shadow: var(--glass-shadow-dark); /* Ensure dark mode shadow is used */
 }
 
 /* Dark mode variables for elegantLetterReveal */
