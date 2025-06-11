@@ -613,6 +613,27 @@ button.login-button-morphing::before span:nth-child(3) {
   animation: shake 0.5s ease-in-out;
 }
 
+  body.dark-mode .message-area.success {
+    color: var(--color-success);
+    background-color: rgba(var(--color-success-rgb), 0.2);
+    border-color: rgba(var(--color-success-rgb), 0.4);
+  }
+  body.dark-mode .message-area.error {
+    color: var(--color-danger);
+    background-color: rgba(var(--color-danger-rgb), 0.2);
+    border-color: rgba(var(--color-danger-rgb), 0.4);
+  }
+  body.dark-mode .message-area.info { /* General info messages */
+    color: var(--color-primary-dark-theme);
+    background-color: rgba(var(--color-primary-dark-theme-rgb), 0.15);
+    border-color: rgba(var(--color-primary-dark-theme-rgb), 0.3);
+  }
+  body.dark-mode .message-area:not(.success):not(.error):not(.info) {
+      color: var(--color-text-dark);
+      background-color: rgba(var(--color-surface-dark-rgb), 0.5); /* Generic surface-like bg */
+      border: 1px solid var(--color-border-dark);
+  }
+
 /* Toast Notifications */
 #toast-container {
   position: fixed;
@@ -1277,23 +1298,21 @@ button.login-button-morphing::before span:nth-child(3) {
   gap: var(--spacing-md);
   text-align: left;
 }
-.welcome-banner::before {
-  /* Animated overlay for subtle shimmer */
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
+
+body.dark-mode .welcome-banner {
+  background: linear-gradient(135deg, rgba(var(--color-primary-dark-rgb), 0.7) 0%, rgba(var(--color-primary-rgb), 0.5) 100%);
+  box-shadow: var(--glass-shadow-dark);
+}
+body.dark-mode .welcome-banner::before {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.15) 50%,
+    rgba(var(--color-white-rgb), 0.05) 50%, /* Lighter shimmer for dark bg */
     transparent
-  ); /* More visible shimmer */
-  transition: left 0.8s ease;
-  pointer-events: none; /* Ensure clicks pass through */
+  );
 }
+/* The ::before hover effect (left: 100%) is inherited and should be fine */
+
 .welcome-banner:hover::before {
   left: 100%;
 }
@@ -1622,9 +1641,9 @@ body.dark-mode .app-header .header-nav-link:focus {
 
 /* Dark Mode Modals */
 body.dark-mode .modal-content {
-  background-color: rgba(var(--color-surface-dark-rgb), 0.92); /* High opacity */
-  backdrop-filter: blur(5px); /* Minimal blur */
-  -webkit-backdrop-filter: blur(5px);
+  background-color: rgba(var(--color-surface-dark-rgb), 0.97); /* Increased from 0.92 */
+  backdrop-filter: blur(5px); /* Keeping blur for now */
+  -webkit-backdrop-filter: blur(5px); /* Keeping blur for now */
   border-color: rgba(var(--color-white-rgb), 0.15); /* Softer border */
   box-shadow: var(--glass-shadow-dark); /* Keep glass shadow for dark mode, it's lighter */
 }
@@ -1747,9 +1766,34 @@ body.dark-mode .theme-switch-label {
 }
 
 .theme-switch-label {
-  color: var(--color-light); /* Assuming header text is light */
+  color: var(--color-light); /* Assuming header text is light on dark app-header */
   font-size: 0.9rem;
   user-select: none;
+}
+
+/* Styles for standalone theme switch on index.html, login.html */
+.top-right-theme-switch {
+  position: fixed; /* Or absolute if container is suitable */
+  top: var(--spacing-md, 16px);
+  right: var(--spacing-md, 16px);
+  z-index: 1001; /* Above other content like .welcome-scene */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px);
+  background-color: rgba(var(--color-surface-rgb), 0.5); /* Subtle glass bg for the switch itself */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: var(--border-radius, 1rem);
+  box-shadow: var(--box-shadow-sm);
+}
+
+.top-right-theme-switch .theme-switch-label {
+  color: var(--color-text); /* Default text color */
+}
+
+body.dark-mode .top-right-theme-switch .theme-switch-label {
+  color: var(--color-text-dark); /* Dark mode text color */
 }
 
 .theme-switch {

@@ -13,6 +13,7 @@
   --color-secondary-dark-rgb: 90, 98, 104; /* For rgba() usage of darker shade */
 
   --color-success: #28a745; /* Green for success */
+  --color-success-rgb: 40, 167, 69; /* Added based on #28a745 */
   --color-danger: #dc3545;  /* Red for errors/danger */
   --color-danger-rgb: 220, 53, 69; /* For rgba() usage */
   --color-warning: #ffc107; /* Yellow for warnings */
