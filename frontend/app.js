@@ -29,7 +29,7 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 } else {
   // For Vercel production deployment.
   // Ensure this matches your Vercel production URL.
-  OKTA_REDIRECT_URI = `https://${window.location.hostname}/callback.html`;
+  OKTA_REDIRECT_URI = `https://okta-ciam-application.vercel.app/callback.html`;
 }
 
 /**
