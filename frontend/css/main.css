@@ -913,10 +913,11 @@ body.dark-mode .welcome-page {
 
 .scene-element {
   position: absolute;
-  opacity: 0.4; /* Original opacity */
+  opacity: 0; /* Initially invisible */
   filter: blur(20px); /* Original blur */
-  will-change: transform;
+  will-change: transform, opacity; /* Added opacity to will-change */
   z-index: 0;
+  transition: opacity 0.5s ease-in-out; /* Smooth fade-in */
 }
 
 /* Different sizes & unique volumetric shapes - Original values */

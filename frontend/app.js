@@ -1034,6 +1034,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       depthMultiplier: 0.2 + Math.random() * 1.3 // Random depth (0.2 to 1.5)
     }));
 
+    // After objs is populated, iterate and set initial opacity to trigger CSS transition
+    objs.forEach(obj => {
+      if (obj.el) { // Ensure the element exists
+        // Use a minimal timeout to allow the browser to apply the initial opacity: 0 from CSS
+        // before changing it here, ensuring the transition triggers.
+        setTimeout(() => {
+          obj.el.style.opacity = '0.4'; // Set to original visible opacity
+        }, 50); // A small delay like 50ms is usually sufficient
+      }
+    });
+
     function animate(time = 0) {
       objs.forEach(o => {
         // Update base position for random drift
