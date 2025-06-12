@@ -24,3 +24,4 @@
 package-lock.json
 okta-sf-SAML.xml
 .env_deprecated
+.env.auth0
