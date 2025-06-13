@@ -14,7 +14,7 @@ The application adheres to a modern, distributed architecture, separating concer
 
     -   Facilitating the OAuth 2.0 Authorization Code Flow (securely exchanging codes for tokens) with Okta CIC.
 
-    -   Interacting with the Okta Management API for administrative user operations (CRUD, group/role assignments) using an Okta API Token.
+    -   Interacting with the Okta Management API for administrative user operations (CRUD, group/role assignments).
 
 -   **Okta Customer Identity Cloud (CIC) (Identity Provider - IdP):** Serves as the central authority for user authentication, authorization, and a managed user database. It manages user identities, issues tokens (ID, Access, Refresh), and provides a robust API for user and group management. User roles are typically managed via Okta Groups.
 
@@ -65,7 +65,7 @@ The frontend is a collection of static assets that provide the user interface an
 
     -   **State Validation:** The received `state` is validated against the stored one.
 
-    -   **Code Exchange Initiation:** If validation passes, `app.js` makes a `POST` request to `/api/auth`, sending the `code`.
+    -   **Code Exchange Initiation:** If validation passes, `app.js` makes a `POST` request to your backend endpoint `/api/auth`, sending the `code`.
 
     -   **Session Establishment:** Upon receiving a successful response from `/api/auth` (containing `idToken`, `accessToken`, `refreshToken`, `profile`, `roles`), `app.js` stores this `authenticatedUser` object in `localStorage`. This client-side `localStorage` entry acts as the primary indicator of the user's logged-in status for the frontend.
 
@@ -106,109 +106,106 @@ The frontend is a collection of static assets that provide the user interface an
 3\. Backend (`api/`)
 --------------------
 
-The backend consists of Vercel Serverless Functions, implemented in Node.js, responsible for sensitive operations.
+The backend consists of Vercel Serverless Functions, implemented in Node.js, responsible for sensitive operations. These backend APIs serve as secure intermediaries, interacting with Okta's external APIs to perform authentication and user management tasks.
 
-### 3.1. Authentication Endpoint (`api/auth.js`)
+### 3.1. Internal Backend API: `/api/auth.js`
 
-This serverless function acts as the secure intermediary for the Authorization Code Flow with Okta CIC:
+This serverless function is the **backend endpoint for completing the login process** after a user authenticates with Okta.
 
--   **Request Handling:** It listens for `POST` requests from the frontend containing the `code` parameter and `redirect_uri`.
+-   **Request Handling:** It listens for `POST` requests from the frontend, containing the `code` parameter (received from Okta's redirect) and the `redirect_uri`.
 
--   **Token Exchange (Server-to-Server):**
+-   **Interaction with Okta API:**
 
-    -   It performs a `fetch`  `POST` request directly to Okta CIC's token endpoint (e.g., `https://YOUR_OKTA_DOMAIN/oauth2/default/v1/token`).
+    -   **Purpose:** To securely exchange the authorization `code` for OAuth 2.0 tokens (Access Token, ID Token, Refresh Token).
 
-    -   **Crucially, the request's `Content-Type` header is set to `application/x-www-form-urlencoded`, and the request body is sent as URL-encoded form parameters.**
+    -   **How it communicates:**  `api/auth.js` makes a **server-to-server POST request** to the **Okta Authorization Server - Token Endpoint** (`https://YOUR_OKTA_DOMAIN/oauth2/default/v1/token`).
 
-    -   This request includes:
+    -   **Authentication to Okta:** This request is authenticated using your Okta OIDC Application's `client_id` and `client_secret`, which are kept secure on the backend and sent as `application/x-www-form-urlencoded` in the request body.
 
-        -   `grant_type: 'authorization_code'`.
-
-        -   `client_id=process.env.AUTH0_CLIENT_ID` (Okta Client ID).
-
-        -   `client_secret=process.env.AUTH0_CLIENT_SECRET` (Okta Client Secret, kept on backend).
-
-        -   `code`: The authorization code.
-
-        -   `redirect_uri`: Must match the initial request.
-
-        -   `scope`: (`openid profile email offline_access groups`).
-
-        -   `audience`: (e.g., `process.env.AUTH0_AUDIENCE`, typically `api://default`).
+    -   **When Used:** This interaction happens immediately after the frontend (`callback.html`) receives the authorization code from Okta's initial redirect, preventing the exposure of sensitive client secrets in the browser.
 
 -   **Token Processing:**
 
-    -   Upon a successful response from Okta CIC, `api/auth.js` receives tokens.
+    -   Upon a successful response from Okta, `api/auth.js` receives the tokens.
 
-    -   It decodes the `id_token` to get standard OIDC claims and the `groups` claim for role information.
+    -   It decodes the `id_token` to extract standard OIDC claims (e.g., `sub`, `email`, `given_name`, `family_name`) and specifically the `groups` claim for role information.
 
-    -   **Role Extraction:** User roles (e.g., 'Admin') are extracted from the `groups` claim in the ID token. Okta is configured to include this claim based on the user's group memberships and the "Always include in token" setting for the `groups` claim in the Authorization Server.
+    -   **Role Extraction:** User roles (e.g., `'Admin'`) are extracted from the `groups` claim. Okta is configured to include this claim based on the user's group memberships and the "Always include in token" setting for the `groups` claim in the Authorization Server.
 
--   **Response to Frontend:** Processed user `profile`, `roles`, and tokens are returned.
+-   **Response to Frontend:** Processed user `profile` information, `roles`, and the received tokens are returned to the frontend.
 
--   **Logging:** Includes logs for requests, token exchange details, and user information.
+-   **Logging:** Includes logs for incoming requests, token exchange details, and constructed user information.
 
-### 3.2. User Management Endpoint (`api/okta-user-management.js`)
+### 3.2. Internal Backend API: `/api/okta-user-management.js`
 
-This serverless function provides the administrative interface to interact with Okta CIC's Management API. Administrative user management tasks (CRUD operations, role assignments) are performed against user data stored in Okta CIC.
+This serverless function provides the administrative interface to interact with Okta CIC's Management API. It enables CRUD operations on users and manages group memberships (roles) in Okta.
 
--   **Okta API Token Authentication:**
+-   **Authentication (to this Backend API):**
 
-    -   This endpoint uses a long-lived Okta API Token (`process.env.OKTA_API_TOKEN`) for authentication.
+    -   The frontend sends the logged-in end-user's `access_token` in the `Authorization: Bearer <token>` header to this endpoint.
 
-    -   The `fetchOktaAPI()` helper function includes this token in the `Authorization: SSWS YOUR_OKTA_API_TOKEN` header for all requests to the Okta Management API.
+    -   **Interaction with Okta API for Authorization:**  `api/okta-user-management.js` uses the **Okta Authorization Server - Userinfo Endpoint** (`https://YOUR_OKTA_DOMAIN/oauth2/default/v1/userinfo`) to validate this access token and retrieve the end-user's claims, including their assigned `groups` (roles). This server-side validation is crucial for ensuring that only authenticated users with the `'Admin'` role can perform administrative actions.
 
--   **Okta Management API Interactions:**
+-   **Authentication (from Backend to Okta Management API):** If the end-user is authorized (i.e., verified as an 'Admin'), the backend proceeds to call various Okta Management APIs using a long-lived `OKTA_API_TOKEN` (SSWS token), which is securely configured in the environment variables.
 
-    -   The endpoint accepts various HTTP methods and an `action` parameter for operations like `createUser`, `listUsers`, `updateUser`, `deleteUser`, `assignRoles` (add to group), `unassignRoles` (remove from group).
+-   **Okta Management API Interactions:** The `api/okta-user-management.js` endpoint dispatches requests to the following Okta Management APIs based on the `action` parameter received from the frontend:
 
-    -   **Role/Group Assignment Logic:**
+    -   **Action: `createUser`**
 
-        -   For assigning/unassigning roles, it uses the `getGroupIdByName()` helper to find the ID of the target group (e.g., "Admin") in Okta, then adds or removes the user from that group. The role name is now correctly handled as `'Admin'` (capital 'A').
+        -   **Corresponds to Okta API:** Okta Management API - Users Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/users`) via a `POST` request.
 
-        -   **Automated Application Assignment:** When a new user is created (`action: 'createUser'`), the backend now automatically assigns the new user to the `AccessBoardUsers` Okta group. This is achieved by first fetching the `groupId` for `AccessBoardUsers` and then making a `PUT` request to add the user to that group. This ensures new users are immediately granted access to the application via group assignment.
+        -   **Purpose:** To create a new user account in Okta.
 
--   **Client-Side Authorization Note:** While the frontend implements client-side checks, the `api/okta-user-management.js` endpoint itself, in this demo, does not perform additional server-side validation of the *authenticated user's* permissions to call this management API. Server-side validation is recommended for production.
+        -   **When Used:** When an administrator submits the "Create New User" form on the `admin-user-crud.html` page.
 
-4\. Okta Customer Identity Cloud (CIC) Integration Details
-----------------------------------------------------------
+        -   **Additional Step:** Immediately after successful user creation, the backend *also* makes a `PUT` request to the **Okta Management API - Groups Endpoint** (`https://YOUR_OKTA_DOMAIN/api/v1/groups/{groupId}/users/{userId}`). This automatically assigns the newly created user to the `AccessBoardUsers` Okta group (which grants them immediate access to the application).
 
--   **Okta OIDC Application:**
+    -   **Action: `listUsers`**
 
-    -   A "Web Application" is configured in Okta CIC for the Authorization Code Flow.
+        -   **Corresponds to Okta API:** Okta Management API - Users Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/users`) via a `GET` request.
 
-    -   It has "Sign-in redirect URIs" (callback URLs) and "Sign-out redirect URIs" configured.
+        -   **Purpose:** To retrieve a list of all users within your Okta organization.
 
-    -   Grant Types: "Authorization Code" and "Refresh Token" are enabled.
+        -   **When Used:** When an administrator clicks "Load Users" on the `admin-user-crud.html` page.
 
--   **Okta API Token:**
+    -   **Action: `getUser`**
 
-    -   An API token is generated in Okta with appropriate permissions to manage users and groups.
+        -   **Corresponds to Okta API:** Okta Management API - Users Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/users/{userId}`) via a `GET` request.
 
--   **Okta Authorization Server & Claims:**
+        -   **Purpose:** To fetch detailed profile information about a specific user by their Okta User ID.
 
-    -   The default (or a custom) Okta authorization server is configured.
+        -   **When Used:** When an administrator attempts to view or populate an edit form for a specific user.
 
-    -   **Scopes:** All requested scopes (`openid`, `profile`, `email`, `offline_access`, `groups`) must be explicitly defined and enabled under the **Scopes** tab of your Authorization Server.
+    -   **Action: `updateUser`**
 
-    -   **`groups` Claim Configuration:** A `groups` claim is configured under the **Claims** tab with:
+        -   **Corresponds to Okta API:** Okta Management API - Users Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/users/{userId}`) via a `POST` request (Okta's API uses POST for user profile updates).
 
-        -   **Name:**  `groups`
+        -   **Purpose:** To modify a user's profile attributes (e.g., first name, last name) in Okta.
 
-        -   **Include in token type:**  `ID Token`
+        -   **When Used:** When an administrator saves changes to a user's details through the edit modal on the `admin-user-crud.html` page.
 
-        -   **Value type:**  `Groups`
+    -   **Actions: `assignRoles` and `unassignRoles`**
 
-        -   **Filter:**  `Matches regex` with `.*`
+        -   **Corresponds to Okta API:** Okta Management API - Groups Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/groups/{groupId}/users/{userId}`) via a `PUT` request (for assignment) or a `DELETE` request (for unassignment).
 
-        -   **Include in:**  `Any scope`
+        -   **Purpose:** To add or remove a user from a specific Okta group, which directly corresponds to assigning or unassigning an application role (e.g., `'Admin'`).
 
-        -   **Always include in token:**  **`ON`** (this ensures the claim is always present if the user has group memberships).
+        -   **When Used:** When an administrator clicks "Add to Admin Role" or "Remove from Admin Role" on the `admin-group.html` page. The backend first uses a `GET` request to `/api/v1/groups?q=<groupName>` to resolve the group name to its ID.
 
--   **Okta Groups for Roles:**
+    -   **Action: `listUsersInRole`**
 
-    -   User roles (e.g., "Admin") are represented by Okta groups (e.g., an "Admin" group). Users are assigned to these groups in Okta to grant them corresponding application roles.
+        -   **Corresponds to Okta API:** Okta Management API - Groups Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/groups?q=<groupName>`) for finding the group ID, and then (`https://YOUR_OKTA_DOMAIN/api/v1/groups/{groupId}/users`) via a `GET` request to list members of that group.
 
-    -   A default access group (e.g., "AccessBoardUsers") is used to automatically grant application access to newly created users by assigning them to this group upon creation.
+        -   **Purpose:** To retrieve a list of all users who are members of a specific Okta group (role), such as the `'Admin'` group.
+
+        -   **When Used:** When an administrator clicks "Load Admin Users" on the `admin-group.html` page.
+
+    -   **Action: `deleteUser`**
+
+        -   **Corresponds to Okta API:** Okta Management API - Users Lifecycle Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/users/{userId}/lifecycle/deactivate`) via a `POST` request (to set the user to a DEPROVISIONED state), followed by the Okta Management API - Users Endpoint (`https://YOUR_OKTA_DOMAIN/api/v1/users/{userId}`) via a `DELETE` request (for permanent deletion).
+
+        -   **Purpose:** To deactivate and then permanently delete a user account from Okta.
+
+        -   **When Used:** When an administrator confirms the deletion of a user from the User Management page.
 
 This detailed breakdown clarifies the technical flow and interdependencies within your application, highlighting how different components and Okta CIC services work together to provide authentication, authorization, and user management capabilities.
