@@ -36,10 +36,11 @@ This section summarizes the application's features from a user/developer perspec
 -   **Logout**: When a user logs out, their local session is cleared, and they are redirected to Okta CIC's logout endpoint to terminate their session. Okta CIC then redirects them back to your application's login page.
 
 -   **User Management (Admin)**: Authenticated admin users can perform CRUD operations (Create, Read, Update, Delete) on users via the "Admin" page. This is handled by backend API calls from `/api/okta-user-management.js` to the Okta Management API using an Okta API Token. **Crucially, these backend calls are protected by server-side authorization, validating the calling user's access token and ensuring they possess the 'Admin' role.**
+    * **New User Onboarding Automation:** When a new user is created through the application's interface, they are automatically assigned to the `AccessBoardUsers` Okta group. This ensures immediate access to the application for newly registered users, provided this group is assigned to your Okta application.
 
--   **Role Management (Admin)**: Admin users can assign or unassign the 'admin' role (which corresponds to membership in an "Admin" group in Okta) to other users from the "Admin" page. This also uses the Okta Management API via the backend (`/api/okta-user-management.js`), with **server-side authorization** applied.
+-   **Role Management (Admin)**: Admin users can assign or unassign the `'Admin'` role (which corresponds to membership in an "Admin" group in Okta) to other users from the "Admin" page. This also uses the Okta Management API via the backend (`/api/okta-user-management.js`), with **server-side authorization** applied.
 
--   **Protected Content**: Pages like `protected.html` (for any authenticated user) and `admin.html` (for authenticated users with an 'admin' role/group) are only accessible based on authentication status and roles.
+-   **Protected Content**: Pages like `protected.html` (for any authenticated user) and `admin.html` (for authenticated users with an 'Admin' role/group) are only accessible based on authentication status and roles.
 
 -   **Local UI Testing Mode**: A `LOCAL_TESTING_MODE` flag in `frontend/app.js` allows bypassing Okta CIC login for easier UI development and testing of protected routes and role-based UI elements. When enabled, user data (including roles) can be simulated via `localStorage`.
 
@@ -93,7 +94,7 @@ This project utilizes Okta CIC for authentication and authorization:
         * It calls Okta's `/oauth2/default/v1/userinfo` endpoint, presenting the end-user's `access_token`.
         * Okta's `/userinfo` endpoint validates the `access_token` and returns the end-user's claims, including their `groups` (roles).
         * Your backend checks if the `groups` claim contains the 'Admin' role.
-        * If the token is invalid, expired, or the user is not an admin, the backend immediately sends an appropriate error response (e.g., 401 Unauthorized, 403 Forbidden) to the frontend.
+        * If the token is invalid, expired, or the user is not an 'Admin', the backend immediately sends an appropriate error response (e.g., 401 Unauthorized, 403 Forbidden) to the frontend.
 
     4.  **If the end-user is authorized (i.e., confirmed as an 'Admin'):**
         * Your backend then uses its own, securely stored `OKTA_API_TOKEN` (an SSWS token) directly in the `Authorization: SSWS` header to make the actual administrative API call to the Okta Management API (e.g., `GET /api/v1/users`, `PUT /api/v1/groups/{groupId}/users/{userId}`).
@@ -193,6 +194,7 @@ For easier UI development and testing of protected pages without repeatedly goin
 
 In the console, execute:
 
+
 ```
 window.LOCAL_TESTING_MODE = true;
 
@@ -275,7 +277,7 @@ To set up this project with Okta Customer Identity Cloud, follow these steps:
 
 ### II. Role-Based Access Control (RBAC) with Okta Groups
 
-This application uses Okta groups to manage user roles, specifically the "admin" role.
+This application uses Okta groups to manage user roles, specifically the "Admin" role, and also for basic application access.
 
 1.  **Create the 'Admin' Group in Okta:**
     * Log in to your Okta Admin Dashboard.
@@ -285,12 +287,21 @@ This application uses Okta groups to manage user roles, specifically the "admin"
     * **Group description (Optional):** e.g., "Administrators for My Vercel App".
     * Click **Save Group**.
 
-2.  **Assign Users to the 'Admin' Group:**
+2.  **Create 'AccessBoardUsers' Group (or your chosen default access group) in Okta:**
+    * Log in to your Okta Admin Dashboard.
+    * Navigate to **Directory > Groups**.
+    * Click **Add Group**.
+    * **Name:** `AccessBoardUsers` (This name is case-sensitive and used by the application for automated assignments).
+    * **Group description (Optional):** e.g., "Default access group for My Vercel App".
+    * Click **Save Group**.
+    * **Crucially, assign this `AccessBoardUsers` group to your Okta OIDC Web Application** under **Applications > Applications > Your Application Name > Assignments**. This step ensures that any user assigned to this group gains access to your application.
+
+3.  **Assign Users to the 'Admin' Group:**
     * Find the "Admin" group in the list and click on its name.
     * Click **Assign people**.
     * Select the users who should have administrative privileges and assign them to the group. **Ensure the user you are testing with is a member of this group.**
 
-3.  **Configure Okta Authorization Server Scopes:**
+4.  **Configure Okta Authorization Server Scopes:**
     Your application requests several scopes (`openid`, `profile`, `email`, `offline_access`, `groups`). Ensure these are defined on your Authorization Server.
     * In the Okta Admin Dashboard, navigate to **Security > API**.
     * Under the **Authorization Servers** tab, select your authorization server (typically `default`).
@@ -308,7 +319,7 @@ This application uses Okta groups to manage user roles, specifically the "admin"
         * Leave **Default scope** unchecked.
         * Click **Create**.
 
-4.  **Configure Okta to Include Group Claims in ID Tokens:**
+5.  **Configure Okta to Include Group Claims in ID Tokens:**
     This step ensures that the `groups` claim, containing the user's group memberships, is included in the ID token.
     * In the Okta Admin Dashboard, navigate to **Security > API**.
     * Under the **Authorization Servers** tab, select your authorization server (typically named `default`).
@@ -316,13 +327,13 @@ This application uses Okta groups to manage user roles, specifically the "admin"
     * Click **Add Claim** (or edit your existing `groups` claim if you already started one).
     * **Name:** `groups` (This is the name the application expects).
     * **Include in token type:** Select `ID Token`.
-    * **Value type:** Select `Groups`.
+    * **Value type:** `Groups`.
     * **Filter:** Choose `Matches regex` and enter `.*` in the text field (this includes all groups the user is a member of).
     * **Include in:** Select `Any scope`.
     * **Always include in token:** Toggle this to **`ON`** (or ensure the "Included" column shows `Always` as per your screenshot). This is crucial to ensure the claim's presence.
     * Click **Create** (or **Save** if editing).
 
-    The application's backend (`/api/auth.js`) extracts these group names from the `groups` claim in the ID token to determine if a user is an admin. The `/api/okta-user-management.js` also uses this "Admin" group name when managing role assignments via the UI.
+    The application's backend (`/api/auth.js`) extracts these group names from the `groups` claim in the ID token to determine if a user is an admin. The `/api/okta-user-management.js` also uses these group names (like "Admin" and "AccessBoardUsers") when managing role assignments and automated user provisioning via the UI.
 
 ### III. Project Configuration:
 
@@ -364,9 +375,3 @@ Key Environment Variables (for `.env` and Vercel)
 -   `AUTH0_CLIENT_SECRET`: Client Secret for your Okta OIDC Web Application. **Used only by `api/auth.js` backend.**
 -   `AUTH0_AUDIENCE`: The audience for your Okta Authorization Server (e.g., `api://default` or a custom one). **Crucially, ensure this is `api://default` and NOT your Client ID.** Used by `/api/auth.js` and for frontend configuration.
 -   `OKTA_API_TOKEN`: Your Okta SSWS API Token for accessing the Okta Management API. Used by `/api/okta-user-management.js`.
-
-**The following variables, previously used for Auth0, are no longer directly applicable or have changed context:**
--   `AUTH0_M2M_CLIENT_ID`: Not used with Okta API Token authentication.
--   `AUTH0_M2M_CLIENT_SECRET`: Not used with Okta API Token authentication.
--   `AUTH0_MANAGEMENT_AUDIENCE`: The Okta Management API base URL is now derived from `AUTH0_DOMAIN`.
--   `AUTH0_ROLES_NAMESPACE`: Roles are now managed via Okta groups and the `groups` claim in the ID token, not a namespaced custom claim from an Auth0 Action.

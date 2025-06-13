@@ -16,6 +16,10 @@ const OKTA_API_TOKEN = process.env.OKTA_API_TOKEN; // Using static SSWS token fo
 const BASE_OKTA_API_URL = `https://${OKTA_DOMAIN}/api/v1`; // Base URL for Okta API
 const OKTA_ISSUER = `https://${OKTA_DOMAIN}/oauth2/default`; // Issuer for user tokens (for userinfo endpoint)
 
+// Define your default group name here.
+// Ensure this group exists in Okta and is assigned to your application.
+const DEFAULT_ACCESS_GROUP_NAME = "AccessBoardUsers";
+
 /**
  * Helper function to send standardized error responses.
  * @param {object} res - The Express response object.
@@ -236,6 +240,22 @@ export default async function handler(req, res) {
                     }
                 };
                 const newUser = await fetchOktaAPI('/users?activate=true', 'POST', oktaUserPayload);
+
+                // --- NEW LOGIC: Assign new user to default access group ---
+                const defaultGroupId = await getGroupIdByName(DEFAULT_ACCESS_GROUP_NAME);
+                if (defaultGroupId) {
+                    try {
+                        await fetchOktaAPI(`/groups/${defaultGroupId}/users/${encodeURIComponent(newUser.id)}`, 'PUT');
+                        console.log(`[Okta Management API] New user ${newUser.id} automatically assigned to group '${DEFAULT_ACCESS_GROUP_NAME}'.`);
+                    } catch (groupAssignError) {
+                        console.warn(`[Okta Management API] Failed to automatically assign user ${newUser.id} to group '${DEFAULT_ACCESS_GROUP_NAME}':`, groupAssignError.message);
+                        // Log but don't block user creation success, as primary goal is user creation.
+                    }
+                } else {
+                    console.warn(`[Okta Management API] Default access group '${DEFAULT_ACCESS_GROUP_NAME}' not found. User was created but not automatically assigned to the application.`);
+                }
+                // --- END NEW LOGIC ---
+
                 const adaptedNewUser = {
                     id: newUser.id,
                     user_id: newUser.id,

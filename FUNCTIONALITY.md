@@ -35,8 +35,8 @@ The frontend is a collection of static assets that provide the user interface an
 
 `app.js` is the control center for client-side operations:
 
--   **Authentication Initiation (`login.html` & `app.js`):**
-    User authentication is managed via Okta Customer Identity Cloud (CIC), utilizing the OAuth 2.0 Authorization Code Flow.
+-   **Authentication Initiation (`login.html` & `app.js`):** User authentication is managed via Okta Customer Identity Cloud (CIC), utilizing the OAuth 2.0 Authorization Code Flow.
+
     -   When a user clicks the "Login with Okta" button on `login.html`, `app.js` prevents default form submission.
 
     -   It dynamically constructs an Okta CIC authorization URL (e.g., `https://YOUR_OKTA_DOMAIN/oauth2/default/v1/authorize?...`).
@@ -79,7 +79,7 @@ The frontend is a collection of static assets that provide the user interface an
 
     -   **User Information Display:** It populates user-specific UI elements (e.g., `user-profile-name`, `user-profile-email`, `user-profile-roles`, `user-profile-picture`) on pages like `protected.html`.
 
-    -   **Role-Based UI Control:** It checks the `roles` array (derived from Okta groups included in the ID token) within `authenticatedUser` (specifically for the 'Admin' role). Based on this, it dynamically shows or hides UI components, such as the "Administrator Tools" section. RBAC is implemented by checking these user roles to grant or deny access to specific parts of the application.
+    -   **Role-Based UI Control:** It checks the `roles` array (derived from Okta groups included in the ID token) within `authenticatedUser` (specifically for the 'Admin' role). Based on this, it dynamically shows or hides UI components, such as the "Administrator Tools" section. RBAC is implemented by checking these user roles to grant or deny access to specific parts of the application. The logic for assigning/unassigning the 'Admin' role now correctly sends `'Admin'` (capital 'A') to the backend.
 
     -   **Page Protection (Client-Side):** It implements client-side route protection. If an unauthenticated user attempts to access protected pages, they are redirected to `login.html`. If an authenticated *non-admin* user attempts to access an admin page, they are redirected.
 
@@ -116,7 +116,7 @@ This serverless function acts as the secure intermediary for the Authorization C
 
 -   **Token Exchange (Server-to-Server):**
 
-    -   It performs a `fetch` `POST` request directly to Okta CIC's token endpoint (e.g., `https://YOUR_OKTA_DOMAIN/oauth2/default/v1/token`).
+    -   It performs a `fetch`  `POST` request directly to Okta CIC's token endpoint (e.g., `https://YOUR_OKTA_DOMAIN/oauth2/default/v1/token`).
 
     -   **Crucially, the request's `Content-Type` header is set to `application/x-www-form-urlencoded`, and the request body is sent as URL-encoded form parameters.**
 
@@ -155,35 +155,60 @@ This serverless function provides the administrative interface to interact with 
 -   **Okta API Token Authentication:**
 
     -   This endpoint uses a long-lived Okta API Token (`process.env.OKTA_API_TOKEN`) for authentication.
+
     -   The `fetchOktaAPI()` helper function includes this token in the `Authorization: SSWS YOUR_OKTA_API_TOKEN` header for all requests to the Okta Management API.
 
 -   **Okta Management API Interactions:**
 
     -   The endpoint accepts various HTTP methods and an `action` parameter for operations like `createUser`, `listUsers`, `updateUser`, `deleteUser`, `assignRoles` (add to group), `unassignRoles` (remove from group).
-    -   **Role/Group Assignment Logic:** For assigning/unassigning roles, it uses the `getGroupIdByName()` helper to find the ID of the target group (e.g., "Admin") in Okta, then adds or removes the user from that group.
+
+    -   **Role/Group Assignment Logic:**
+
+        -   For assigning/unassigning roles, it uses the `getGroupIdByName()` helper to find the ID of the target group (e.g., "Admin") in Okta, then adds or removes the user from that group. The role name is now correctly handled as `'Admin'` (capital 'A').
+
+        -   **Automated Application Assignment:** When a new user is created (`action: 'createUser'`), the backend now automatically assigns the new user to the `AccessBoardUsers` Okta group. This is achieved by first fetching the `groupId` for `AccessBoardUsers` and then making a `PUT` request to add the user to that group. This ensures new users are immediately granted access to the application via group assignment.
 
 -   **Client-Side Authorization Note:** While the frontend implements client-side checks, the `api/okta-user-management.js` endpoint itself, in this demo, does not perform additional server-side validation of the *authenticated user's* permissions to call this management API. Server-side validation is recommended for production.
 
 4\. Okta Customer Identity Cloud (CIC) Integration Details
----------------------------------------------------------
+----------------------------------------------------------
 
 -   **Okta OIDC Application:**
+
     -   A "Web Application" is configured in Okta CIC for the Authorization Code Flow.
+
     -   It has "Sign-in redirect URIs" (callback URLs) and "Sign-out redirect URIs" configured.
+
     -   Grant Types: "Authorization Code" and "Refresh Token" are enabled.
+
 -   **Okta API Token:**
+
     -   An API token is generated in Okta with appropriate permissions to manage users and groups.
+
 -   **Okta Authorization Server & Claims:**
+
     -   The default (or a custom) Okta authorization server is configured.
+
     -   **Scopes:** All requested scopes (`openid`, `profile`, `email`, `offline_access`, `groups`) must be explicitly defined and enabled under the **Scopes** tab of your Authorization Server.
+
     -   **`groups` Claim Configuration:** A `groups` claim is configured under the **Claims** tab with:
-        * **Name:** `groups`
-        * **Include in token type:** `ID Token`
-        * **Value type:** `Groups`
-        * **Filter:** `Matches regex` with `.*`
-        * **Include in:** `Any scope`
-        * **Always include in token:** **`ON`** (this ensures the claim is always present if the user has group memberships).
+
+        -   **Name:**  `groups`
+
+        -   **Include in token type:**  `ID Token`
+
+        -   **Value type:**  `Groups`
+
+        -   **Filter:**  `Matches regex` with `.*`
+
+        -   **Include in:**  `Any scope`
+
+        -   **Always include in token:**  **`ON`** (this ensures the claim is always present if the user has group memberships).
+
 -   **Okta Groups for Roles:**
-    -   User roles (e.g., "admin") are represented by Okta groups (e.g., an "Admin" group). Users are assigned to these groups in Okta to grant them corresponding application roles.
+
+    -   User roles (e.g., "Admin") are represented by Okta groups (e.g., an "Admin" group). Users are assigned to these groups in Okta to grant them corresponding application roles.
+
+    -   A default access group (e.g., "AccessBoardUsers") is used to automatically grant application access to newly created users by assigning them to this group upon creation.
 
 This detailed breakdown clarifies the technical flow and interdependencies within your application, highlighting how different components and Okta CIC services work together to provide authentication, authorization, and user management capabilities.
