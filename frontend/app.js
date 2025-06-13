@@ -575,7 +575,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${accessToken}` // Send user's access token
               },
-              body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['admin'] })
+              body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['Admin'] })
           });
 
           if (response.ok) {
