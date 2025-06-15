@@ -2,12 +2,6 @@
 // Handles user authentication against Auth0 using the Authorization Code Flow.
 // It exchanges the authorization code received from the frontend for ID, Access, and Refresh tokens.
 
-// Load environment variables from .env file in development environments
-// This ensures process.env variables are available locally.
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
-}
-
 // Import node-fetch for making HTTP requests.
 // This is typically needed in Node.js environments for fetch API functionality.
 import fetch from 'node-fetch';
