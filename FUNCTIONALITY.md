@@ -14,7 +14,7 @@ The application adheres to a modern, distributed architecture, separating concer
 
     -   Facilitating the OAuth 2.0 Authorization Code Flow (securely exchanging codes for tokens) with Okta CIC.
 
-    -   Interacting with the Okta Management API for administrative user operations (CRUD, group/role assignments).
+    -   Interacting with the Okta Management API for administrative user operations (CRUD, group/role assignments) using secure machine-to-machine authentication.
 
 -   **Okta Customer Identity Cloud (CIC) (Identity Provider - IdP):** Serves as the central authority for user authentication, authorization, and a managed user database. It manages user identities, issues tokens (ID, Access, Refresh), and provides a robust API for user and group management. User roles are typically managed via Okta Groups.
 
@@ -146,7 +146,51 @@ This serverless function provides the administrative interface to interact with 
 
     -   **Interaction with Okta API for Authorization:**  `api/okta-user-management.js` uses the **Okta Authorization Server - Userinfo Endpoint** (`https://YOUR_OKTA_DOMAIN/oauth2/default/v1/userinfo`) to validate this access token and retrieve the end-user's claims, including their assigned `groups` (roles). This server-side validation is crucial for ensuring that only authenticated users with the `'Admin'` role can perform administrative actions.
 
--   **Authentication (from Backend to Okta Management API):** If the end-user is authorized (i.e., verified as an 'Admin'), the backend proceeds to call various Okta Management APIs using a long-lived `OKTA_API_TOKEN` (SSWS token), which is securely configured in the environment variables.
+-   **Authentication (from Backend to Okta Management API) - Shift to OAuth 2.0 Client Credentials with Private Key JWT:**
+
+    -   **Why Shift from SSWS to OAuth 2.0 Client Credentials (Private Key JWT)?** Historically, direct API access for management tasks might have used static SSWS (Session Single Sign-On) tokens. While simple to use, SSWS tokens present several security and operational drawbacks for machine-to-machine (M2M) communication:
+
+        -   **Static and Long-Lived:** SSWS tokens are typically long-lived and don't expire unless manually revoked. This increases the risk of compromise; if a token is stolen, it remains valid indefinitely until revoked.
+
+        -   **Lack of Granularity:** An SSWS token often inherits the full permissions of the admin user who generated it, making it difficult to apply the principle of least privilege.
+
+        -   **Auditing Challenges:** Tracking actions performed by an SSWS token can be less granular than with OAuth 2.0 access tokens.
+
+        -   **Manual Rotation:** SSWS tokens require manual rotation, which is prone to human error and can lead to operational overhead.
+
+        Shifting to OAuth 2.0 Client Credentials Grant provides a more secure, robust, and industry-standard approach for M2M authentication:
+
+        -   **Dynamic and Short-Lived Access Tokens:** M2M access tokens are dynamically issued with a short lifespan (e.g., 1 hour), reducing the window of opportunity for compromise. They are automatically refreshed by the application.
+
+        -   **Scoped Permissions:** Tokens are issued with explicit scopes (e.g., `okta.users.read`, `okta.groups.manage`), ensuring the application only has access to the resources and operations it needs.
+
+        -   **Standardized Security:** Leverages well-understood OAuth 2.0 and JWT best practices.
+
+        -   **Improved Auditability:** Token issuance and usage are tied to the client application, offering better audit trails.
+
+    -   **Why `private_key_jwt` was required over simple Client ID/Secret?** The OAuth 2.0 Client Credentials Grant typically allows client authentication using a simple `client_id` and `client_secret` (similar to a username/password for a machine). However, when interacting with **Okta's Org Authorization Server** (which is the only authorization server capable of issuing tokens with privileged `okta.*` scopes for accessing Okta's own Management APIs), Okta enforces the use of **`private_key_jwt`** for client authentication.
+
+        -   **Enhanced Security (Proof-of-Possession):** A simple `client_secret` is a shared secret. If compromised, an attacker can impersonate your client. `private_key_jwt` authentication, based on asymmetric cryptography (public/private key pairs), provides **proof-of-possession**. The client (your backend) signs a JWT (`client_assertion`) with its private key. Okta verifies this signature using the corresponding public key registered with your application. This cryptographically proves that the client possesses the private key, significantly enhancing security against impersonation and secret leakage.
+
+        -   **Non-Repudiation:** The signed JWT provides non-repudiation, meaning the client cannot deny having made a specific token request.
+
+        -   **Okta's Policy:** Okta mandates this stronger authentication method for accessing its core management APIs due to the highly sensitive nature of the operations involved. While custom authorization servers might offer `client_secret_post` for simplicity, the Org Authorization Server's stricter requirement ensures top-tier security for `okta.*` scopes.
+
+    -   **New M2M Flow in `api/okta-user-management.js`:**
+
+        -   The backend (your serverless function), acting as an OAuth 2.0 client, dynamically generates a **JSON Web Token (JWT)**. This JWT is signed with the application's **private key** (securely retrieved from an environment variable). This signed JWT is called the `client_assertion`.
+
+        -   It then makes a `POST` request to the **Okta Org Authorization Server's Token Endpoint** (`https://YOUR_OKTA_DOMAIN/oauth2/v1/token`).
+
+        -   This request includes `client_id`, `grant_type=client_credentials`, `client_assertion_type` (`urn:ietf:params:oauth:client-assertion-type:jwt-bearer`), and the generated `client_assertion`.
+
+        -   Okta verifies the `client_assertion`'s signature using the public key registered with your M2M application.
+
+        -   Upon successful validation, Okta issues a short-lived **M2M access token** that contains the requested `okta.*` scopes (e.g., `okta.users.read`, `okta.users.manage`). This token is cached by the backend for reuse until expiry.
+
+        -   This M2M access token is then used in the `Authorization: Bearer` header for all subsequent calls to the Okta Management API (e.g., `/api/v1/users`, `/api/v1/groups`).
+
+    -   **Admin Role Assignment (Crucial for Permissions):** Even with the correct `okta.*` scopes in the access token, the API Services application itself **must be assigned an Admin Role in Okta** (e.g., "Organization Administrator") under its "Admin Roles" tab. This grants the application the actual organizational permissions to perform the requested actions (e.g., list all users, create/update users, manage group memberships) within your Okta tenant. This is a distinct authorization layer from merely granting scopes.
 
 -   **Okta Management API Interactions:** The `api/okta-user-management.js` endpoint dispatches requests to the following Okta Management APIs based on the `action` parameter received from the frontend:
 
