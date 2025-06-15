@@ -2,16 +2,16 @@
 // Provides API endpoints for managing Okta users and their group memberships (roles).
 // Now includes robust server-side authorization by fetching user info (including groups)
 // via the /userinfo endpoint using the end-user's access token.
-
-// Load environment variables from .env file in development environments
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
-}
+// IMPORTANT: Management API calls now use OAuth 2.0 Client Credentials Grant (M2M) flow
+// with private_key_jwt client authentication.
 import fetch from 'node-fetch';
+import jwt from 'jsonwebtoken'; // Import jsonwebtoken for JWT creation
+import crypto from 'crypto'; // For generating JTI
 
 // Okta Configuration from environment variables
 const OKTA_DOMAIN = process.env.AUTH0_DOMAIN; // Re-using AUTH0_DOMAIN as it holds the Okta domain
-const OKTA_API_TOKEN = process.env.OKTA_API_TOKEN; // Using static SSWS token for Management API
+// M2M Client Credentials (Client ID only, secret is replaced by private_key_jwt)
+const OKTA_M2M_CLIENT_ID = process.env.OKTA_M2M_CLIENT_ID;
 
 const BASE_OKTA_API_URL = `https://${OKTA_DOMAIN}/api/v1`; // Base URL for Okta API
 const OKTA_ISSUER = `https://${OKTA_DOMAIN}/oauth2/default`; // Issuer for user tokens (for userinfo endpoint)
@@ -19,6 +19,10 @@ const OKTA_ISSUER = `https://${OKTA_DOMAIN}/oauth2/default`; // Issuer for user 
 // Define your default group name here.
 // Ensure this group exists in Okta and is assigned to your application.
 const DEFAULT_ACCESS_GROUP_NAME = "AccessBoardUsers";
+
+// Cache for M2M Access Token
+let m2mAccessToken = null;
+let m2mTokenExpiry = 0; // Unix timestamp in seconds
 
 /**
  * Helper function to send standardized error responses.
@@ -33,7 +37,110 @@ function sendError(res, statusCode, message, errorDetails) {
 }
 
 /**
- * Helper function to make requests to the Okta Management API (using SSWS token).
+ * Fetches an M2M access token from Okta using the Client Credentials Grant flow
+ * with private_key_jwt client authentication. Caches the token and refreshes it when expired.
+ * @returns {Promise<string>} A promise that resolves to the M2M access token.
+ * @throws {Error} If the token exchange fails or key is missing.
+ */
+async function getM2MAccessToken() {
+    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+
+    // Return cached token if not expired
+    if (m2mAccessToken && m2mTokenExpiry > currentTime + 30) { // Refresh 30 seconds before actual expiry
+        console.log("[M2M Auth] Using cached M2M access token.");
+        return m2mAccessToken;
+    }
+
+    console.log("[M2M Auth] Fetching new M2M access token using private_key_jwt...");
+
+    if (!OKTA_M2M_CLIENT_ID) {
+        throw new Error('Server configuration error: Okta M2M Client ID is missing.');
+    }
+
+    // --- CORRECTED SECTION STARTS HERE ---
+    let privateKeyBase64 = process.env.OKTA_M2M_PRIVATE_KEY; // Declare and assign it here first
+
+    if (!privateKeyBase64) { // Then you can check its value
+        console.error(`[M2M Auth Error] Environment variable OKTA_M2M_PRIVATE_KEY is not set.`);
+        throw new Error('Server configuration error: OKTA_M2M_PRIVATE_KEY environment variable is missing.');
+    }
+
+    let privateKey;
+    try {
+        // Decode the base64 string back to the original private key PEM format
+        privateKey = Buffer.from(privateKeyBase64, 'base64').toString('utf8');
+    } catch (err) {
+        console.error(`[M2M Auth Error] Failed to decode private key from environment variable:`, err);
+        throw new Error('Server configuration error: Private key decoding failed. Check base64 encoding.');
+    }
+    // --- CORRECTED SECTION ENDS HERE ---
+
+    // --- Create client_assertion JWT ---
+    // JWT Header
+    const header = {
+        alg: 'RS256', // Algorithm used to sign the JWT
+        typ: 'JWT',   // Type of the token
+    };
+
+    // JWT Claims (Payload)
+    // The 'aud' (Audience) must be the token endpoint URL for the Org Authorization Server.
+    const claims = {
+        iss: OKTA_M2M_CLIENT_ID, // Issuer (your client_id)
+        sub: OKTA_M2M_CLIENT_ID, // Subject (your client_id)
+        aud: `https://${OKTA_DOMAIN}/oauth2/v1/token`, // Audience (Okta's token endpoint for Org Auth Server)
+        exp: currentTime + 300, // Expiration time (e.g., 5 minutes from now)
+        iat: currentTime, // Issued at time
+        jti: crypto.randomBytes(16).toString('hex'), // Unique JWT ID
+    };
+
+    let clientAssertion;
+    try {
+        clientAssertion = jwt.sign(claims, privateKey, { algorithm: 'RS256', header });
+        console.log("[M2M Auth] client_assertion JWT successfully created.");
+    } catch (err) {
+        console.error("[M2M Auth Error] Failed to sign JWT:", err);
+        throw new Error('Failed to create signed JWT client assertion. Check private key format or jwt library usage.');
+    }
+    // --- End client_assertion JWT creation ---
+
+    // The token endpoint for the Okta Org Authorization Server (without '/default')
+    const tokenUrl = `https://${OKTA_DOMAIN}/oauth2/v1/token`;
+
+    const requestBody = new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: OKTA_M2M_CLIENT_ID, // Still needs to be sent as part of the request body
+        client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer', // Required type
+        client_assertion: clientAssertion, // The signed JWT
+        scope: 'okta.users.manage okta.groups.manage okta.users.read okta.groups.read' // Scopes for Okta Management API
+    }).toString();
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: requestBody,
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            console.error("[M2M Auth Error] Failed to get M2M access token:", response.status, responseData);
+            throw new Error(`Okta M2M Token Error (${response.status}): ${responseData.error_description || responseData.error}`);
+        }
+
+        m2mAccessToken = responseData.access_token;
+        m2mTokenExpiry = currentTime + responseData.expires_in;
+        console.log("[M2M Auth] Successfully obtained new M2M access token. Expires in:", responseData.expires_in, "seconds.");
+        return m2mAccessToken;
+
+    } catch (error) {
+        console.error("[M2M Auth Error] Network or unexpected error during M2M token fetch:", error);
+        throw error;
+    }
+}
+
+/**
+ * Helper function to make requests to the Okta Management API (using M2M token).
  * @param {string} endpoint - The API endpoint (e.g., '/users', '/groups').
  * @param {string} [method='GET'] - HTTP method.
  * @param {object} [body=null] - Request body for POST, PUT, etc.
@@ -43,13 +150,11 @@ function sendError(res, statusCode, message, errorDetails) {
 async function fetchOktaAPI(endpoint, method = 'GET', body = null) {
     const url = `${BASE_OKTA_API_URL}${endpoint}`;
 
-    // Validate OKTA_API_TOKEN is present before making the call
-    if (!OKTA_API_TOKEN) {
-        throw new Error('Server configuration error: Okta API token (SSWS) is missing. Please set OKTA_API_TOKEN in your environment variables.');
-    }
+    // Get the M2M access token
+    const token = await getM2MAccessToken();
 
     const headers = {
-        'Authorization': `SSWS ${OKTA_API_TOKEN}`, // Use SSWS token
+        'Authorization': `Bearer ${token}`, // Use Bearer token for M2M
         'Accept': 'application/json',
         'Content-Type': 'application/json',
     };
@@ -196,13 +301,13 @@ export default async function handler(req, res) {
 
     console.log(`[Okta Management API Handler] Received request: ${req.method} ${req.url}`);
     if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
-      ({ action, userId, userData, updates, roles } = req.body);
-      console.log(`[Okta Management API Handler] Action: ${action}, Body:`, req.body);
+        ({ action, userId, userData, updates, roles } = req.body);
+        console.log(`[Okta Management API Handler] Action: ${action}, Body:`, req.body);
     } else if (req.method === 'GET') {
-      queryAction = req.query.action;
-      queryUserId = req.query.userId;
-      queryRoleName = req.query.roleName;
-      console.log(`[Okta Management API Handler] Action: ${queryAction}, Query:`, req.query);
+        queryAction = req.query.action;
+        queryUserId = req.query.userId;
+        queryRoleName = req.query.roleName;
+        console.log(`[Okta Management API Handler] Action: ${queryAction}, Query:`, req.query);
     }
 
     // --- Server-side authorization check ---
@@ -213,9 +318,9 @@ export default async function handler(req, res) {
     }
     // At this point, 'authorizedUser' contains the validated user's claims, and the user is confirmed to be an 'Admin'.
 
-    // Validate that OKTA_API_TOKEN is configured (needed for fetchOktaAPI)
-    if (!OKTA_API_TOKEN) {
-        return sendError(res, 500, 'Server configuration error: Okta API token (SSWS) is missing. Cannot perform management operations.');
+    // Validate that OKTA_M2M_CLIENT_ID is configured (needed for getM2MAccessToken)
+    if (!OKTA_M2M_CLIENT_ID) {
+        return sendError(res, 500, 'Server configuration error: Okta M2M Client ID is missing. Cannot perform management operations.');
     }
     if (!OKTA_DOMAIN) {
         return sendError(res, 500, 'Server configuration error: Okta domain is missing.');
