@@ -47,9 +47,9 @@ async function fetchAppConfig() {
 
     // Validate essential config
     if (!appConfig.oktaDomain || !appConfig.oktaClientId) {
-        console.error('Okta domain or client ID is missing from fetched config.');
-        showToast('Error: Client configuration is missing. Authentication may not work.', 'error', 5000);
-        // Potentially block further auth actions if config is incomplete
+      console.error('Okta domain or client ID is missing from fetched config.');
+      showToast('Error: Client configuration is missing. Authentication may not work.', 'error', 5000);
+      // Potentially block further auth actions if config is incomplete
     }
   } catch (error) {
     console.error('Error fetching application configuration:', error);
@@ -65,20 +65,20 @@ async function fetchAppConfig() {
  * @async
  */
 async function logout() {
-    const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
-    localStorage.removeItem('authenticatedUser');
-    localStorage.removeItem('okta_state'); // Also clear any stored state for Okta
+  const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
+  localStorage.removeItem('authenticatedUser');
+  localStorage.removeItem('okta_state'); // Also clear any stored state for Okta
 
-    if (appConfig.oktaDomain && authenticatedUser?.idToken) {
-        const postLogoutRedirectUri = window.location.origin + '/index.html'; // Or login.html
-        // For Okta, the client_id is not sent to /logout. Instead, id_token_hint and post_logout_redirect_uri are used.
-        const oktaLogoutUrl = `https://${appConfig.oktaDomain}/oauth2/default/v1/logout?id_token_hint=${authenticatedUser.idToken}&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
-        window.location.href = oktaLogoutUrl;
-    } else {
-        // Fallback if config or idToken isn't available
-        console.warn('Okta config or ID token not available for full logout. Clearing local session and redirecting.');
-        window.location.href = window.location.origin + '/index.html';
-    }
+  if (appConfig.oktaDomain && authenticatedUser?.idToken) {
+    const postLogoutRedirectUri = window.location.origin + '/index.html'; // Or login.html
+    // For Okta, the client_id is not sent to /logout. Instead, id_token_hint and post_logout_redirect_uri are used.
+    const oktaLogoutUrl = `https://${appConfig.oktaDomain}/oauth2/default/v1/logout?id_token_hint=${authenticatedUser.idToken}&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
+    window.location.href = oktaLogoutUrl;
+  } else {
+    // Fallback if config or idToken isn't available
+    console.warn('Okta config or ID token not available for full logout. Clearing local session and redirecting.');
+    window.location.href = window.location.origin + '/index.html';
+  }
 }
 
 
@@ -146,11 +146,16 @@ function checkAuthAndRedirect() {
     if (userProfileEmailEl && authenticatedUser.profile) {
       userProfileEmailEl.textContent = authenticatedUser.profile.email || 'N/A';
     }
-    // New: Set profile picture
-    if (userProfilePictureEl && authenticatedUser.profile?.picture) {
-      userProfilePictureEl.src = authenticatedUser.profile.picture;
-    } else if (userProfilePictureEl) {
-      userProfilePictureEl.src = 'assets/default-avatar.png'; // Fallback to default
+    // Set profile picture
+    if (userProfilePictureEl) {
+      if (authenticatedUser.profile?.picture) {
+        userProfilePictureEl.src = authenticatedUser.profile.picture;
+      } else if (authenticatedUser.profile?.name) {
+        // Use the  generateInitialsAvatar function
+        userProfilePictureEl.src = generateInitialsAvatar(authenticatedUser.profile.name, 90, ['#63E01F', '#627B15'], '#FFFFFF',135);
+      } else {
+        userProfilePictureEl.src = 'assets/default-avatar.png';
+      }
     }
 
     if (userProfileRolesEl) {
@@ -197,6 +202,80 @@ function checkAuthAndRedirect() {
       window.location.href = 'login.html';
     }
   }
+}
+
+/**
+ * Generates a square avatar image with user's initials, featuring
+ * a gradient background, text shadow, and an optional outer border.
+ * @param {string} name - The user's full name (e.g., "David Marketing").
+ * @param {number} [size=90] - The width and height of the avatar in pixels.
+ * @param {string|string[]} [bgColor=['#9F83E1', '#634C9E']] - Background color(s). Can be a single hex color or an array of two hex colors for a linear gradient.
+ * @param {string} [textColor='#FFFFFF'] - The text color for the initials.
+ * @param {number} [gradientAngle=45] - Angle for linear gradient in degrees (0-360).
+ * @returns {string} A data URL representing the generated image.
+ */
+function generateInitialsAvatar(name, size = 90, bgColor = ['#9F83E1', '#634C9E'], textColor = '#FFFFFF', gradientAngle = 45) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+
+  // --- Draw Gradient Background ---
+  if (Array.isArray(bgColor) && bgColor.length === 2) {
+    const angleRad = (gradientAngle * Math.PI) / 180;
+    const startX = size / 2 - Math.cos(angleRad) * size / 2;
+    const startY = size / 2 - Math.sin(angleRad) * size / 2;
+    const endX = size / 2 + Math.cos(angleRad) * size / 2;
+    const endY = size / 2 + Math.sin(angleRad) * size / 2;
+
+    const gradient = context.createLinearGradient(startX, startY, endX, endY);
+    gradient.addColorStop(0, bgColor[0]); // Start color (e.g., --color-primary-light)
+    gradient.addColorStop(1, bgColor[1]); // End color (e.g., --color-primary-dark)
+    context.fillStyle = gradient;
+  } else {
+    context.fillStyle = typeof bgColor === 'string' ? bgColor : '#7A5CBA'; // Fallback to solid primary if not a valid array
+  }
+  context.fillRect(0, 0, size, size);
+
+  // --- Optional Outer Border (Circular, to match CSS border-radius: 50%) ---
+  context.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // Subtle white transparent border
+  context.lineWidth = 2; // Thin border
+  context.beginPath();
+  context.arc(size / 2, size / 2, size / 2 - context.lineWidth / 2, 0, Math.PI * 2); // Draw circle
+  context.stroke();
+
+
+  // Get initials
+  const nameParts = name.split(' ').filter(part => part.length > 0);
+  let initials = '';
+  if (nameParts.length > 1) {
+    initials = nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0);
+  } else if (nameParts.length === 1) {
+    initials = nameParts[0].charAt(0);
+  }
+  initials = initials.toUpperCase();
+
+  // --- Draw Text with Shadow ---
+  context.fillStyle = textColor;
+  context.font = `bold ${size * 0.4}px ${getComputedStyle(document.body).fontFamily.split(',')[0] || 'sans-serif'}`; // Use actual font family from CSS
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+
+  // Text Shadow properties
+  context.shadowColor = 'rgba(0, 0, 0, 0.4)'; // Soft black shadow
+  context.shadowBlur = 5; // Blur radius for the shadow
+  context.shadowOffsetX = 2; // Horizontal offset
+  context.shadowOffsetY = 2; // Vertical offset
+
+  context.fillText(initials, size / 2, size / 2);
+
+  // Reset shadow for any subsequent drawing if needed, though this function returns a data URL
+  context.shadowColor = 'transparent';
+  context.shadowBlur = 0;
+  context.shadowOffsetX = 0;
+  context.shadowOffsetY = 0;
+
+  return canvas.toDataURL();
 }
 
 /**
@@ -488,10 +567,10 @@ document.addEventListener('DOMContentLoaded', async () => {
    */
   async function exchangeCodeWithBackend(code) {
     if (!OKTA_REDIRECT_URI) {
-        console.error("OKTA_REDIRECT_URI is not defined. Cannot exchange code.");
-        showToast('Configuration error: Redirect URI is missing.', 'error');
-        window.location.href = 'login.html';
-        return;
+      console.error("OKTA_REDIRECT_URI is not defined. Cannot exchange code.");
+      showToast('Configuration error: Redirect URI is missing.', 'error');
+      window.location.href = 'login.html';
+      return;
     }
     try {
       const response = await fetch('/api/auth', {
@@ -561,39 +640,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       // --- ADDED: Get authenticated user's access token for server-side authorization ---
       const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
       if (!authenticatedUser || !authenticatedUser.accessToken) {
-          showToast('Authentication required to perform this action.', 'error');
-          return;
+        showToast('Authentication required to perform this action.', 'error');
+        return;
       }
       const accessToken = authenticatedUser.accessToken;
       // --- END ADDED ---
 
       try {
-          if (buttonElement) buttonElement.classList.add('loading');
-          const response = await fetch('/api/okta-user-management', {
-              method: 'PUT',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${accessToken}` // Send user's access token
-              },
-              body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['Admin'] })
-          });
+        if (buttonElement) buttonElement.classList.add('loading');
+        const response = await fetch('/api/okta-user-management', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}` // Send user's access token
+          },
+          body: JSON.stringify({ action: action, userId: userIdToManage, roles: ['Admin'] })
+        });
 
-          if (response.ok) {
-              const successMessage = action === 'assignRoles' ? 'User added to admin role successfully.' : 'User removed from admin role successfully.';
-              showToast(successMessage, 'success'); // Use toast for success
-              userIdInput.value = ''; // Clear input
-              loadAdminUsers(); // Refresh the list
-          } else {
-              const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
-              showToast(`Failed to update roles: ${errorData.error || 'Server error'}`, 'error'); // Use toast for error
-          }
-        } catch (error) {
-          console.error("Error updating roles:", error);
-          showToast('Client-side error: ' + error.message, 'error'); // Use toast for network errors
-        } finally {
-          if (buttonElement) buttonElement.classList.remove('loading');
+        if (response.ok) {
+          const successMessage = action === 'assignRoles' ? 'User added to admin role successfully.' : 'User removed from admin role successfully.';
+          showToast(successMessage, 'success'); // Use toast for success
+          userIdInput.value = ''; // Clear input
+          loadAdminUsers(); // Refresh the list
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown server error.' }));
+          showToast(`Failed to update roles: ${errorData.error || 'Server error'}`, 'error'); // Use toast for error
         }
+      } catch (error) {
+        console.error("Error updating roles:", error);
+        showToast('Client-side error: ' + error.message, 'error'); // Use toast for network errors
+      } finally {
+        if (buttonElement) buttonElement.classList.remove('loading');
       }
+    }
 
     if (addToAdminRoleButton) {
       addToAdminRoleButton.addEventListener('click', () => manageAdminRole('assignRoles', addToAdminRoleButton));
@@ -610,10 +689,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       // --- ADDED: Get authenticated user's access token for server-side authorization ---
       const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
       if (!authenticatedUser || !authenticatedUser.accessToken) {
-          showToast('Authentication required to load admin users.', 'error');
-          displayMessage(loadAdminUsersMessage, 'Authentication required.', 'error');
-          if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading');
-          return;
+        showToast('Authentication required to load admin users.', 'error');
+        displayMessage(loadAdminUsersMessage, 'Authentication required.', 'error');
+        if (loadAdminUsersButton) loadAdminUsersButton.classList.remove('loading');
+        return;
       }
       const accessToken = authenticatedUser.accessToken;
       // --- END ADDED ---
@@ -621,9 +700,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         // Fix: Use 'Admin' (capital A) to match Okta group name case
         const response = await fetch('/api/okta-user-management?action=listUsersInRole&roleName=Admin', { // Fixed: 'Admin'
-            headers: {
-                'Authorization': `Bearer ${accessToken}` // Send user's access token
-            }
+          headers: {
+            'Authorization': `Bearer ${accessToken}` // Send user's access token
+          }
         });
         if (response.ok) {
           const users = await response.json();
@@ -748,9 +827,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- ADDED: Get authenticated user's access token for server-side authorization ---
         const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
         if (!authenticatedUser || !authenticatedUser.accessToken) {
-            showToast('Authentication required to create user.', 'error');
-            displayMessage(createMessage, 'Authentication required.', 'error', 'message-area', 0, true);
-            return;
+          showToast('Authentication required to create user.', 'error');
+          displayMessage(createMessage, 'Authentication required.', 'error', 'message-area', 0, true);
+          return;
         }
         const accessToken = authenticatedUser.accessToken;
         // --- END ADDED ---
@@ -767,8 +846,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           const response = await fetch('/api/okta-user-management', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}` // Send user's access token
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}` // Send user's access token
             },
             body: JSON.stringify({ action: 'createUser', userData })
           });
@@ -800,20 +879,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       // --- ADDED: Get authenticated user's access token for server-side authorization ---
       const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
       if (!authenticatedUser || !authenticatedUser.accessToken) {
-          showToast('Authentication required to load users.', 'error');
-          displayMessage(listMessage, 'Authentication required.', 'error');
-          if (loadUsersButton) loadUsersButton.classList.remove('loading');
-          if (userListSkeleton) userListSkeleton.style.display = 'none'; // Hide skeleton
-          return;
+        showToast('Authentication required to load users.', 'error');
+        displayMessage(listMessage, 'Authentication required.', 'error');
+        if (loadUsersButton) loadUsersButton.classList.remove('loading');
+        if (userListSkeleton) userListSkeleton.style.display = 'none'; // Hide skeleton
+        return;
       }
       const accessToken = authenticatedUser.accessToken;
       // --- END ADDED ---
 
       try {
         const response = await fetch('/api/okta-user-management?action=listUsers', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}` // Send user's access token
-            }
+          headers: {
+            'Authorization': `Bearer ${accessToken}` // Send user's access token
+          }
         });
         if (response.ok) {
           const users = await response.json();
@@ -909,9 +988,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- ADDED: Get authenticated user's access token for server-side authorization ---
         const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
         if (!authenticatedUser || !authenticatedUser.accessToken) {
-            showToast('Authentication required to save changes.', 'error');
-            displayMessage(editMessage, 'Authentication required.', 'error', 'message-area', 0, true);
-            return;
+          showToast('Authentication required to save changes.', 'error');
+          displayMessage(editMessage, 'Authentication required.', 'error', 'message-area', 0, true);
+          return;
         }
         const accessToken = authenticatedUser.accessToken;
         // --- END ADDED ---
@@ -921,8 +1000,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           const response = await fetch('/api/okta-user-management', {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}` // Send user's access token
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}` // Send user's access token
             },
             body: JSON.stringify({ action: 'updateUser', userId: userIdToUpdate, updates })
           });
@@ -952,9 +1031,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       // --- ADDED: Get authenticated user's access token for server-side authorization ---
       const authenticatedUser = JSON.parse(localStorage.getItem('authenticatedUser'));
       if (!authenticatedUser || !authenticatedUser.accessToken) {
-          showToast('Authentication required to delete user.', 'error');
-          displayMessage(listMessage, 'Authentication required.', 'error');
-          return;
+        showToast('Authentication required to delete user.', 'error');
+        displayMessage(listMessage, 'Authentication required.', 'error');
+        return;
       }
       const accessToken = authenticatedUser.accessToken;
       // --- END ADDED ---
@@ -970,8 +1049,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch('/api/okta-user-management', {
               method: 'DELETE',
               headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${accessToken}` // Send user's access token
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}` // Send user's access token
               },
               body: JSON.stringify({ action: 'deleteUser', userId: userIdToDelete })
             });
@@ -1174,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize animations only if relevant elements are on the page
     if (document.querySelector('.scene-element')) {
-        moveLandingPageElementIndependently();
+      moveLandingPageElementIndependently();
     }
     // Other initializations that depend on DOM elements specific to certain pages
   }
