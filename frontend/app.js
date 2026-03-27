@@ -206,6 +206,7 @@ function checkAuthAndRedirect() {
     } else if (isCallbackPage) {
       console.log('[Auth] On callback page, allowing code exchange to proceed...');
     }
+  }
 }
 
 /**
