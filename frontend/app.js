@@ -197,11 +197,15 @@ function checkAuthAndRedirect() {
     // User is not authenticated
     const isProtectedPage = currentPage.endsWith('protected.html');
     const isAdminAreaPage = currentPage.includes('admin');
-    // Ensure we don't redirect from the login or callback page itself if not authenticated
-    if (isProtectedPage || isAdminAreaPage) {
+    const isCallbackPage = currentPage.endsWith('callback.html'); // NEW
+
+    // Only redirect if it's a protected/admin page AND NOT the callback page
+    if ((isProtectedPage || isAdminAreaPage) && !isCallbackPage) {
+      console.log('[Auth] Protected page detected, redirecting to login.');
       window.location.href = 'login.html';
+    } else if (isCallbackPage) {
+      console.log('[Auth] On callback page, allowing code exchange to proceed...');
     }
-  }
 }
 
 /**
